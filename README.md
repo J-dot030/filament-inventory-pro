@@ -1,106 +1,51 @@
-# Filament Inventory Pro - Auto-Lookup Edition
+🧵 Filament Inventory Pro (AI Edition)
 
-A smart inventory management system for 3D printer filament that **automatically looks up product information** from QR codes. No manual data entry needed!
+A professional-grade inventory tracker for 3D printing filaments. Now featuring AI Vision powered by Google Gemini to automatically detect filament brand, color, and type just by looking at the box.
 
-## 🎯 How It Works
+✨ New Features
 
-### The Smart Workflow:
-1. **Print QR Code Labels** for each unique filament type (brand, color, material)
-2. **Add to Product Database** - Define what each QR code represents (do this once)
-3. **Scan to Add** - Scan the QR code, enter only the quantity, done!
-4. **System Automatically** pulls all product info from your database
+🧠 AI Box Scanner: Point your camera at a filament box, and the AI extracts the Brand, Color, and Material automatically.
 
-### Two-Part System:
-- **Product Database**: Master list of all your filament types (Prusament Red PLA, MatterHackers Blue PETG, etc.)
-- **Inventory**: Your actual spools with quantities
+📱 Professional UI: Glassmorphism design, dark mode, and smooth animations using Tailwind CSS.
 
-## ✨ Key Features
+⚡ Quick Actions: One-tap QR scanning to adjust stock levels.
 
-✅ **Automatic Product Lookup** - Scan QR code, system finds all details automatically
-✅ **Quantity-Only Entry** - Just enter how many spools you're adding
-✅ **Product Database Management** - Easy UI to manage product information
-✅ **QR Code Generator Ready** - Use QR code generator to create labels
-✅ **Low Stock Alerts** - Visual warnings with customizable thresholds
-✅ **Statistics Dashboard** - Real-time inventory metrics
-✅ **Dark Mode** - Easy on the eyes
-✅ **Search & Filter** - Find items by brand or name
-✅ **Data Export** - JSON and CSV formats
-✅ **Bulk Import** - Import multiple inventory items at once
-✅ **Responsive Design** - Works on mobile and desktop
+📊 Real-time Stats: Track total spools and get "Low Stock" alerts instantly.
 
-## 🚀 Quick Start
+💾 Local & Secure: All data is stored in your browser. Your API key is saved locally on your device.
 
-### Live Demo:
-https://j-dot030.github.io/Filament-Inventory/
+🚀 How to Set Up (One Time)
 
-### Initial Setup:
+Since this app uses an AI brain, you need to give it a free key to work.
 
-1. **Go to "Product DB" Tab**
-2. **Add Your Filament Types:**
-   - Generate or write down QR codes for each unique filament
-   - Click "Add New Product"
-   - Enter: QR Code ID, Brand, Color, Material Type, Threshold
-   - Save
+Get a Key: Go to Google AI Studio and click "Get API Key" (It's free).
 
-3. **Print QR Code Labels**
-   - Use any QR code generator (e.g., qr-server.com)
-   - Print and stick labels on your filament spools
+Open the App: Go to your GitHub Pages link (e.g., https://yourname.github.io/repo).
 
-4. **Start Scanning**
-   - Click "SCAN FILAMENT SPOOL"
-   - Point camera at QR code label
-   - Enter quantity you have
-   - Done! System auto-fills everything else
+Enter Settings: Click the Gear Icon ⚙️ in the top right.
 
-## 📋 Detailed Instructions
+Paste Key: Paste your key into the "Google Gemini API Key" box and click Save.
 
-### Setting Up Product Database
+📖 How to Use
 
-Each "Product" represents a unique filament type. Example:
-- **QR Code ID**: `QR-PRUSAMENT-RED-PLA`
-- **Brand**: Prusament
-- **Color**: Red
-- **Material Type**: PLA
-- **Threshold**: 2 (alert when below 2 spools)
+Adding New Filament (The Cool Way)
 
-### Creating QR Code Labels
+Click "AI Scan New Box".
 
-1. Go to https://qr-server.com/qr-code-generator/
-2. Enter the QR Code ID (e.g., `QR-PRUSAMENT-RED-PLA`)
-3. Download and print
-4. Stick on your filament spool
+Hold the filament box in front of your camera.
 
-### Scanning Workflow
+Click the Shutter Button.
 
-1. Click **"SCAN FILAMENT SPOOL"**
-2. Allow camera access
-3. Point camera at the QR code on your spool
-4. Dialog appears with product details auto-filled
-5. Enter quantity (1, 2, 3, etc.)
-6. Click "Add to Inventory"
-7. Done! Your inventory updates automatically
+The AI will read the label and fill out the form for you!
 
-### Data Management
+Adjusting Stock
 
-**Export Data:**
-- Click "Export JSON" for backup
-- Click "Export CSV" for spreadsheet use
+Manual: Click the + or - buttons on any item card.
 
-**Import Inventory:**
-- Click "Bulk Import"
-- Format: `[{"id":"QR-123","qty":2},{"id":"QR-456","qty":1}]`
-- Paste and import
+QR Scan: Click "Scan QR" and scan any barcode you've previously saved to instantly add +1 stock.
 
-## 🏗️ Technical Details
+📦 Exporting Data
 
-### Data Structure:
+You can download your entire inventory as a .json file from the Settings menu to back it up or move it to another device.
 
-**Products** (master list):
-```json
-{
-  "id": "QR-PRUSAMENT-RED-PLA",
-  "brand": "Prusament",
-  "color": "Red",
-  "type": "PLA",
-  "threshold": 2
-}
+Built with Tailwind CSS, HTML5-QRCode, and Google Gemini.
