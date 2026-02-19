@@ -1117,7 +1117,7 @@
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     contents: [{ parts: [
-                        { text: "Analyze this image of a 3D printer filament box. Return a JSON object (no markdown) with keys: 'brand' (string), 'type' (PLA/PETG/ABS/TPU/ASA/Nylon etc), 'color' (string). Use 'Unknown' if unsure." },
+                        { { text: "Analyze this image of a 3D printer filament spool. Return a JSON object (no markdown) with keys: 'brand' (string), 'type' (string), 'color' (string), 'spool_id' (string), and 'percentage_left' (number). Estimate the physical amount of plastic remaining on the spool visually for percentage_left (e.g., 100, 75, 50, 25). The 'spool_id' MUST be the unique identification text printed specifically under the filament type name." },." },
                         { inlineData: { mimeType: "image/jpeg", data: imageData } }
                     ]}]
                 })
@@ -1142,7 +1142,8 @@
             }
             if (!found) sel.value = 'Unknown';
 
-            document.getElementById('item-id').value = '';
+           document.getElementById('item-id').value = result.spool_id || '';
+            document.getElementById('item-qty').value = result.percentage_left || 100;
             document.getElementById('modal-title').textContent = 'AI Detected — Confirm';
             document.getElementById('btn-delete').style.display = 'none';
             openModal('item-modal');
