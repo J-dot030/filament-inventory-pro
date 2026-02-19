@@ -522,8 +522,7 @@
                 aiStream = null;
             }
         }
-
-        async function captureAndAnalyze() {
+async function captureAndAnalyze() {
             const video = document.getElementById('ai-video');
             const canvas = document.getElementById('ai-canvas');
             const loading = document.getElementById('ai-loading');
@@ -532,17 +531,23 @@
             loading.classList.remove('hidden');
             loading.classList.add('flex');
 
-            // 1. Capture Image
-            canvas.width = video.videoWidth;
-            canvas.height = video.videoHeight;
-            canvas.getContext('2d').drawImage(video, 0, 0);
-            
-            // 2. Convert to Base64 (remove the "data:image/jpeg;base64," part)
-            const imageData = canvas.toDataURL('image/jpeg', 0.8).split(',')[1];
-            const apiKey = localStorage.getItem('geminiApiKey');
-
-            // 3. Send to Google Gemini
             try {
+                // 1. Capture and RESIZE Image for Mobile (Max 800px)
+                const origWidth = video.videoWidth;
+                const origHeight = video.videoHeight;
+                const scale = Math.min(1, 800 / origWidth); 
+                const newWidth = origWidth * scale;
+                const newHeight = origHeight * scale;
+
+                canvas.width = newWidth;
+                canvas.height = newHeight;
+                canvas.getContext('2d').drawImage(video, 0, 0, newWidth, newHeight);
+                
+                // 2. Convert to Base64 (remove the "data:image/jpeg;base64," part)
+                const imageData = canvas.toDataURL('image/jpeg', 0.8).split(',')[1];
+                const apiKey = localStorage.getItem('geminiApiKey');
+
+                // 3. Send to Google Gemini
                 const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -558,13 +563,18 @@
 
                 const data = await response.json();
                 
-                // 4. Parse the Brain's Answer
+                // 4. Catch specific Google API Errors (like Invalid API Key)
+                if (data.error) {
+                    throw new Error(data.error.message);
+                }
+                
+                // 5. Parse the Brain's Answer
                 let text = data.candidates[0].content.parts[0].text;
                 // Clean up any markdown ```json ... ``` formatting
                 text = text.replace(/```json|```/g, '').trim();
                 const result = JSON.parse(text);
 
-                // 5. Fill the Form
+                // 6. Fill the Form
                 closeAICamera();
                 
                 document.getElementById('item-brand').value = result.brand || "Unknown";
@@ -593,11 +603,100 @@
 
             } catch (error) {
                 console.error(error);
-                alert("AI Error: Could not read the image. Please try again.");
+                // Now it will alert the EXACT reason it failed!
+                alert("AI Error: " + error.message);
+                loading.classList.add('hidden');
+                loading.classList.remove('flex');
+            }
+        }async function captureAndAnalyze() {
+            const video = document.getElementById('ai-video');
+            const canvas = document.getElementById('ai-canvas');
+            const loading = document.getElementById('ai-loading');
+
+            // Show loading overlay
+            loading.classList.remove('hidden');
+            loading.classList.add('flex');
+
+            try {
+                // 1. Capture and RESIZE Image for Mobile (Max 800px)
+                const origWidth = video.videoWidth;
+                const origHeight = video.videoHeight;
+                const scale = Math.min(1, 800 / origWidth); 
+                const newWidth = origWidth * scale;
+                const newHeight = origHeight * scale;
+
+                canvas.width = newWidth;
+                canvas.height = newHeight;
+                canvas.getContext('2d').drawImage(video, 0, 0, newWidth, newHeight);
+                
+                // 2. Convert to Base64 (remove the "data:image/jpeg;base64," part)
+                const imageData = canvas.toDataURL('image/jpeg', 0.8).split(',')[1];
+                const apiKey = localStorage.getItem('geminiApiKey');
+
+                // 3. Send to Google Gemini
+                const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        contents: [{
+                            parts: [
+                                { text: "Analyze this image of a 3D printer filament box. Return a JSON object (no markdown) with these keys: 'brand' (string), 'type' (PLA/PETG/ABS etc), 'color' (string). If you cannot find info, use 'Unknown'." },
+                                { inlineData: { mimeType: "image/jpeg", data: imageData } }
+                            ]
+                        }]
+                    })
+                });
+
+                const data = await response.json();
+                
+                // 4. Catch specific Google API Errors (like Invalid API Key)
+                if (data.error) {
+                    throw new Error(data.error.message);
+                }
+                
+                // 5. Parse the Brain's Answer
+                let text = data.candidates[0].content.parts[0].text;
+                // Clean up any markdown ```json ... ``` formatting
+                text = text.replace(/```json|```/g, '').trim();
+                const result = JSON.parse(text);
+
+                // 6. Fill the Form
+                closeAICamera();
+                
+                document.getElementById('item-brand').value = result.brand || "Unknown";
+                document.getElementById('item-color').value = result.color || "Unknown";
+                updateColorPreview(result.color || '');
+                
+                // Try to auto-select type
+                const typeSelect = document.getElementById('item-type');
+                const aiType = (result.type || "PLA").toUpperCase();
+                let foundType = false;
+                for(let i=0; i<typeSelect.options.length; i++) {
+                    if (aiType.includes(typeSelect.options[i].value)) {
+                        typeSelect.selectedIndex = i;
+                        foundType = true;
+                        break;
+                    }
+                }
+                if(!foundType) typeSelect.value = "Unknown";
+
+                // Open the editor
+                document.getElementById('modal-title').innerText = '✨ AI Found Item';
+                document.getElementById('item-id').value = ''; // New ID will be generated
+                document.getElementById('btn-delete').classList.add('hidden');
+                document.getElementById('item-modal').classList.remove('hidden');
+                document.getElementById('item-modal').classList.add('flex');
+
+            } catch (error) {
+                console.error(error);
+                // Now it will alert the EXACT reason it failed!
+                alert("AI Error: " + error.message);
                 loading.classList.add('hidden');
                 loading.classList.remove('flex');
             }
         }
+       
+
 
         // --- 7. Settings & Utils ---
         function openSettings() {
