@@ -18,53 +18,56 @@
         .app { display: flex; flex-direction: column; min-height: 100vh; }
         header { position: sticky; top: 0; z-index: 40; background: rgba(14,14,15,0.92); backdrop-filter: blur(16px); border-bottom: 1px solid var(--border); padding: 0 20px; height: 56px; display: flex; align-items: center; justify-content: space-between; }
         .logo { display: flex; align-items: center; gap: 10px; }
-        .logo-mark { width: 28px; height: 28px; border: 1.5px solid var(--accent); border-radius: 6px; display: flex; align-items: center; justify-content: center; position: relative; }
+        .logo-mark { width: 28px; height: 28px; border: 1.5px solid var(--accent); border-radius: 6px; display: flex; align-items: center; justify-content: center; }
         .logo-mark::before { content: ''; width: 10px; height: 10px; background: var(--accent); border-radius: 2px; }
         .logo-text { font-family: 'DM Mono', monospace; font-size: 13px; font-weight: 500; letter-spacing: 0.08em; color: var(--text); }
-        .logo-text span { color: var(--text-3); }
         .header-actions { display: flex; gap: 4px; }
         .icon-btn { width: 36px; height: 36px; border-radius: 8px; border: none; background: transparent; color: var(--text-2); cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 15px; }
         main { flex: 1; padding: 24px 20px 120px; max-width: 640px; margin: 0 auto; width: 100%; }
         .stats-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 24px; }
-        .stat-card { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 18px 20px; position: relative; overflow: hidden; }
+        .stat-card { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 18px 20px; }
         .stat-label { font-family: 'DM Mono', monospace; font-size: 10px; letter-spacing: 0.1em; color: var(--text-3); text-transform: uppercase; margin-bottom: 10px; }
         .stat-value { font-family: 'DM Mono', monospace; font-size: 36px; font-weight: 300; color: var(--text); line-height: 1; }
-        .stat-value.warn { color: var(--amber); }
         .search-wrap { position: relative; margin-bottom: 16px; }
         .search-input { width: 100%; background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 11px 14px; color: var(--text); outline: none; }
+        
+        /* Grouping Styles */
         .group-container { margin-bottom: 12px; }
         .group-header { display: flex; justify-content: space-between; align-items: center; padding: 14px 16px; background: var(--surface-2); border: 1px solid var(--border); border-radius: 10px; cursor: pointer; }
         .group-title { font-weight: 600; font-size: 15px; display: flex; align-items: center; gap: 10px;}
         .group-badge { font-family: 'DM Mono', monospace; font-size: 11px; background: var(--surface); color: var(--text-2); padding: 2px 8px; border-radius: 12px; border: 1px solid var(--border); }
-        .group-content { display: none; flex-direction: column; gap: 4px; padding-top: 8px; margin-left: 4px; }
+        .group-content { display: none; flex-direction: column; gap: 4px; padding-top: 8px; }
         .group-content.open { display: flex; }
+        
         .item-row { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 12px 14px; display: flex; align-items: center; gap: 14px; cursor: pointer; }
         .item-row.low { border-color: rgba(255,179,71,0.25); background: var(--amber-dim); }
         .item-info { flex: 1; min-width: 0; }
         .item-name { font-size: 13px; font-weight: 500; color: var(--text); display: flex; align-items: center; gap: 6px; }
         .item-id-badge { font-family: 'DM Mono', monospace; font-size: 10px; color: var(--accent); background: var(--accent-dim); padding: 1px 6px; border-radius: 4px;}
         .qty-control { display: flex; align-items: center; gap: 8px; }
-        .qty-btn { width: 28px; height: 28px; border-radius: 6px; border: 1px solid var(--border); background: var(--surface-2); color: var(--text-2); cursor: pointer; border: none; }
+        .qty-btn { width: 28px; height: 28px; border-radius: 6px; border: none; background: var(--surface-2); color: var(--text-2); cursor: pointer; }
+        
         .fab-bar { position: fixed; bottom: 0; left: 0; right: 0; z-index: 30; padding: 16px 20px 28px; background: linear-gradient(to top, var(--bg) 60%, transparent); display: flex; justify-content: center; }
         .fab.primary { flex: 1; max-width: 280px; padding: 14px; border-radius: 12px; background: var(--accent); color: #0e0e0f; font-weight: 600; border: none; cursor: pointer; }
+        
         .modal-overlay { position: fixed; inset: 0; z-index: 50; background: rgba(0,0,0,0.75); backdrop-filter: blur(6px); display: none; align-items: flex-end; justify-content: center; }
         .modal-overlay.open { display: flex; }
         .modal-sheet { background: var(--surface); width: 100%; max-width: 640px; padding: 28px 24px 40px; border-radius: 20px 20px 0 0; position: relative; }
         .field-group { margin-bottom: 16px; }
         .field-label { font-family: 'DM Mono', monospace; font-size: 10px; color: var(--text-3); text-transform: uppercase; margin-bottom: 6px; }
         .field-input { width: 100%; background: var(--bg); border: 1px solid var(--border); border-radius: 10px; padding: 11px 14px; color: var(--text); outline: none; }
+        
         .camera-modal { position: fixed; inset: 0; z-index: 60; background: #000; display: none; flex-direction: column; }
         #ai-video { width: 100%; height: 100%; object-fit: cover; }
-        .ai-loading { position: absolute; inset: 0; background: rgba(0,0,0,0.9); display: none; align-items: center; justify-content: center; color: white; z-index: 100; }
+        .ai-loading { position: absolute; inset: 0; background: rgba(0,0,0,0.9); display: none; align-items: center; justify-content: center; color: white; z-index: 100; font-family: 'DM Mono', monospace;}
         .ai-loading.show { display: flex; }
-        .sync-badge { font-family: 'DM Mono'; font-size: 10px; background: rgba(74, 222, 128, 0.1); color: #4ade80; padding: 4px 8px; border-radius: 12px; border: 1px solid rgba(74, 222, 128, 0.3); display: flex; align-items: center; gap: 4px;}
     </style>
 </head>
 <body>
 <div class="app">
     <header>
         <div class="logo"><div class="logo-mark"></div><span class="logo-text">FILAMENT<span>/INV</span></span></div>
-        <div class="header-actions"><div class="sync-badge">Sync Active</div><button class="icon-btn" onclick="openSettings()">⚙️</button></div>
+        <div class="header-actions"><button class="icon-btn" onclick="openSettings()">⚙️</button></div>
     </header>
     <main>
         <div class="stats-row">
@@ -79,7 +82,8 @@
 
 <div class="camera-modal" id="ai-modal">
     <div style="position:absolute; top:20px; width:100%; padding:0 20px; display:flex; justify-content:space-between; z-index:10;">
-        <span style="color:white; font-family:monospace;">AI SCANNER</span><button onclick="closeAICamera()" style="background:none; border:none; color:white; font-size:24px;">✕</button>
+        <span style="color:white; font-family:monospace;">AI SCANNER</span>
+        <button onclick="closeAICamera()" style="background:none; border:none; color:white; font-size:24px;">✕</button>
     </div>
     <video id="ai-video" autoplay playsinline></video>
     <canvas id="ai-canvas" style="display:none;"></canvas>
@@ -93,23 +97,23 @@
     <div class="modal-sheet">
         <button onclick="closeItemModal()" style="position:absolute; top:20px; right:20px; background:none; border:none; color:white;">✕</button>
         <h3 style="margin-bottom:20px;">Edit Spool</h3>
-        <div class="field-group"><div class="field-label">ID</div><input type="text" id="item-id" class="field-input"></div>
+        <div class="field-group"><div class="field-label">Spool ID (Sharpie)</div><input type="text" id="item-id" class="field-input"></div>
         <div class="field-group"><div class="field-label">Brand</div><input type="text" id="item-brand" class="field-input"></div>
         <div class="field-group"><div class="field-label">Color</div><input type="text" id="item-color" class="field-input"></div>
         <div class="field-group"><div class="field-label">Material</div>
-            <select id="item-type" class="field-input" style="background:#0e0e0f; color:white; border:1px solid var(--border);">
+            <select id="item-type" class="field-input" style="background:#0e0e0f; color:white;">
                 <option value="PLA">PLA</option><option value="PETG">PETG</option><option value="ASA">ASA</option><option value="ABS">ABS</option><option value="TPU">TPU</option>
             </select>
         </div>
         <div class="field-group"><div class="field-label">Remaining %</div>
             <div style="display:flex; align-items:center; gap:20px; justify-content:center;">
-                <button class="qty-btn" onclick="adjustModalQty(-10)" style="width:40px; height:40px; background:var(--surface-2); color:white; border-radius:8px;">-</button>
+                <button class="qty-btn" onclick="adjustModalQty(-10)" style="width:40px; height:40px;">-</button>
                 <input type="number" id="item-qty" style="background:none; border:none; color:white; font-size:24px; width:60px; text-align:center;" readonly>
-                <button class="qty-btn" onclick="adjustModalQty(10)" style="width:40px; height:40px; background:var(--surface-2); color:white; border-radius:8px;">+</button>
+                <button class="qty-btn" onclick="adjustModalQty(10)" style="width:40px; height:40px;">+</button>
             </div>
         </div>
         <button class="fab primary" onclick="saveItem()" style="width:100%; margin-top:20px;">Save to Inventory</button>
-        <button onclick="deleteItem()" style="width:100%; margin-top:10px; background:none; border:none; color:var(--danger); font-size:12px; cursor:pointer;">Delete Spool</button>
+        <button onclick="deleteItem()" style="width:100%; margin-top:15px; background:none; border:none; color:var(--danger); font-size:12px; cursor:pointer;">Delete Spool</button>
     </div>
 </div>
 
@@ -120,7 +124,8 @@
 
     function renderInventory() {
         const grid = document.getElementById('inventory-grid');
-        const search = (document.getElementById('search-input').value || "").toLowerCase();
+        const searchInput = document.getElementById('search-input');
+        const search = (searchInput ? searchInput.value : "").toLowerCase();
         grid.innerHTML = '';
         
         const filtered = inventory.filter(i => ( (i.brand||"") + (i.id||"") + (i.type||"") ).toLowerCase().includes(search));
@@ -172,8 +177,7 @@
     }
 
     async function openAICamera() {
-        const modal = document.getElementById('ai-modal');
-        modal.style.display = 'flex';
+        document.getElementById('ai-modal').style.display = 'flex';
         try {
             aiStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
             document.getElementById('ai-video').srcObject = aiStream;
@@ -198,7 +202,7 @@
         try {
             const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${key}`, {
                 method: 'POST', body: JSON.stringify({ contents: [{ parts: [
-                    { text: "Return JSON only: brand, color, type (PLA/PETG/ASA/ABS/TPU), spool_id (the number written in Sharpie), percentage_left (0-100 estimate)." },
+                    { text: "Return JSON only: brand, color, type (PLA/PETG/ASA/ABS/TPU), spool_id (read the Sharpie number), percentage_left (0-100 estimate based on plastic on spool)." },
                     { inlineData: { mimeType: "image/jpeg", data: base64 } }
                 ]}]})
             });
@@ -207,4 +211,66 @@
             const result = JSON.parse(text);
             closeAICamera();
             document.getElementById('item-id').value = result.spool_id || 'NEW';
-            document.getElementById('item-brand').value = result
+            document.getElementById('item-brand').value = result.brand || 'Unknown';
+            document.getElementById('item-color').value = result.color || 'Unknown';
+            document.getElementById('item-qty').value = result.percentage_left || 100;
+            document.getElementById('item-type').value = (result.type || 'PLA').toUpperCase();
+            document.getElementById('item-modal').classList.add('open');
+        } catch (e) { alert("AI Error: Check API Key and internet connection."); }
+        loading.classList.remove('show');
+    }
+
+    function saveItem() {
+        const id = document.getElementById('item-id').value;
+        const newItem = { 
+            id, 
+            brand: document.getElementById('item-brand').value, 
+            color: document.getElementById('item-color').value, 
+            qty: parseInt(document.getElementById('item-qty').value), 
+            type: document.getElementById('item-type').value 
+        };
+        const idx = inventory.findIndex(i => i.id === id);
+        if (idx >= 0) inventory[idx] = newItem; else inventory.push(newItem);
+        localStorage.setItem('filamentInventory', JSON.stringify(inventory));
+        document.getElementById('item-modal').classList.remove('open');
+        renderInventory();
+    }
+
+    function updateQty(id, d) {
+        const i = inventory.find(x => x.id === id);
+        if (i) { i.qty = Math.min(100, Math.max(0, i.qty + d)); localStorage.setItem('filamentInventory', JSON.stringify(inventory)); renderInventory(); }
+    }
+
+    function editItem(id) {
+        const i = inventory.find(x => x.id === id);
+        if (!i) return;
+        document.getElementById('item-id').value = i.id;
+        document.getElementById('item-brand').value = i.brand;
+        document.getElementById('item-color').value = i.color;
+        document.getElementById('item-qty').value = i.qty;
+        document.getElementById('item-type').value = i.type;
+        document.getElementById('item-modal').classList.add('open');
+    }
+
+    function deleteItem() {
+        const id = document.getElementById('item-id').value;
+        if(confirm("Delete this spool?")) {
+            inventory = inventory.filter(x => x.id !== id);
+            localStorage.setItem('filamentInventory', JSON.stringify(inventory));
+            closeItemModal();
+            renderInventory();
+        }
+    }
+
+    function adjustModalQty(d) {
+        const el = document.getElementById('item-qty');
+        el.value = Math.min(100, Math.max(0, parseInt(el.value || 100) + d));
+    }
+
+    function closeItemModal() { document.getElementById('item-modal').classList.remove('open'); }
+    function openSettings() { const k = prompt("Gemini API Key:", localStorage.getItem('geminiApiKey')||""); if(k) { localStorage.setItem('geminiApiKey', k); location.reload(); } }
+    
+    renderInventory();
+</script>
+</body>
+</html>
