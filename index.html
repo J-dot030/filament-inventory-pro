@@ -316,9 +316,10 @@
             closeAICamera();
         }
     }
-
-    async function captureAndAnalyze() {
+async function captureAndAnalyze() {
         const apiKey = getApiKey();
+        if (!apiKey) return;
+
         document.getElementById('ai-loading').style.display = 'flex';
         
         const canvas = document.getElementById('ai-canvas');
@@ -328,8 +329,8 @@
         const base64 = canvas.toDataURL('image/jpeg', 0.8).split(',')[1];
         
         try {
-            // UPDATED TO GEMINI-2.0-FLASH FOR GUARANTEED ACCESS
-            const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`, {
+            // FIXED: Using the universally available gemini-1.5-flash model
+            const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`, {
                 method: 'POST', 
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ 
@@ -341,6 +342,38 @@
                 })
             });
             
+            // FIXED: If Google rejects it, this will tell us exactly why!
+            if (!res.ok) {
+                const errorData = await res.json();
+                throw new Error(errorData.error?.message || "Unknown Google Server Error");
+            }
+            
+            const data = await res.json();
+            const result = JSON.parse(data.candidates[0].content.parts[0].text);
+            
+            closeAICamera();
+            document.getElementById('item-id').value = (result.asset_id && result.asset_id !== "null") ? result.asset_id : getNextId();
+            document.getElementById('item-brand').value = result.brand || 'Unknown';
+            document.getElementById('item-color').value = result.color || 'Unknown';
+            document.getElementById('item-qty').value = result.percentage_left || (result.status === 'inventory' ? 100 : 100);
+            document.getElementById('item-type').value = result.type || 'PLA';
+            document.getElementById('item-status').value = result.status || 'storage';
+            
+            document.getElementById('modal-title').textContent = "Confirm AI Scan";
+            document.getElementById('btn-delete').style.display = "none";
+            document.getElementById('item-modal').classList.add('open');
+            
+        } catch (e) { 
+            console.error("AI Error:", e);
+            // This will display the EXACT error from Google
+            alert("GOOGLE AI ERROR: " + e.message); 
+            closeAICamera();
+            document.getElementById('item-id').value = getNextId(); 
+            document.getElementById('item-modal').classList.add('open'); 
+        }
+        document.getElementById('ai-loading').style.display = 'none';
+    }
+  
             if (!res.ok) throw new Error("API Key Invalid or Model Error.");
             
             const data = await res.json();
