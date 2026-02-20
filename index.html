@@ -170,7 +170,7 @@
 
         <div class="input-group">
             <label class="label">Unique ID (Factory Serial / Custom QR)</label>
-            <input type="text" id="item-id" class="input" style="font-family: 'JetBrains Mono', monospace; font-weight: bold; color: var(--accent);">
+            <input type="text" id="item-id" class="input" readonly style="background: var(--bg); font-family: 'JetBrains Mono', monospace; font-weight: bold; color: var(--accent);">
         </div>
 
         <div style="display:grid; grid-template-columns: 1fr 1fr; gap:16px;">
@@ -218,7 +218,7 @@
     let activeUser = localStorage.getItem('activeUser') || "Member 1";
     let aiStream = null;
     let currentTab = 'storage';
-    let currentScanMode = 'scan'; // 'scan' or 'delete'
+    let currentScanMode = 'scan'; 
 
     document.getElementById('current-user').textContent = activeUser;
 
@@ -313,11 +313,6 @@
         document.getElementById('total-items').textContent = inventory.length;
     }
 
-    function getNextId() {
-        const nums = inventory.map(i => parseInt(i.id.replace(/\D/g,''))).filter(n => !isNaN(n));
-        return nums.length === 0 ? "001" : (Math.max(...nums) + 1).toString().padStart(3, '0');
-    }
-
     function showToast(msg, isError = false) {
         const toast = document.getElementById('hint-toast');
         toast.style.display = 'block';
@@ -343,8 +338,7 @@
             shutter.classList.remove('delete-mode');
             badge.innerHTML = "AI SCANNER ACTIVATED";
             badge.style.background = "rgba(0,0,0,0.6)";
-            const next = getNextId();
-            showToast(`Searching for Serial / QR Code...`);
+            showToast(`Strict ID enforcement active.`);
         }
 
         document.getElementById('ai-modal').style.display = 'flex';
@@ -402,7 +396,7 @@
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ 
                     contents: [{ parts: [
-                        { text: "Analyze 3D filament spool/box. \nPRIORITY 1: Find the stand-alone factory printed alphanumeric serial number (like '000M046933024'). CRITICAL OCR INSTRUCTION: The serial numbers are often printed in a dotted/matrix font. Be extremely careful not to confuse zeros ('0') with eights ('8'). It usually starts with '000'. \nCRITICAL RULE: IGNORE numbers that belong to standard 1D barcodes (e.g., '02151018A' or typical UPC codes). \nPRIORITY 2: Find a custom QR code label. \nIf NEITHER a factory serial nor a QR code is visible, you MUST return 'null' for asset_id. \nReturn JSON with keys: brand (string), color (string), type (string: PLA/PETG/ASA/ABS/TPU/PCTG/XPETG), asset_id (string or null), percentage_left (number 10, 20, 30, 40, 50, 60, 70, 80, 90, 100), status ('inventory' for cardboard boxes, 'storage' for plastic spools)." },
+                        { text: "Analyze 3D filament spool/box. \nPRIORITY 1: Find the stand-alone factory printed alphanumeric serial number (like '000M046933024'). CRITICAL OCR INSTRUCTION: The serial numbers are often printed in a dotted/matrix font. Be extremely careful not to confuse zeros ('0') with eights ('8'). It usually starts with '000'. \nCRITICAL RULE: IGNORE numbers that belong to standard 1D barcodes (e.g., '02151018A' or typical UPC codes). \nPRIORITY 2: Find a custom QR code label. \n(Do NOT look for Sharpie marker writing). \nIf NEITHER a factory serial nor a custom QR code is visible, you MUST return 'null' for asset_id. \nReturn JSON with keys: brand (string), color (string), type (string: PLA/PETG/ASA/ABS/TPU/PCTG/XPETG), asset_id (string or null), percentage_left (number 10, 20, 30, 40, 50, 60, 70, 80, 90, 100), status ('inventory' for cardboard boxes, 'storage' for plastic spools)." },
                         { inlineData: { mimeType: "image/jpeg", data: base64 } }
                     ]}],
                     generationConfig: { responseMimeType: "application/json" } 
@@ -418,11 +412,13 @@
             const data = await res.json();
             const result = JSON.parse(data.candidates[0].content.parts[0].text);
             
+            // ALWAYS CLOSE CAMERA BEFORE SHOWING ALERTS OR MODALS
             closeAICamera();
 
             // Handle DELETION mode
             if (currentScanMode === 'delete') {
-                if (result.asset_id && result.asset_id !== "null") {
+                document.getElementById('ai-loading').style.display = 'none';
+                if (result.asset_id && result.asset_id !== "null" && String(result.asset_id).trim() !== "") {
                     const exists = inventory.find(i => i.id === result.asset_id);
                     if (exists) {
                         inventory = inventory.filter(i => i.id !== result.asset_id);
@@ -433,24 +429,26 @@
                         alert(`Error: Scanned ID #${result.asset_id} was not found in your inventory.`);
                     }
                 } else {
-                    alert("Could not detect a valid Serial or QR code to delete.");
+                    alert("⚠️ Scan Failed: Could not detect a valid Serial or QR code to delete.");
                 }
                 return; // Stop here, don't open the modal
             }
             
             // Handle NORMAL mode
-            
-            // ALERT RULE: If no QR/Serial is found, warn the user.
-            if (!result.asset_id || result.asset_id === "null" || result.asset_id === "") {
-                alert("⚠️ No QR Code or Serial Number Detected!\n\nWe couldn't find a unique ID on this spool. Please make sure a QR sticker is applied to it.");
+
+            // STRICT ENFORCEMENT: If no ID is found, abort completely.
+            if (!result.asset_id || String(result.asset_id).toLowerCase() === "null" || String(result.asset_id).trim() === "") {
+                document.getElementById('ai-loading').style.display = 'none';
+                alert("⚠️ Scan Rejected: No ID Found\n\nWe couldn't detect a factory serial or custom QR code on this item. \n\nPlease apply a QR sticker to the spool before adding it to the system.");
+                return; // ABORT THE PROCESS. Do not open the modal.
             }
 
-            document.getElementById('item-id').value = (result.asset_id && result.asset_id !== "null") ? result.asset_id : getNextId();
+            document.getElementById('item-id').value = result.asset_id;
             document.getElementById('item-brand').value = result.brand || 'Unknown';
             document.getElementById('item-color').value = result.color || 'Unknown';
             
             let qtyVal = result.percentage_left || (result.status === 'inventory' ? 100 : 100);
-            qtyVal = Math.round(qtyVal / 10) * 10;
+            qtyVal = Math.round(qtyVal / 10) * 10; 
             document.getElementById('item-qty').value = qtyVal;
 
             document.getElementById('item-type').value = (result.type || 'PLA').toUpperCase();
@@ -461,8 +459,8 @@
             document.getElementById('item-modal').classList.add('open');
             
         } catch (e) { 
-            alert(`SYSTEM HALT:\n\n${e.message}\n\nPlease tap the 🔑 Key icon and try a new key.`); 
             closeAICamera();
+            alert(`SYSTEM HALT:\n\n${e.message}\n\nPlease check your internet connection or API Key.`); 
         }
         document.getElementById('ai-loading').style.display = 'none';
     }
