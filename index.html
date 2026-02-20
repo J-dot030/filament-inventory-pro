@@ -15,7 +15,7 @@
             --surface-hover: #F9FAFB;
             --border: #E5E7EB;
             --border-strong: #D1D5DB;
-            --text-main: #111827;
+            --text-main: #111827; 
             --text-muted: #6B7280;
             --accent: #2563EB;
             --accent-hover: #1D4ED8;
@@ -385,7 +385,7 @@
         const base64 = canvas.toDataURL('image/jpeg', 0.8).split(',')[1];
         
         try {
-            const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`, {
+           const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=${apiKey}`, {
                 method: 'POST', 
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ 
