@@ -22,10 +22,15 @@
 
         main { flex: 1; padding: 20px; padding-bottom: 120px; }
 
-        .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 24px; }
+        .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 16px; }
         .stat-box { background: var(--surface); padding: 16px; border-radius: 16px; border: 1px solid var(--border); }
         .stat-label { font-size: 11px; color: var(--text-dim); text-transform: uppercase; margin-bottom: 4px; font-weight: 600; }
         .stat-val { font-family: 'DM Mono'; font-size: 24px; color: var(--text); }
+
+        /* TABS SECTION */
+        .tabs { display: flex; gap: 8px; margin-bottom: 20px; background: var(--surface); padding: 6px; border-radius: 12px; border: 1px solid var(--border); }
+        .tab { flex: 1; text-align: center; padding: 10px; font-weight: 600; font-size: 13px; color: var(--text-dim); cursor: pointer; border-radius: 8px; transition: 0.2s; }
+        .tab.active { background: var(--surface-2); color: var(--accent); border: 1px solid var(--accent-dim); }
 
         .tool-bar { margin-bottom: 20px; }
         .search-input { width: 100%; background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 12px 16px; color: white; outline: none; }
@@ -38,6 +43,7 @@
         .spool-card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 14px; margin-bottom: 6px; display: flex; align-items: center; gap: 12px; cursor: pointer; transition: 0.2s; }
         .spool-card:active { transform: scale(0.98); background: var(--surface-2); }
         .id-pill { font-family: 'DM Mono'; background: var(--accent-dim); color: var(--accent); padding: 4px 8px; border-radius: 6px; font-size: 13px; font-weight: 700; min-width: 50px; text-align: center; }
+        .id-pill.box { background: rgba(74, 222, 128, 0.1); color: var(--success); }
         .spool-info { flex: 1; min-width: 0; }
         .spool-brand { font-weight: 600; font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         .spool-meta { font-size: 11px; color: var(--text-dim); margin-top: 2px; }
@@ -75,13 +81,18 @@
     <main>
         <div class="stats-grid">
             <div class="stat-box">
-                <div class="stat-label">Total Inventory</div>
-                <div class="stat-val" id="total-weight">0<span style="font-size: 12px; color: var(--text-dim)">kg</span></div>
+                <div class="stat-label">Total Unique Items</div>
+                <div class="stat-val" id="total-items">0</div>
             </div>
             <div class="stat-box">
-                <div class="stat-label">Unique Assets</div>
-                <div class="stat-val" id="active-count">0</div>
+                <div class="stat-label">System Health</div>
+                <div class="stat-val" id="system-health" style="color:var(--success); font-size: 16px; margin-top: 6px;">ONLINE</div>
             </div>
+        </div>
+
+        <div class="tabs">
+            <div class="tab active" id="tab-storage" onclick="setTab('storage')">Storage (Opened)</div>
+            <div class="tab" id="tab-inventory" onclick="setTab('inventory')">Inventory (New Boxes)</div>
         </div>
 
         <div class="tool-bar">
@@ -100,7 +111,7 @@
 
 <div class="camera-overlay" id="ai-modal">
     <div style="position:absolute; top:20px; width:100%; padding:0 20px; display:flex; justify-content:space-between; z-index:10;">
-        <span style="font-family: 'DM Mono'; font-size: 10px; color:var(--accent);">HIERARCHY: FACTORY ID > SHARPIE ID</span>
+        <span style="font-family: 'DM Mono'; font-size: 10px; color:var(--accent);">AI FACTORY SCANNER</span>
         <button onclick="closeAICamera()" style="background:none; border:none; color:white; font-size:24px;">✕</button>
     </div>
     <video id="ai-video" autoplay playsinline></video>
@@ -109,17 +120,25 @@
     <div class="ai-status" id="ai-loading">
         <div>
             <div style="font-size: 24px; margin-bottom: 10px; font-weight: bold;">ANALYZING...</div>
-            <div style="color:var(--text-dim); font-size:11px;">Identifying Serial or Asset ID</div>
+            <div style="color:var(--text-dim); font-size:11px;">Identifying Serial, QR, or Box</div>
         </div>
     </div>
 </div>
 
 <div class="modal" id="item-modal">
     <div class="modal-sheet">
-        <h3 id="modal-title" style="margin-bottom:20px; font-size:18px;">Sync Spool Asset</h3>
+        <h3 id="modal-title" style="margin-bottom:20px; font-size:18px;">Sync Asset</h3>
         
         <div class="input-group">
-            <label class="label">Identification (Serial / Sharpie #)</label>
+            <label class="label">Location / State</label>
+            <select id="item-status" class="input" style="background: var(--surface-2); font-weight: bold; border-color: var(--accent);">
+                <option value="storage">📂 Storage (Opened Spool)</option>
+                <option value="inventory">📦 Inventory (Unopened Box)</option>
+            </select>
+        </div>
+
+        <div class="input-group">
+            <label class="label">Identification (Serial / Sharpie / QR)</label>
             <input type="text" id="item-id" class="input">
         </div>
 
@@ -131,22 +150,24 @@
             <div class="input-group">
                 <label class="label">Material</label>
                 <select id="item-type" class="input">
-                    <option value="PLA">PLA</option><option value="PETG">PETG</option><option value="ASA">ASA</option><option value="ABS">ABS</option><option value="TPU">TPU</option>
+                    <option value="PLA">PLA</option><option value="PETG">PETG</option><option value="ASA">ASA</option><option value="ABS">ABS</option><option value="TPU">TPU</option><option value="OTHER">OTHER</option>
                 </select>
             </div>
         </div>
 
-        <div class="input-group">
-            <label class="label">Color / Finish</label>
-            <input type="text" id="item-color" class="input">
-        </div>
-
-        <div class="input-group">
-            <label class="label">Remaining Weight (grams)</label>
-            <div style="display:flex; align-items:center; gap:10px;">
-                <button onclick="addWeight(-100)" style="flex:1; padding:12px; background:var(--surface-2); border:none; color:white; border-radius:10px;">-100g</button>
-                <input type="number" id="item-weight" class="input" style="flex:1.5; text-align:center; font-family:'DM Mono';">
-                <button onclick="addWeight(100)" style="flex:1; padding:12px; background:var(--surface-2); border:none; color:white; border-radius:10px;">+100g</button>
+        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px;">
+            <div class="input-group">
+                <label class="label">Color</label>
+                <input type="text" id="item-color" class="input">
+            </div>
+            <div class="input-group">
+                <label class="label">Remaining %</label>
+                <input type="number" id="item-qty" list="percents" class="input" placeholder="Type or Select">
+                <datalist id="percents">
+                    <option value="100"><option value="90"><option value="80"><option value="70">
+                    <option value="60"><option value="50"><option value="40"><option value="30">
+                    <option value="20"><option value="10"><option value="5"><option value="0">
+                </datalist>
             </div>
         </div>
 
@@ -157,74 +178,91 @@
 
 <script>
     // --- CONNECT GOOGLE SHEETS LATER HERE ---
-    const GEMINI_KEY = ""; // PASTE KEY HERE
+    const GEMINI_KEY = ""; // PASTE YOUR KEY HERE
     
     let inventory = JSON.parse(localStorage.getItem('filamentFarmDB')) || [];
     let activeUser = localStorage.getItem('activeUser') || "Member 1";
     let aiStream = null;
+    let currentTab = 'storage';
 
     document.getElementById('current-user').textContent = activeUser;
+
+    function setTab(tab) {
+        currentTab = tab;
+        document.getElementById('tab-storage').classList.remove('active');
+        document.getElementById('tab-inventory').classList.remove('active');
+        document.getElementById('tab-' + tab).classList.add('active');
+        renderInventory();
+    }
 
     function renderInventory() {
         const grid = document.getElementById('inventory-grid');
         const search = document.getElementById('search-input').value.toLowerCase();
         grid.innerHTML = '';
         
-        const filtered = inventory.filter(i => (i.id + i.brand + i.type + i.color).toLowerCase().includes(search));
+        // 1. Calculate TOTAL counts across everything (both tabs) to see if we are low on stock
+        const totalMatCount = {};
+        inventory.forEach(i => {
+            if(!totalMatCount[i.type]) totalMatCount[i.type] = 0;
+            totalMatCount[i.type]++;
+        });
+
+        // 2. Filter list by Active Tab (Inventory vs Storage) and Search box
+        const filtered = inventory.filter(i => {
+            const matchesSearch = (i.id + i.brand + i.type + i.color).toLowerCase().includes(search);
+            const itemStatus = i.status || 'storage'; // default to storage if old data
+            return matchesSearch && (itemStatus === currentTab);
+        });
+
         const grouped = {};
-        
         filtered.forEach(i => {
             if (!grouped[i.type]) grouped[i.type] = [];
             grouped[i.type].push(i);
         });
 
-        let totalGrams = 0;
         Object.keys(grouped).sort().forEach(type => {
-            let groupWeight = 0;
-            const spoolCount = grouped[type].length;
-            const isLowStock = spoolCount < 3; // <--- The NEW Logic you requested
+            const items = grouped[type];
+            // Check the GLOBAL count of this material to trigger the warning
+            const isLowStock = (totalMatCount[type] < 3); 
             
             const container = document.createElement('div');
             container.className = 'group-container';
             
             const listContainer = document.createElement('div');
             
-            grouped[type].forEach(i => {
-                groupWeight += parseInt(i.weight || 0);
-                totalGrams += parseInt(i.weight || 0);
+            items.forEach(i => {
+                const isBox = (i.status === 'inventory');
                 const card = document.createElement('div');
                 card.className = 'spool-card';
                 card.onclick = () => editItem(i.id);
                 card.innerHTML = `
-                    <div class="id-pill">#${i.id}</div>
+                    <div class="id-pill ${isBox ? 'box' : ''}">${isBox ? '📦' : '#'}${i.id}</div>
                     <div class="spool-info">
                         <div class="spool-brand">${i.brand}</div>
                         <div class="spool-meta">${i.color} • ${i.user}</div>
                     </div>
                     <div class="weight-pill">
-                        <div class="weight-val" style="color: ${i.weight < 250 ? 'var(--danger)' : 'white'}">${i.weight}g</div>
+                        <div class="weight-val" style="color: ${i.qty <= 20 ? 'var(--danger)' : 'white'}">${i.qty}%</div>
                         <div class="weight-label">LEFT</div>
                     </div>
                 `;
                 listContainer.appendChild(card);
             });
 
-            // Dynamic header based on spool count
             container.innerHTML = `<div class="group-header ${isLowStock ? 'low-stock' : ''}">
-                <span>${type} ${isLowStock ? '<span style="color:var(--danger); font-size:10px; margin-left:6px;">⚠️ &lt; 3 SPOOLS</span>' : ''}</span>
-                <span>${spoolCount} Spools (${(groupWeight/1000).toFixed(1)}kg)</span>
+                <span>${type} ${isLowStock ? '<span style="color:var(--danger); font-size:10px; margin-left:6px;">⚠️ &lt; 3 TOTAL</span>' : ''}</span>
+                <span>${items.length} in ${currentTab === 'storage' ? 'Storage' : 'Inventory'}</span>
             </div>`;
             
             container.appendChild(listContainer);
             grid.appendChild(container);
         });
 
-        document.getElementById('total-weight').innerHTML = `${(totalGrams/1000).toFixed(1)}<span style="font-size: 12px; color: var(--text-dim)">kg</span>`;
-        document.getElementById('active-count').textContent = inventory.length;
+        document.getElementById('total-items').textContent = inventory.length;
     }
 
     function getNextId() {
-        const nums = inventory.map(i => parseInt(i.id)).filter(n => !isNaN(n));
+        const nums = inventory.map(i => parseInt(i.id.replace(/\D/g,''))).filter(n => !isNaN(n));
         return nums.length === 0 ? "001" : (Math.max(...nums) + 1).toString().padStart(3, '0');
     }
 
@@ -232,7 +270,7 @@
         const next = getNextId();
         const toast = document.getElementById('hint-toast');
         toast.style.display = 'block';
-        toast.innerHTML = `IF NO FACTORY SERIAL: WRITE #${next}`;
+        toast.innerHTML = `IF NO SERIAL OR QR: WRITE #${next}`;
         setTimeout(() => toast.style.display = 'none', 5000);
 
         document.getElementById('ai-modal').style.display = 'flex';
@@ -246,27 +284,33 @@
         const video = document.getElementById('ai-video');
         canvas.width = 800; canvas.height = 600;
         canvas.getContext('2d').drawImage(video, 0, 0, 800, 600);
-        const base64 = canvas.toDataURL('image/jpeg', 0.7).split(',')[1];
+        const base64 = canvas.toDataURL('image/jpeg', 0.8).split(',')[1];
         
         try {
             const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_KEY || localStorage.getItem('geminiApiKey')}`, {
-                method: 'POST', body: JSON.stringify({ contents: [{ parts: [
-                    { text: "Analyze 3D spool image. PRIORITY: 1. Find printed factory serial number on label. 2. If no factory serial, find handwritten Sharpie number. 3. If neither, return null for asset_id. Return JSON: brand, color, type (PLA/PETG/ASA/ABS/TPU), asset_id (string), weight_estimate (number 0-1000)." },
-                    { inlineData: { mimeType: "image/jpeg", data: base64 } }
-                ]}]})
+                method: 'POST', 
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ 
+                    contents: [{ parts: [
+                        { text: "Analyze 3D spool/box image. PRIORITY 1: Find factory serial (e.g. 000M046933024). PRIORITY 2: Find custom QR code or Sharpie number. PRIORITY 3: Return null for asset_id if none found. Also determine if this is an unopened cardboard BOX ('inventory') or an opened plastic SPOOL ('storage'). Return JSON: brand, color, type (PLA/PETG/ASA/ABS/TPU), asset_id (string), percentage_left (number 0-100), status ('inventory' or 'storage')." },
+                        { inlineData: { mimeType: "image/jpeg", data: base64 } }
+                    ]}],
+                    generationConfig: { responseMimeType: "application/json" } 
+                })
             });
             const data = await res.json();
-            const result = JSON.parse(data.candidates[0].content.parts[0].text.replace(/```json|```/g, ''));
+            const result = JSON.parse(data.candidates[0].content.parts[0].text);
             
             closeAICamera();
             document.getElementById('item-id').value = result.asset_id && result.asset_id !== "null" ? result.asset_id : getNextId();
-            document.getElementById('item-brand').value = result.brand;
-            document.getElementById('item-color').value = result.color;
-            document.getElementById('item-weight').value = result.weight_estimate || 1000;
+            document.getElementById('item-brand').value = result.brand || 'Unknown';
+            document.getElementById('item-color').value = result.color || 'Unknown';
+            document.getElementById('item-qty').value = result.percentage_left || (result.status === 'inventory' ? 100 : 100);
             document.getElementById('item-type').value = result.type || 'PLA';
+            document.getElementById('item-status').value = result.status || 'storage';
             document.getElementById('item-modal').classList.add('open');
         } catch (e) { 
-            alert("AI Scan failed. Manual entry opened."); 
+            alert("AI Scan failed. Please enter manually."); 
             closeAICamera();
             document.getElementById('item-id').value = getNextId(); 
             document.getElementById('item-modal').classList.add('open'); 
@@ -277,10 +321,12 @@
     function saveItem() {
         const id = document.getElementById('item-id').value;
         const newItem = {
-            id, brand: document.getElementById('item-brand').value,
+            id, 
+            brand: document.getElementById('item-brand').value,
             color: document.getElementById('item-color').value,
-            weight: document.getElementById('item-weight').value,
+            qty: document.getElementById('item-qty').value,
             type: document.getElementById('item-type').value,
+            status: document.getElementById('item-status').value,
             user: activeUser,
             time: new Date().toISOString()
         };
@@ -295,15 +341,10 @@
         document.getElementById('item-id').value = i.id;
         document.getElementById('item-brand').value = i.brand;
         document.getElementById('item-color').value = i.color;
-        document.getElementById('item-weight').value = i.weight;
+        document.getElementById('item-qty').value = i.qty;
         document.getElementById('item-type').value = i.type;
-        document.getElementById('modal-title').textContent = "Asset Details #" + i.id;
+        document.getElementById('item-status').value = i.status || 'storage';
         document.getElementById('item-modal').classList.add('open');
-    }
-
-    function addWeight(d) {
-        const el = document.getElementById('item-weight');
-        el.value = Math.max(0, parseInt(el.value || 0) + d);
     }
 
     function switchUser() {
@@ -315,7 +356,6 @@
     function closeItemModal() { document.getElementById('item-modal').classList.remove('open'); }
     function deleteItem() { if(confirm("Permanently delete this asset?")) { inventory = inventory.filter(i => i.id !== document.getElementById('item-id').value); localStorage.setItem('filamentFarmDB', JSON.stringify(inventory)); closeItemModal(); renderInventory(); } }
     
-    // Auto-ask for Key on first load if missing
     if(!GEMINI_KEY && !localStorage.getItem('geminiApiKey')) {
         const k = prompt("Welcome! Please enter your Gemini API Key to enable scanning:");
         if(k) localStorage.setItem('geminiApiKey', k);
