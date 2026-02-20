@@ -6,201 +6,244 @@
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
-    <title>Filament OS — Enterprise</title>
+    <title>Filament OS — Enterprise Inventory</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600;700&display=swap" rel="stylesheet">
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         
-        /* UNIFIED COLOR THEME - Midnight & Amber */
         :root {
-            --bg: #050505;
-            --surface: #121212;
-            --surface-hover: #1e1e1e;
-            --border: #2a2a2a;
-            --border-strong: #404040;
-            --text-main: #ffffff;
-            --text-muted: #888888;
-            --accent: #FBBF24; /* Professional Amber/Yellow */
-            --accent-dim: rgba(251, 191, 36, 0.1);
-            --shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+            --bg: #0a0a0a; --surface: #1a1a1a; --surface-hover: #2a2a2a;
+            --yellow: #FFD700; --yellow-dim: #B8941E; --border: rgba(255, 215, 0, 0.2);
+            --border-strong: rgba(255, 215, 0, 0.4); --text: #ffffff; --text-dim: #999999;
+            --red: #FF4444; --green: #00FF88; --blue: #4A9EFF;
         }
         
-        body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text-main); min-height: 100vh; line-height: 1.5; }
+        body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; line-height: 1.6; }
         
-        /* Clean Scanline Overlay */
+        /* Subtle scanline effect */
         body::before {
-            content: ''; position: fixed; inset: 0;
-            background: repeating-linear-gradient(0deg, rgba(255,255,255,0.02), rgba(255,255,255,0.02) 1px, transparent 1px, transparent 2px);
-            pointer-events: none; z-index: 999; opacity: 0.5;
+            content: ''; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: repeating-linear-gradient(0deg, rgba(0,0,0,0.1), rgba(0,0,0,0.1) 1px, transparent 1px, transparent 2px);
+            pointer-events: none; z-index: 999; opacity: 0.3;
         }
         
-        .container { max-width: 600px; margin: 0 auto; position: relative; padding-bottom: 120px; }
+        .container { max-width: 700px; margin: 0 auto; position: relative; }
         
         /* Header */
-        header { background: rgba(18, 18, 18, 0.9); backdrop-filter: blur(10px); border-bottom: 1px solid var(--border); padding: 16px 20px; position: sticky; top: 0; z-index: 100; }
+        header { background: var(--surface); border-bottom: 3px solid var(--yellow); padding: 16px 20px; position: sticky; top: 0; z-index: 100; box-shadow: 0 4px 30px rgba(255, 215, 0, 0.2); }
         .header-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
-        .logo { font-family: 'JetBrains Mono', monospace; font-size: 18px; font-weight: 700; color: var(--text-main); display: flex; align-items: center; gap: 8px; letter-spacing: -0.5px; }
-        .logo span { color: var(--accent); }
-        .sync-status { display: flex; align-items: center; gap: 6px; font-size: 11px; color: var(--text-muted); font-weight: 600; font-family: 'JetBrains Mono', monospace; letter-spacing: 0.5px; }
-        .sync-dot { width: 6px; height: 6px; background: var(--accent); border-radius: 50%; animation: pulse 2s infinite; }
-        @keyframes pulse { 0%, 100% { opacity: 1; box-shadow: 0 0 8px var(--accent); } 50% { opacity: 0.4; box-shadow: none; } }
+        .logo { font-family: 'JetBrains Mono', monospace; font-size: 22px; font-weight: 800; color: var(--yellow); letter-spacing: 1px; display: flex; align-items: center; gap: 10px; }
+        .logo-icon { width: 36px; height: 36px; background: var(--yellow); color: var(--bg); border-radius: 8px; display: flex; align-items: center; justify-content: center; font-weight: 900; font-size: 18px; }
+        .sync-status { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--green); font-weight: 600; }
+        .sync-dot { width: 8px; height: 8px; background: var(--green); border-radius: 50%; animation: pulse 2s infinite; }
+        @keyframes pulse { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.5; transform: scale(0.8); } }
         
-        .user-bar { display: flex; align-items: center; justify-content: space-between; }
-        .user-info { display: flex; align-items: center; gap: 8px; color: var(--text-muted); font-size: 12px; font-weight: 500; cursor: pointer; }
-        .btn-group { display: flex; gap: 8px; }
-        .header-btn { background: var(--surface-hover); border: 1px solid var(--border); color: var(--text-main); padding: 6px 12px; border-radius: 6px; font-size: 11px; font-weight: 600; cursor: pointer; transition: 0.2s; }
-        .header-btn:hover { border-color: var(--text-muted); }
+        .user-bar { display: flex; align-items: center; gap: 10px; }
+        .user-info { display: flex; align-items: center; gap: 10px; background: var(--bg); padding: 8px 14px; border-radius: 8px; border: 1px solid var(--border); cursor: pointer; transition: all 0.3s; }
+        .user-info:hover { border-color: var(--yellow); box-shadow: 0 0 15px rgba(255, 215, 0, 0.2); }
+        .user-avatar { width: 28px; height: 28px; border-radius: 50%; background: var(--yellow); display: flex; align-items: center; justify-content: center; font-weight: 700; color: var(--bg); font-size: 13px; }
+        .user-avatar img { width: 100%; height: 100%; border-radius: 50%; object-fit: cover; }
+        .user-name { font-size: 13px; font-weight: 600; }
+        .btn-key { background: transparent; border: 1px solid var(--border); color: var(--yellow); padding: 8px 12px; border-radius: 8px; font-size: 12px; font-weight: 600; cursor: pointer; transition: all 0.3s; font-family: 'Inter', sans-serif; }
+        .btn-key:hover { background: var(--yellow); color: var(--bg); border-color: var(--yellow); }
+        .btn-logout { background: transparent; border: 1px solid var(--red); color: var(--red); padding: 8px 12px; border-radius: 8px; font-size: 12px; font-weight: 600; cursor: pointer; transition: all 0.3s; }
+        .btn-logout:hover { background: var(--red); color: white; }
         
-        /* Stats Dashboard */
-        .stats { padding: 20px; display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
-        .stat-card { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 16px; transition: 0.2s; }
-        .stat-card:hover { border-color: var(--border-strong); }
-        .stat-label { font-size: 10px; color: var(--text-muted); text-transform: uppercase; font-weight: 600; letter-spacing: 0.5px; margin-bottom: 4px; }
-        .stat-value { font-family: 'JetBrains Mono', monospace; font-size: 28px; font-weight: 700; color: var(--text-main); }
-        .stat-value span { font-size: 14px; color: var(--accent); margin-left: 4px; }
+        /* Stats */
+        .stats { padding: 20px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+        .stat-card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 16px; text-align: center; transition: all 0.3s; }
+        .stat-card:hover { border-color: var(--yellow); transform: translateY(-2px); box-shadow: 0 8px 20px rgba(255, 215, 0, 0.15); }
+        .stat-label { font-size: 11px; color: var(--text-dim); text-transform: uppercase; font-weight: 700; letter-spacing: 1px; margin-bottom: 8px; }
+        .stat-value { font-family: 'JetBrains Mono', monospace; font-size: 32px; font-weight: 700; color: var(--yellow); }
+        .stat-value.small { font-size: 14px; color: var(--green); }
         
         /* Tabs */
         .tabs { display: flex; padding: 0 20px; gap: 8px; margin-bottom: 20px; }
-        .tab { flex: 1; padding: 10px; background: transparent; border: 1px solid var(--border); border-radius: 8px; text-align: center; font-weight: 600; font-size: 12px; cursor: pointer; transition: 0.2s; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; }
-        .tab.active { background: var(--surface); color: var(--accent); border-color: var(--accent-dim); }
+        .tab { flex: 1; padding: 12px; background: var(--surface); border: 1px solid var(--border); border-radius: 8px; text-align: center; font-weight: 700; font-size: 13px; cursor: pointer; transition: all 0.3s; color: var(--text-dim); }
+        .tab.active { background: var(--yellow); color: var(--bg); border-color: var(--yellow); box-shadow: 0 4px 15px rgba(255, 215, 0, 0.3); }
+        .tab:hover:not(.active) { border-color: var(--yellow); color: var(--yellow); }
         
         /* Search */
-        .search { padding: 0 20px; margin-bottom: 24px; }
-        .search-input { width: 100%; background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 12px 16px; color: var(--text-main); font-size: 14px; font-family: 'Inter', sans-serif; outline: none; transition: 0.2s; }
-        .search-input:focus { border-color: var(--accent); }
+        .search { padding: 0 20px; margin-bottom: 20px; }
+        .search-input { width: 100%; background: var(--surface); border: 2px solid var(--border); border-radius: 10px; padding: 14px 16px; color: var(--text); font-size: 14px; font-weight: 500; font-family: 'Inter', sans-serif; outline: none; transition: all 0.3s; }
+        .search-input:focus { border-color: var(--yellow); box-shadow: 0 0 20px rgba(255, 215, 0, 0.2); }
         
-        /* Inventory List */
-        .inventory { padding: 0 20px; }
-        .group-header { color: var(--text-muted); font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 12px; display: flex; justify-content: space-between; border-bottom: 1px solid var(--border); padding-bottom: 8px; cursor: pointer; }
-        .group-header.warning { color: var(--accent); border-bottom-color: var(--accent-dim); }
-        .group-items { display: none; flex-direction: column; gap: 8px; margin-bottom: 24px; }
+        /* Inventory */
+        .inventory { padding: 0 20px; padding-bottom: 160px; }
+        .group { margin-bottom: 24px; }
+        .group-header { background: var(--yellow); color: var(--bg); padding: 12px 16px; font-weight: 800; font-size: 13px; display: flex; justify-content: space-between; cursor: pointer; border-radius: 8px; margin-bottom: 10px; transition: all 0.3s; }
+        .group-header:hover { box-shadow: 0 4px 20px rgba(255, 215, 0, 0.4); transform: translateY(-1px); }
+        .group-header.warning { background: var(--red); color: white; }
+        .group-items { display: none; flex-direction: column; gap: 10px; }
         .group-items.open { display: flex; }
         
-        .item { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 14px; display: flex; align-items: center; gap: 14px; cursor: pointer; transition: 0.2s; }
-        .item:hover { border-color: var(--border-strong); }
-        .item-id { font-family: 'JetBrains Mono', monospace; font-size: 12px; color: var(--text-main); background: var(--surface-hover); padding: 6px 10px; border-radius: 6px; min-width: 80px; text-align: center; border: 1px solid var(--border); }
+        .item { background: var(--surface); border: 1px solid var(--border); border-left: 4px solid var(--yellow); border-radius: 10px; padding: 16px; display: flex; align-items: center; gap: 14px; cursor: pointer; transition: all 0.3s; }
+        .item:hover { border-color: var(--yellow); box-shadow: 0 4px 20px rgba(255, 215, 0, 0.15); transform: translateX(4px); }
+        .item.box { border-left-color: var(--green); }
+        .item-id { font-family: 'JetBrains Mono', monospace; font-weight: 800; font-size: 14px; background: var(--bg); padding: 10px 14px; border: 2px solid var(--yellow); border-radius: 8px; min-width: 90px; text-align: center; color: var(--yellow); }
+        .item.box .item-id { border-color: var(--green); color: var(--green); }
         .item-info { flex: 1; }
-        .item-brand { font-weight: 600; font-size: 14px; color: var(--text-main); margin-bottom: 2px; }
-        .item-meta { font-size: 11px; color: var(--text-muted); }
+        .item-brand { font-weight: 700; font-size: 15px; margin-bottom: 4px; color: var(--text); }
+        .item-meta { font-size: 12px; color: var(--text-dim); font-weight: 500; }
         
-        .qty { display: flex; align-items: center; background: var(--bg); border: 1px solid var(--border); border-radius: 6px; }
-        .qty-btn { width: 32px; height: 32px; background: transparent; border: none; color: var(--text-muted); font-size: 16px; cursor: pointer; transition: 0.2s; }
-        .qty-btn:hover { color: var(--text-main); background: var(--surface-hover); }
-        .qty-val { font-family: 'JetBrains Mono', monospace; font-size: 12px; font-weight: 700; width: 40px; text-align: center; color: var(--text-main); }
+        .qty { display: flex; align-items: center; background: var(--bg); border: 1px solid var(--border-strong); border-radius: 8px; overflow: hidden; }
+        .qty-btn { width: 36px; height: 36px; background: transparent; border: none; color: var(--yellow); font-size: 18px; font-weight: 700; cursor: pointer; transition: all 0.2s; }
+        .qty-btn:hover { background: var(--yellow); color: var(--bg); }
+        .qty-val { font-family: 'JetBrains Mono', monospace; font-weight: 700; font-size: 13px; padding: 0 14px; border-left: 1px solid var(--border); border-right: 1px solid var(--border); color: var(--yellow); }
         
         /* Action Bar */
-        .actions { position: fixed; bottom: 0; left: 50%; transform: translateX(-50%); width: 100%; max-width: 600px; background: rgba(5,5,5,0.9); backdrop-filter: blur(10px); border-top: 1px solid var(--border); padding: 16px 20px; display: flex; gap: 12px; z-index: 50; }
-        .btn-main { flex: 2; padding: 14px; border-radius: 8px; border: none; background: var(--text-main); color: var(--bg); font-weight: 700; font-size: 13px; cursor: pointer; transition: 0.2s; }
-        .btn-main:hover { opacity: 0.9; }
-        .btn-secondary { flex: 1; padding: 14px; border-radius: 8px; border: 1px solid var(--border-strong); background: var(--surface); color: var(--text-main); font-weight: 600; font-size: 13px; cursor: pointer; transition: 0.2s; }
-        .btn-secondary:hover { border-color: var(--text-main); }
+        .actions { position: fixed; bottom: 0; left: 50%; transform: translateX(-50%); width: 100%; max-width: 700px; background: var(--surface); border-top: 3px solid var(--yellow); padding: 20px; display: flex; gap: 12px; box-shadow: 0 -4px 30px rgba(0, 0, 0, 0.5); z-index: 50;}
+        .action-btn { flex: 1; padding: 16px; border-radius: 10px; border: 2px solid var(--yellow); background: var(--bg); color: var(--yellow); font-weight: 700; font-size: 14px; cursor: pointer; transition: all 0.3s; font-family: 'Inter', sans-serif; }
+        .action-btn:hover { background: var(--yellow); color: var(--bg); box-shadow: 0 6px 25px rgba(255, 215, 0, 0.4); transform: translateY(-2px); }
+        .action-btn.danger { border-color: var(--red); color: var(--red); }
+        .action-btn.danger:hover { background: var(--red); color: white; box-shadow: 0 6px 25px rgba(255, 68, 68, 0.4); }
         
         /* Login Screen */
         .login-screen { position: fixed; inset: 0; background: var(--bg); z-index: 500; display: flex; align-items: center; justify-content: center; padding: 20px; }
         .login-screen.hidden { display: none; }
-        .login-box { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 32px; max-width: 360px; width: 100%; text-align: center; }
+        .login-box { background: var(--surface); border: 3px solid var(--yellow); border-radius: 16px; padding: 40px; max-width: 400px; width: 100%; text-align: center; box-shadow: 0 10px 50px rgba(255, 215, 0, 0.3); }
+        .login-logo { font-family: 'JetBrains Mono', monospace; font-size: 32px; font-weight: 900; color: var(--yellow); margin-bottom: 12px; letter-spacing: 2px; }
+        .login-subtitle { font-size: 14px; color: var(--text-dim); margin-bottom: 32px; }
+        .btn-google { width: 100%; padding: 16px; background: white; color: #333; border: none; border-radius: 10px; font-weight: 700; font-size: 15px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 12px; transition: all 0.3s; margin-bottom: 16px; }
+        .or-divider { margin: 24px 0; text-align: center; color: var(--text-dim); font-size: 13px; position: relative; }
+        .or-divider::before, .or-divider::after { content: ''; position: absolute; top: 50%; width: 40%; height: 1px; background: var(--border); }
+        .or-divider::before { left: 0; } .or-divider::after { right: 0; }
+        .login-input { width: 100%; background: var(--bg); border: 2px solid var(--border); border-radius: 10px; padding: 14px 16px; color: var(--text); font-size: 14px; font-weight: 500; outline: none; margin-bottom: 16px; font-family: 'Inter', sans-serif;}
+        .login-input:focus { border-color: var(--yellow); box-shadow: 0 0 20px rgba(255, 215, 0, 0.2); }
+        .btn-login { width: 100%; padding: 16px; background: var(--yellow); color: var(--bg); border: none; border-radius: 10px; font-weight: 700; font-size: 15px; cursor: pointer; transition: all 0.3s; }
         
         /* Camera */
-        .camera { position: fixed; inset: 0; background: #000; z-index: 400; display: none; flex-direction: column; }
-        .camera-header { padding: 16px 20px; display: flex; justify-content: space-between; align-items: center; background: linear-gradient(rgba(0,0,0,0.8), transparent); position: absolute; width: 100%; z-index: 10; }
-        .camera-close { background: rgba(255,255,255,0.1); border: none; color: white; width: 36px; height: 36px; border-radius: 50%; font-size: 16px; cursor: pointer; backdrop-filter: blur(4px); }
-        #video { flex: 1; object-fit: cover; width: 100%; height: 100%; }
-        .shutter-wrap { position: absolute; bottom: 40px; width: 100%; display: flex; flex-direction: column; align-items: center; }
-        .shutter { width: 64px; height: 64px; border: 3px solid white; background: rgba(255,255,255,0.2); border-radius: 50%; cursor: pointer; transition: 0.2s; backdrop-filter: blur(4px); }
-        .shutter:active { transform: scale(0.9); background: white; }
-        .camera-hint { font-family: 'JetBrains Mono', monospace; font-size: 10px; color: white; background: rgba(0,0,0,0.6); padding: 6px 12px; border-radius: 20px; margin-bottom: 20px; text-transform: uppercase; letter-spacing: 0.5px;}
+        .camera { position: fixed; inset: 0; background: var(--bg); z-index: 400; display: none; flex-direction: column; }
+        .camera-header { padding: 16px 20px; background: var(--surface); border-bottom: 3px solid var(--yellow); display: flex; justify-content: space-between; align-items: center; }
+        .camera-status { font-weight: 700; font-size: 14px; color: var(--yellow); }
+        .camera-close { background: transparent; border: 2px solid var(--yellow); color: var(--yellow); width: 36px; height: 36px; border-radius: 50%; font-size: 18px; cursor: pointer; }
+        #video { flex: 1; object-fit: cover; }
+        .camera-controls { position: absolute; bottom: 80px; left: 50%; transform: translateX(-50%); text-align: center; width: 100%; }
+        .camera-hint { color: var(--yellow); font-size: 13px; font-weight: 600; margin-bottom: 20px; text-shadow: 0 2px 10px rgba(0, 0, 0, 0.8); background: rgba(0,0,0,0.6); padding: 8px 16px; border-radius: 20px; display: inline-block;}
+        .shutter { width: 70px; height: 70px; border: 4px solid var(--yellow); background: rgba(255, 215, 0, 0.2); border-radius: 50%; cursor: pointer; transition: all 0.3s; box-shadow: 0 0 25px rgba(255, 215, 0, 0.5); display: block; margin: 0 auto; }
+        .shutter:hover { transform: scale(1.1); }
+        .shutter.delete { border-color: var(--red); background: rgba(255, 68, 68, 0.2); box-shadow: 0 0 25px rgba(255, 68, 68, 0.5); }
         #canvas { display: none; }
         
-        .processing { position: absolute; inset: 0; background: rgba(0, 0, 0, 0.9); display: none; flex-direction: column; align-items: center; justify-content: center; z-index: 20; }
-        .spinner { width: 40px; height: 40px; border: 3px solid rgba(255,255,255,0.1); border-top: 3px solid var(--accent); border-radius: 50%; animation: spin 1s linear infinite; margin-bottom: 16px; }
+        .processing { position: absolute; inset: 0; background: rgba(0, 0, 0, 0.9); display: none; flex-direction: column; align-items: center; justify-content: center; }
+        .spinner { width: 50px; height: 50px; border: 4px solid var(--surface); border-top: 4px solid var(--yellow); border-radius: 50%; animation: spin 1s linear infinite; margin-bottom: 20px; }
         @keyframes spin { to { transform: rotate(360deg); } }
-        .process-text { font-family: 'JetBrains Mono', monospace; font-size: 12px; color: var(--text-main); text-transform: uppercase; letter-spacing: 1px; }
+        .process-text { font-weight: 700; font-size: 16px; color: var(--yellow); margin-bottom: 8px; }
+        .process-log { font-size: 12px; color: var(--text-dim); }
         
         /* Modal */
-        .modal { position: fixed; inset: 0; background: rgba(0, 0, 0, 0.8); backdrop-filter: blur(5px); z-index: 450; display: none; align-items: flex-end; justify-content: center; }
+        .modal { position: fixed; inset: 0; background: rgba(0, 0, 0, 0.9); z-index: 450; display: none; align-items: center; justify-content: center; padding: 20px; }
         .modal.open { display: flex; }
-        .modal-content { background: var(--surface); border: 1px solid var(--border); border-bottom: none; border-radius: 16px 16px 0 0; padding: 24px; max-width: 600px; width: 100%; max-height: 90vh; overflow-y: auto; }
-        .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; }
-        .modal-title { font-weight: 600; font-size: 16px; }
-        .form-group { margin-bottom: 16px; }
-        .form-label { display: block; font-size: 10px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px; }
-        .form-input { width: 100%; background: var(--bg); border: 1px solid var(--border); border-radius: 6px; padding: 12px; color: var(--text-main); font-size: 14px; font-family: 'Inter', sans-serif; outline: none; transition: 0.2s; }
-        .form-input:focus { border-color: var(--text-muted); }
-        .form-input[readonly] { color: var(--text-muted); font-family: 'JetBrains Mono', monospace; }
+        .modal-content { background: var(--surface); border: 3px solid var(--yellow); border-radius: 16px; padding: 28px; max-width: 500px; width: 100%; max-height: 90vh; overflow-y: auto; }
+        .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; padding-bottom: 16px; border-bottom: 2px solid var(--border); }
+        .modal-title { font-weight: 800; font-size: 18px; color: var(--yellow); }
+        .modal-close { background: transparent; border: 2px solid var(--yellow); color: var(--yellow); width: 32px; height: 32px; border-radius: 50%; font-weight: 700; cursor: pointer; }
+        .form-group { margin-bottom: 18px; }
+        .form-label { display: block; font-size: 11px; font-weight: 700; color: var(--text-dim); text-transform: uppercase; margin-bottom: 8px; }
+        .form-input, .form-select { width: 100%; background: var(--bg); border: 2px solid var(--border); border-radius: 8px; padding: 12px 14px; color: var(--text); font-size: 14px; outline: none; font-family: 'Inter', sans-serif; }
+        .form-input[readonly] { background: var(--surface-hover); color: var(--yellow); font-family: 'JetBrains Mono', monospace; font-weight: 700; }
         .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+        .btn-save { width: 100%; padding: 14px; border-radius: 8px; font-weight: 700; font-size: 14px; cursor: pointer; margin-top: 12px; background: var(--yellow); color: var(--bg); border: 2px solid var(--yellow); }
+        .btn-delete { width: 100%; margin-top: 16px; background: transparent; color: var(--red); border: 2px solid var(--red); padding: 12px; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; }
         
         /* Toast */
-        .toast { position: fixed; top: 20px; left: 50%; transform: translateX(-50%); background: var(--text-main); color: var(--bg); padding: 12px 20px; border-radius: 6px; font-weight: 600; font-size: 12px; z-index: 600; display: none; text-align: center; }
+        .toast { position: fixed; top: 20px; left: 50%; transform: translateX(-50%); background: var(--yellow); color: var(--bg); padding: 14px 24px; border-radius: 10px; font-weight: 700; font-size: 14px; z-index: 600; display: none; text-align: center; box-shadow: 0 6px 25px rgba(255, 215, 0, 0.5); width: max-content; max-width: 90%; }
+        .toast.error { background: var(--red); color: white; }
+        .toast.success { background: var(--green); color: var(--bg); }
     </style>
 </head>
 <body>
     <div class="login-screen" id="login-screen">
         <div class="login-box">
-            <div style="font-family: 'JetBrains Mono', monospace; font-size: 24px; font-weight: 700; margin-bottom: 8px;">FILAMENT<span>_OS</span></div>
-            <div style="color: var(--text-muted); font-size: 12px; margin-bottom: 32px;">Enterprise Asset Management</div>
-            <input type="text" class="form-input" id="member-id" placeholder="Enter Member ID" style="margin-bottom: 12px; text-align: center;">
-            <button class="btn-main" onclick="loginWithMemberId()" style="width: 100%;">Authenticate</button>
+            <div class="login-logo">FILAMENT//OS</div>
+            <div class="login-subtitle">Cloud-Connected Inventory System</div>
+            
+            <button class="btn-google" onclick="loginWithGoogle()">
+                <svg width="20" height="20" viewBox="0 0 24 24">
+                    <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+                    <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+                    <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
+                    <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
+                </svg>
+                Sign in with Google
+            </button>
+            
+            <div class="or-divider">OR</div>
+            <input type="text" class="login-input" id="member-id" placeholder="Enter Member ID">
+            <button class="btn-login" onclick="loginWithMemberId()">Continue Locally</button>
         </div>
     </div>
 
     <div class="container" id="main-app" style="display: none;">
         <header>
             <div class="header-row">
-                <div class="logo">FILAMENT<span>_OS</span></div>
-                <div class="sync-status"><div class="sync-dot"></div><span id="sync-text">LOCAL ONLY</span></div>
+                <div class="logo">
+                    <div class="logo-icon">F</div>
+                    FILAMENT//OS
+                </div>
+                <div class="sync-status">
+                    <div class="sync-dot"></div>
+                    <span id="sync-text">LOCAL ONLY</span>
+                </div>
             </div>
             <div class="user-bar">
-                <div class="user-info" id="user-name">User</div>
-                <div class="btn-group">
-                    <button class="header-btn" onclick="setApiKey()">API Key</button>
-                    <button class="header-btn" onclick="logout()">Exit</button>
+                <div class="user-info">
+                    <div class="user-avatar" id="user-avatar">U</div>
+                    <div class="user-name" id="user-name">User</div>
                 </div>
+                <button class="btn-key" onclick="setApiKey()">🔑 Key</button>
+                <button class="btn-logout" onclick="logout()">Logout</button>
             </div>
         </header>
 
         <div class="stats">
             <div class="stat-card">
-                <div class="stat-label">Total Assets</div>
+                <div class="stat-label">Total</div>
                 <div class="stat-value" id="total">0</div>
             </div>
             <div class="stat-card">
-                <div class="stat-label">Action Required</div>
-                <div class="stat-value" id="low-stock" style="color:var(--text-muted);">0</div>
+                <div class="stat-label">Low Stock</div>
+                <div class="stat-value" id="low-stock" style="color:var(--red);">0</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Status</div>
+                <div class="stat-value small">● ONLINE</div>
             </div>
         </div>
 
         <div class="tabs">
-            <div class="tab active" id="tab-storage" onclick="setTab('storage')">Storage (Opened)</div>
-            <div class="tab" id="tab-inventory" onclick="setTab('inventory')">Inventory (Sealed)</div>
+            <div class="tab active" id="tab-storage" onclick="setTab('storage')">STORAGE</div>
+            <div class="tab" id="tab-inventory" onclick="setTab('inventory')">INVENTORY</div>
         </div>
 
         <div class="search">
-            <input type="text" class="search-input" id="search" placeholder="Search ID, brand, material..." onkeyup="renderInventory()">
+            <input type="text" class="search-input" id="search" placeholder="Search by ID, Brand, Material, Color..." onkeyup="renderInventory()">
         </div>
 
         <div class="inventory" id="inventory"></div>
     </div>
 
     <div class="actions" id="action-bar" style="display: none;">
-        <button class="btn-secondary" onclick="openCamera('delete')">Remove Asset</button>
-        <button class="btn-main" onclick="openCamera('scan')">Scan & Sync Asset</button>
+        <button class="action-btn danger" onclick="openCamera('delete')">🗑 Delete</button>
+        <button class="action-btn" onclick="openCamera('scan')">⚡ Scan Asset</button>
     </div>
 
     <div class="camera" id="camera">
         <div class="camera-header">
-            <div class="camera-hint" id="cam-status" style="margin-bottom:0;">AI SCANNER</div>
+            <div class="camera-status" id="cam-status">AI SCANNER</div>
             <button class="camera-close" onclick="closeCamera()">✕</button>
         </div>
         <video id="video" autoplay playsinline></video>
         <canvas id="canvas"></canvas>
-        <div class="shutter-wrap">
-            <div class="camera-hint" id="camera-hint">AIM AT SERIAL OR QR</div>
+        <div class="camera-controls">
+            <div class="camera-hint" id="camera-hint">AIM AT FACTORY SERIAL OR QR</div>
             <button class="shutter" id="shutter" onclick="capture()"></button>
         </div>
         <div class="processing" id="processing">
             <div class="spinner"></div>
-            <div class="process-text" id="proc-text">ANALYZING ASSET</div>
+            <div class="process-text" id="proc-text">Processing...</div>
+            <div class="process-log" id="proc-log">Connecting to AI Engine...</div>
         </div>
     </div>
 
@@ -208,14 +251,14 @@
         <div class="modal-content">
             <div class="modal-header">
                 <div class="modal-title" id="modal-title">Sync Asset</div>
-                <button class="camera-close" onclick="closeModal()" style="border:1px solid var(--border); color:var(--text-main);">✕</button>
+                <button class="modal-close" onclick="closeModal()">✕</button>
             </div>
             
             <div class="form-group">
                 <label class="form-label">Location / State</label>
-                <select id="f-status" class="form-input">
-                    <option value="storage">Storage (Opened Spool)</option>
-                    <option value="inventory">Inventory (Unopened Box)</option>
+                <select id="f-status" class="form-select">
+                    <option value="storage">📂 Storage (Opened Spool)</option>
+                    <option value="inventory">📦 Inventory (Unopened Box)</option>
                 </select>
             </div>
 
@@ -231,11 +274,11 @@
                 </div>
                 <div class="form-group">
                     <label class="form-label">Material</label>
-                    <input type="text" id="f-material" list="mat-list" class="form-input">
+                    <input type="text" id="f-material" list="mat-list" class="form-input" placeholder="Select/Type">
                     <datalist id="mat-list">
                         <option value="PLA"></option><option value="PETG"></option><option value="ASA"></option>
                         <option value="ABS"></option><option value="TPU"></option><option value="PCTG"></option>
-                        <option value="XPETG"></option><option value="FLEX"></option>
+                        <option value="XPETG"></option><option value="FLEX HARD"></option>
                     </datalist>
                 </div>
             </div>
@@ -246,8 +289,8 @@
                     <input type="text" id="f-color" class="form-input">
                 </div>
                 <div class="form-group">
-                    <label class="form-label">Remaining Volume</label>
-                    <select id="f-qty" class="form-input">
+                    <label class="form-label">Remaining %</label>
+                    <select id="f-qty" class="form-select">
                         <option value="100">100%</option><option value="90">90%</option>
                         <option value="80">80%</option><option value="70">70%</option>
                         <option value="60">60%</option><option value="50">50%</option>
@@ -258,36 +301,77 @@
                 </div>
             </div>
 
-            <button class="btn-main" style="width:100%; margin-top:12px;" onclick="saveItem()">Save to Database</button>
+            <button class="btn-save" onclick="saveItem()">Save to Database</button>
+            <button class="btn-delete" id="btn-del" onclick="deleteItem()" style="display:none;">Delete Permanently</button>
         </div>
     </div>
 
     <div class="toast" id="toast"></div>
 
+    <script type="module">
+        import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
+        import { getAuth, signInWithPopup, GoogleAuthProvider, signOut, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js';
+        import { getDatabase, ref, set, get, remove, onValue } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js';
+
+        // Add your config here later
+        const firebaseConfig = { apiKey: "YOUR_API_KEY", authDomain: "YOUR_PROJECT.firebaseapp.com", databaseURL: "https://YOUR_PROJECT.firebaseio.com", projectId: "YOUR_PROJECT", storageBucket: "YOUR_PROJECT.appspot.com", messagingSenderId: "YOUR_SENDER_ID", appId: "YOUR_APP_ID" };
+
+        try {
+            if(firebaseConfig.apiKey !== "YOUR_API_KEY") {
+                const app = initializeApp(firebaseConfig);
+                window.firebaseAuth = getAuth(app);
+                window.firebaseDb = getDatabase(app);
+                window.firebaseProvider = new GoogleAuthProvider();
+                
+                onAuthStateChanged(window.firebaseAuth, (user) => {
+                    if (user) { window.currentUser = user; showMainApp(user); window.loadInventory(); } 
+                    else { showLoginScreen(); }
+                });
+            } else { throw new Error("No Firebase keys."); }
+        } catch(e) {
+            console.warn("Running in Offline/Local Mode.");
+            window.firebaseDb = null;
+            setTimeout(() => {
+                const localUser = localStorage.getItem('activeUser') || 'Member 1';
+                window.loginWithMemberId(localUser);
+            }, 100);
+        }
+    </script>
+
     <script>
-        let inventory = JSON.parse(localStorage.getItem('filamentFarmDB')) || [];
-        let activeUser = localStorage.getItem('activeUser') || "Member 1";
-        let aiStream = null;
+        let inventory = [];
         let currentTab = 'storage';
-        let currentScanMode = 'scan'; 
+        let scanMode = 'scan';
+        let stream = null;
 
-        // Auto-login
-        if(localStorage.getItem('activeUser')) {
-            showMainApp({displayName: localStorage.getItem('activeUser')});
-            loadInventory();
-        }
+        window.loginWithGoogle = async function() {
+            if(!window.firebaseAuth) return showToast("Firebase not configured", "error");
+            try {
+                const result = await window.signInWithPopup(window.firebaseAuth, window.firebaseProvider);
+                window.currentUser = result.user;
+                showToast('Logged in successfully', 'success');
+            } catch (error) { showToast('Login failed', 'error'); }
+        };
 
-        function loginWithMemberId() {
-            const id = document.getElementById('member-id').value.trim();
-            if(!id) return;
-            activeUser = id;
-            localStorage.setItem('activeUser', id);
-            showMainApp({displayName: id});
-            loadInventory();
-        }
+        window.loginWithMemberId = function(presetId) {
+            const memberId = presetId || document.getElementById('member-id').value.trim();
+            if (!memberId) return showToast('Please enter a Member ID', 'error');
+            
+            localStorage.setItem('activeUser', memberId);
+            window.currentUser = { uid: 'member_' + memberId, displayName: memberId };
+            showMainApp(window.currentUser);
+            window.loadInventory();
+        };
 
-        function logout() {
-            localStorage.removeItem('activeUser');
+        window.logout = async function() {
+            if (window.firebaseAuth && window.currentUser && window.currentUser.email) {
+                await window.signOut(window.firebaseAuth);
+            }
+            window.currentUser = null;
+            showLoginScreen();
+        };
+
+        function showLoginScreen() {
             document.getElementById('login-screen').classList.remove('hidden');
             document.getElementById('main-app').style.display = 'none';
             document.getElementById('action-bar').style.display = 'none';
@@ -297,15 +381,21 @@
             document.getElementById('login-screen').classList.add('hidden');
             document.getElementById('main-app').style.display = 'block';
             document.getElementById('action-bar').style.display = 'flex';
-            document.getElementById('user-name').textContent = user.displayName;
+            document.getElementById('user-name').textContent = user.displayName || 'User';
+            document.getElementById('user-avatar').textContent = (user.displayName || 'U').charAt(0).toUpperCase();
         }
 
-        function loadInventory() {
+        window.loadInventory = function() {
+            if (!window.currentUser) return;
+            const localData = localStorage.getItem('filamentDB_' + window.currentUser.uid);
+            inventory = localData ? JSON.parse(localData) : [];
             renderInventory();
+            document.getElementById('sync-text').textContent = window.firebaseDb ? 'SYNCING...' : 'LOCAL ONLY';
         }
 
-        function saveInventory() {
-            localStorage.setItem('filamentFarmDB', JSON.stringify(inventory));
+        window.saveInventory = function() {
+            if (!window.currentUser) return;
+            localStorage.setItem('filamentDB_' + window.currentUser.uid, JSON.stringify(inventory));
         }
 
         function getApiKey() {
@@ -318,11 +408,10 @@
         }
 
         window.setApiKey = function() {
-            const key = prompt('Update Gemini API Key:', localStorage.getItem('geminiApiKey') || '');
+            const key = prompt('Enter Gemini API Key:', localStorage.getItem('geminiApiKey') || '');
             if (key) {
                 localStorage.setItem('geminiApiKey', key);
-                localStorage.removeItem('activeGeminiModel');
-                showToast('API Key updated');
+                showToast('API Key saved', 'success');
             }
         };
 
@@ -366,16 +455,16 @@
                 div.className = 'group';
                 div.innerHTML = `
                     <div class="group-header ${low ? 'warning' : ''}" onclick="document.getElementById('${id}').classList.toggle('open')">
-                        <span>${mat} ${low ? ' • ACTION REQ' : ''}</span>
-                        <span>${items.length} ASSETS</span>
+                        <span>${mat} ${low ? '⚠ LOW' : ''}</span>
+                        <span>${items.length} assets</span>
                     </div>
                     <div class="group-items open" id="${id}">
                         ${items.map(item => `
                             <div class="item ${item.status === 'inventory' ? 'box' : ''}" onclick="editItem('${item.id}')">
-                                <div class="item-id">${item.status === 'inventory' ? '📦' : ''}${item.id}</div>
+                                <div class="item-id">${item.id}</div>
                                 <div class="item-info">
                                     <div class="item-brand">${item.brand || 'Unknown'}</div>
-                                    <div class="item-meta">${item.color || 'No color'}</div>
+                                    <div class="item-meta">${item.color || 'No color'} • Updated by ${item.user || 'System'}</div>
                                 </div>
                                 <div class="qty" onclick="event.stopPropagation()">
                                     <button class="qty-btn" onclick="updateQty('${item.id}', -10)">-</button>
@@ -397,7 +486,7 @@
             const item = inventory.find(i => i.id === id);
             if (item) {
                 item.qty = Math.min(100, Math.max(0, parseInt(item.qty) + change));
-                saveInventory();
+                window.saveInventory();
                 renderInventory();
             }
         };
@@ -415,6 +504,7 @@
             document.getElementById('f-qty').value = qtyVal;
             
             document.getElementById('f-status').value = item.status || 'storage';
+            document.getElementById('btn-del').style.display = 'block';
             document.getElementById('modal-title').textContent = 'Edit Asset';
             document.getElementById('modal').classList.add('open');
         };
@@ -430,23 +520,35 @@
                 color: document.getElementById('f-color').value,
                 qty: document.getElementById('f-qty').value,
                 status: document.getElementById('f-status').value,
-                user: activeUser,
+                user: window.currentUser ? window.currentUser.displayName : 'Unknown',
                 time: new Date().toISOString()
             };
 
             const idx = inventory.findIndex(i => i.id === id);
             if (idx >= 0) { inventory[idx] = item; } else { inventory.push(item); }
 
-            saveInventory();
+            window.saveInventory();
             closeModal();
             renderInventory();
-        }
+            showToast('Asset saved', 'success');
+        };
+
+        window.deleteItem = function() {
+            if (!confirm('Delete permanently?')) return;
+            const id = document.getElementById('f-id').value;
+            inventory = inventory.filter(i => i.id !== id);
+            window.saveInventory();
+            closeModal();
+            renderInventory();
+            showToast('Asset deleted', 'success');
+        };
 
         window.closeModal = function() { document.getElementById('modal').classList.remove('open'); };
 
-        function showToast(msg) {
+        function showToast(msg, type = '') {
             const toast = document.getElementById('toast');
             toast.textContent = msg;
+            toast.className = 'toast ' + type;
             toast.style.display = 'block';
             setTimeout(() => toast.style.display = 'none', 3000);
         }
@@ -455,31 +557,48 @@
             const key = getApiKey();
             if (!key) return;
 
-            currentScanMode = mode;
-            document.getElementById('cam-status').textContent = mode === 'delete' ? 'DELETION MODE' : 'AI SCANNER';
-            document.getElementById('camera-hint').textContent = mode === 'delete' ? 'SCAN SPOOL TO REMOVE' : 'AIM AT SERIAL OR QR';
+            scanMode = mode;
+            const shutter = document.getElementById('shutter');
+            const hint = document.getElementById('camera-hint');
+            
+            if (mode === 'delete') {
+                shutter.className = 'shutter delete';
+                document.getElementById('cam-status').textContent = 'DELETE MODE';
+                hint.textContent = 'SCAN SPOOL TO REMOVE';
+            } else {
+                shutter.className = 'shutter';
+                document.getElementById('cam-status').textContent = 'AI SCANNER';
+                hint.textContent = 'AIM AT FACTORY SERIAL OR QR';
+            }
+            
             document.getElementById('camera').style.display = 'flex';
 
             try {
-                aiStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
-                document.getElementById('video').srcObject = aiStream;
+                stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
+                document.getElementById('video').srcObject = stream;
             } catch (e) {
-                showToast('Camera access denied');
+                showToast('Camera access denied', 'error');
                 closeCamera();
             }
         };
 
         window.closeCamera = function() {
             document.getElementById('camera').style.display = 'none';
-            if (aiStream) { aiStream.getTracks().forEach(t => t.stop()); aiStream = null; }
+            if (stream) { stream.getTracks().forEach(t => t.stop()); stream = null; }
         };
 
+        // --- FIXED OCR AI LOGIC (No MimeType, Strict Prompts) ---
         window.capture = async function() {
             const key = getApiKey();
             if (!key) return;
 
             const proc = document.getElementById('processing');
+            const text = document.getElementById('proc-text');
+            const log = document.getElementById('proc-log');
+
             proc.style.display = 'flex';
+            text.textContent = scanMode === 'delete' ? 'Scanning for Deletion...' : 'Extracting Data...';
+            log.textContent = 'Analyzing Image...';
 
             const canvas = document.getElementById('canvas');
             const video = document.getElementById('video');
@@ -488,62 +607,59 @@
             const base64 = canvas.toDataURL('image/jpeg', 0.8).split(',')[1];
 
             try {
-                let model = localStorage.getItem('activeGeminiModel');
-                if (!model) {
-                    const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${key}`);
-                    if (!res.ok) throw new Error('API Key Invalid');
-                    const data = await res.json();
-                    const availableModels = data.models.map(m => m.name.replace('models/', ''));
-                    
-                    if (availableModels.includes('gemini-2.5-flash')) model = 'gemini-2.5-flash';
-                    else if (availableModels.includes('gemini-2.0-flash')) model = 'gemini-2.0-flash';
-                    else if (availableModels.includes('gemini-1.5-flash-latest')) model = 'gemini-1.5-flash-latest';
-                    else model = 'gemini-1.5-flash'; 
-                    localStorage.setItem('activeGeminiModel', model);
-                }
+                // Safely default to 1.5-flash which is widely supported
+                const model = "gemini-1.5-flash";
 
-                // AI PROMPT FIX - Generalize Alphanumeric Serial & Ignore Barcodes
                 const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${key}`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
                         contents: [{
                             parts: [
-                                { text: "Analyze 3D filament spool/box. \nPRIORITY 1: Find the distinct factory-printed alphanumeric serial number. This is often printed in a dotted/matrix font. Be extremely careful not to confuse zeros ('0') with eights ('8'). \nCRITICAL RULE: STRICTLY IGNORE all standard 1D barcode numbers (like typical 12-14 digit UPC/EAN numbers). Do NOT pick the barcode number. \nPRIORITY 2: Find a custom QR code label. \nIf NO valid factory serial and NO QR code is found, you MUST return 'null' for asset_id. \nReturn JSON with keys: brand (string), color (string), type (string: PLA/PETG/ASA/ABS/TPU/PCTG/XPETG), asset_id (string or null), percentage_left (number 10, 20, 30, 40, 50, 60, 70, 80, 90, 100), status ('inventory' for cardboard boxes, 'storage' for plastic spools)." },
+                                { text: "Analyze this 3D filament spool/box. \nPRIORITY 1: Find the manufacturer's alphanumeric serial number. \nCRITICAL FONT WARNING: The serial is often printed in a coarse DOT MATRIX font. Because of the dotted gaps, you will easily confuse '0' (zero) with '8' or '9'. Look extremely closely. The serial almost ALWAYS starts with three zeros, like '000'. Example format: '000M046933024'. \nCRITICAL RULE 2: IGNORE 1D barcodes and their numbers (e.g., '02151018A' or typical UPC codes). \nPRIORITY 2: If no factory serial exists, look for a custom QR code label. \nIf NEITHER is found, you MUST return 'null' for asset_id. \nRespond strictly with valid JSON (no markdown block): {\"brand\": \"string\", \"color\": \"string\", \"type\": \"PLA/PETG/ASA/ABS/TPU/PCTG/XPETG\", \"asset_id\": \"string or null\", \"percentage_left\": 100, \"status\": \"inventory or storage\"}" },
                                 { inlineData: { mimeType: 'image/jpeg', data: base64 } }
                             ]
-                        }],
-                        generationConfig: { responseMimeType: 'application/json' }
+                        }]
                     })
                 });
 
                 if (!res.ok) {
-                    localStorage.removeItem('activeGeminiModel');
-                    throw new Error('Google rejected the scan.');
+                    const errorData = await res.json();
+                    throw new Error(errorData.error?.message || `HTTP Error ${res.status}`);
                 }
 
                 const data = await res.json();
-                const result = JSON.parse(data.candidates[0].content.parts[0].text);
+                
+                // Safely parse JSON even if Gemini wraps it in markdown blocks
+                let rawText = data.candidates[0].content.parts[0].text;
+                rawText = rawText.replace(/```json/gi, '').replace(/```/gi, '').trim();
+                const result = JSON.parse(rawText);
 
                 closeCamera();
                 proc.style.display = 'none';
 
-                if (currentScanMode === 'delete') {
+                // DELETE MODE
+                if (scanMode === 'delete') {
                     if (result.asset_id && String(result.asset_id).toLowerCase() !== 'null' && String(result.asset_id).trim()) {
                         const exists = inventory.find(i => i.id === result.asset_id);
                         if (exists) {
                             inventory = inventory.filter(i => i.id !== result.asset_id);
-                            saveInventory(); renderInventory();
-                            showToast('Asset Removed');
-                        } else { showToast('ID not found in system.'); }
-                    } else { showToast('No valid ID found to delete.'); }
+                            window.saveInventory();
+                            renderInventory();
+                            showToast(`Asset #${result.asset_id} Deleted!`, 'success');
+                        } else {
+                            showToast(`ID #${result.asset_id} not found in system.`, 'error');
+                        }
+                    } else {
+                        showToast('No valid ID found to delete.', 'error');
+                    }
                     return;
                 }
 
-                // STRICT BOUNCER
+                // STRICT BOUNCER: Reject if no serial/QR
                 if (!result.asset_id || String(result.asset_id).toLowerCase() === 'null' || !String(result.asset_id).trim()) {
-                    alert('⚠️ SCAN REJECTED\n\nWe could not detect a factory serial or custom QR code on this item. Please apply a QR sticker before adding to inventory.');
-                    return; 
+                    alert('⚠️ SCAN REJECTED\n\nNo serial or QR code detected. We will not log an unidentified asset. Please apply a QR sticker.');
+                    return; // Completely abort.
                 }
 
                 document.getElementById('f-id').value = result.asset_id;
@@ -556,16 +672,20 @@
                 document.getElementById('f-qty').value = qtyVal;
                 
                 document.getElementById('f-status').value = result.status || 'storage';
+                document.getElementById('btn-del').style.display = 'none';
                 document.getElementById('modal-title').textContent = 'Confirm Asset';
                 document.getElementById('modal').classList.add('open');
 
             } catch (e) {
                 closeCamera();
                 proc.style.display = 'none';
-                alert(`SYSTEM ERROR:\n\n${e.message}`); 
+                alert(`GOOGLE AI ERROR:\n\n${e.message}`); 
             }
         };
 
+        if (!localStorage.getItem('geminiApiKey')) {
+            setTimeout(getApiKey, 1500);
+        }
     </script>
 </body>
 </html>
