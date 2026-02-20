@@ -359,7 +359,7 @@
             document.getElementById('item-modal').classList.add('open');
             
         } catch (e) { 
-            alert("AI Error. Please enter manually."); 
+            alert("GOOGLE AI ERROR: " + e.message); 
             closeAICamera();
             document.getElementById('item-id').value = getNextId(); 
             document.getElementById('item-modal').classList.add('open'); 
