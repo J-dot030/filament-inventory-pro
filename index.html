@@ -64,12 +64,14 @@
         .qty-btn { width: 32px; height: 32px; border: none; background: transparent; color: var(--text-muted); cursor: pointer; font-size: 16px; }
         .qty-val { width: 44px; text-align: center; font-family: 'JetBrains Mono', monospace; font-size: 13px; font-weight: 600; border-left: 1px solid var(--border); border-right: 1px solid var(--border); color: var(--text-main); }
 
-        .fab-bar { position: fixed; bottom: 0; left: 50%; transform: translateX(-50%); width: 100%; max-width: 600px; padding: 24px; background: linear-gradient(to top, rgba(243,244,246,1) 60%, rgba(243,244,246,0)); display: flex; z-index: 40; }
-        .btn-scan { flex: 1; background: var(--accent); color: white; border: none; padding: 18px; border-radius: 14px; font-weight: 600; font-size: 15px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; box-shadow: 0 10px 20px -5px rgba(37,99,235,0.4); }
+        .fab-bar { position: fixed; bottom: 0; left: 50%; transform: translateX(-50%); width: 100%; max-width: 600px; padding: 24px; background: linear-gradient(to top, rgba(243,244,246,1) 60%, rgba(243,244,246,0)); display: flex; gap: 12px; z-index: 40; }
+        .btn-scan { flex: 2; background: var(--accent); color: white; border: none; padding: 18px; border-radius: 14px; font-weight: 600; font-size: 15px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; box-shadow: 0 10px 20px -5px rgba(37,99,235,0.4); }
+        .btn-delete-scan { flex: 1; background: white; color: var(--danger); border: 2px solid var(--danger-bg); padding: 18px; border-radius: 14px; font-weight: 600; font-size: 13px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px; box-shadow: var(--shadow-sm); }
 
         .camera-overlay { position: fixed; inset: 0; z-index: 100; background: #000; display: none; flex-direction: column; }
         #ai-video { flex: 1; object-fit: cover; }
         .shutter { position: absolute; bottom: 50px; left: 50%; transform: translateX(-50%); width: 76px; height: 76px; border: 4px solid white; border-radius: 50%; background: rgba(255,255,255,0.3); cursor: pointer; }
+        .shutter.delete-mode { border-color: var(--danger); background: rgba(239, 68, 68, 0.3); }
         .ai-status { position: absolute; inset: 0; background: rgba(0,0,0,0.85); display: none; align-items: center; justify-content: center; color: white; flex-direction: column; z-index: 110; text-align: center; }
         .spinner { border: 4px solid rgba(255,255,255,0.1); border-top: 4px solid var(--accent); border-radius: 50%; width: 48px; height: 48px; animation: spin 1s linear infinite; margin-bottom: 16px; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
@@ -80,10 +82,13 @@
         .input-group { margin-bottom: 16px; }
         .label { font-size: 11px; color: var(--text-muted); text-transform: uppercase; margin-bottom: 8px; font-weight: 600; }
         .input { width: 100%; background: var(--surface); border: 1px solid var(--border-strong); border-radius: 10px; padding: 12px 14px; font-size: 15px; outline: none; }
+        
+        select.input { appearance: none; -webkit-appearance: none; background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e"); background-repeat: no-repeat; background-position: right 14px center; background-size: 16px; padding-right: 40px; }
+
         .btn-save { width: 100%; background: var(--accent); color: white; padding: 16px; border-radius: 10px; border: none; font-weight: 600; font-size: 15px; cursor: pointer; margin-top: 8px; }
         .btn-delete { width: 100%; margin-top: 16px; background: transparent; border: 1px solid var(--danger-bg); color: var(--danger); padding: 12px; border-radius: 10px; font-size: 13px; font-weight: 600; cursor: pointer; }
         
-        .toast { position: fixed; top: 24px; left: 50%; transform: translateX(-50%); z-index: 300; background: var(--text-main); color: white; padding: 12px 24px; border-radius: 30px; font-weight: 500; font-size: 13px; display: none; }
+        .toast { position: fixed; top: 24px; left: 50%; transform: translateX(-50%); z-index: 300; background: var(--text-main); color: white; padding: 12px 24px; border-radius: 30px; font-weight: 500; font-size: 13px; display: none; text-align: center; width: max-content; }
     </style>
 </head>
 <body>
@@ -121,7 +126,8 @@
     </main>
 
     <div class="fab-bar">
-        <button class="btn-scan" onclick="openAICamera()">Scan Asset (AI)</button>
+        <button class="btn-delete-scan" onclick="openAICamera('delete')">🗑️ Scan Empty</button>
+        <button class="btn-scan" onclick="openAICamera('scan')">✨ Add / Sync Asset</button>
     </div>
 </div>
 
@@ -129,17 +135,17 @@
 
 <div class="camera-overlay" id="ai-modal">
     <div style="position:absolute; top:30px; width:100%; padding:0 24px; display:flex; justify-content:space-between; align-items:center; z-index:10;">
-        <span style="background: rgba(0,0,0,0.6); color: white; padding: 6px 12px; border-radius: 20px; font-size: 11px; font-weight: 600;">AI SCANNER ACTIVATED</span>
+        <span id="camera-badge" style="background: rgba(0,0,0,0.6); color: white; padding: 6px 12px; border-radius: 20px; font-size: 11px; font-weight: 600;">AI SCANNER ACTIVATED</span>
         <button onclick="closeAICamera()" style="background:rgba(255,255,255,0.2); border:none; color:white; width: 36px; height: 36px; border-radius: 50%; font-size:16px;">✕</button>
     </div>
     <video id="ai-video" autoplay playsinline></video>
     <canvas id="ai-canvas" style="display:none;"></canvas>
     
-    <button class="shutter" onclick="captureAndAnalyze()"></button>
+    <button class="shutter" id="camera-shutter" onclick="captureAndAnalyze()"></button>
     
     <div class="ai-status" id="ai-loading">
-        <div class="spinner"></div>
-        <div style="font-size: 18px; font-weight: 600;">Processing Asset...</div>
+        <div class="spinner" id="loading-spinner"></div>
+        <div style="font-size: 18px; font-weight: 600;" id="loading-text">Processing Asset...</div>
         <div id="ai-log" style="font-size: 11px; color:#A1A1AA; margin-top:10px;">Connecting to AI Engine...</div>
     </div>
 </div>
@@ -160,7 +166,7 @@
         </div>
 
         <div class="input-group">
-            <label class="label">Unique ID (Serial / Sharpie / Custom)</label>
+            <label class="label">Unique ID (Factory Serial / Custom QR)</label>
             <input type="text" id="item-id" class="input" style="font-family: 'JetBrains Mono', monospace; font-weight: bold; color: var(--accent);">
         </div>
 
@@ -172,16 +178,11 @@
             
             <div class="input-group">
                 <label class="label">Material</label>
-                <input type="text" id="item-type" list="materials-list" class="input" placeholder="Select or Type">
+                <input type="text" id="item-type" list="materials-list" class="input" placeholder="Select/Type">
                 <datalist id="materials-list">
-                    <option value="PLA"></option>
-                    <option value="PETG"></option>
-                    <option value="ASA"></option>
-                    <option value="ABS"></option>
-                    <option value="TPU"></option>
-                    <option value="PCTG"></option>
-                    <option value="XPETG"></option>
-                    <option value="FLEX HARD"></option>
+                    <option value="PLA"></option><option value="PETG"></option><option value="ASA"></option>
+                    <option value="ABS"></option><option value="TPU"></option><option value="PCTG"></option>
+                    <option value="XPETG"></option><option value="FLEX HARD"></option>
                 </datalist>
             </div>
         </div>
@@ -193,11 +194,14 @@
             </div>
             <div class="input-group">
                 <label class="label">Remaining %</label>
-                <input type="number" id="item-qty" list="percents" class="input">
-                <datalist id="percents">
-                    <option value="100"></option><option value="90"></option><option value="80"></option><option value="70"></option>
-                    <option value="50"></option><option value="25"></option><option value="10"></option>
-                </datalist>
+                <select id="item-qty" class="input">
+                    <option value="100">100%</option><option value="90">90%</option>
+                    <option value="80">80%</option><option value="70">70%</option>
+                    <option value="60">60%</option><option value="50">50%</option>
+                    <option value="40">40%</option><option value="30">30%</option>
+                    <option value="20">20%</option><option value="10">10%</option>
+                    <option value="0">0% (Empty)</option>
+                </select>
             </div>
         </div>
 
@@ -211,6 +215,7 @@
     let activeUser = localStorage.getItem('activeUser') || "Member 1";
     let aiStream = null;
     let currentTab = 'storage';
+    let currentScanMode = 'scan'; // 'scan' or 'delete'
 
     document.getElementById('current-user').textContent = activeUser;
 
@@ -310,15 +315,34 @@
         return nums.length === 0 ? "001" : (Math.max(...nums) + 1).toString().padStart(3, '0');
     }
 
-    async function openAICamera() {
-        const apiKey = getApiKey();
-        if (!apiKey) return;
-
-        const next = getNextId();
+    function showToast(msg, isError = false) {
         const toast = document.getElementById('hint-toast');
         toast.style.display = 'block';
-        toast.innerHTML = `If no Factory Serial exists, write: <b>#${next}</b>`;
+        toast.style.background = isError ? "var(--danger)" : "var(--text-main)";
+        toast.innerHTML = msg;
         setTimeout(() => toast.style.display = 'none', 4000);
+    }
+
+    async function openAICamera(mode) {
+        const apiKey = getApiKey();
+        if (!apiKey) return;
+        
+        currentScanMode = mode;
+        const shutter = document.getElementById('camera-shutter');
+        const badge = document.getElementById('camera-badge');
+        
+        if (mode === 'delete') {
+            shutter.classList.add('delete-mode');
+            badge.innerHTML = "DELETION MODE ACTIVATED";
+            badge.style.background = "var(--danger)";
+            showToast("Scan empty spool to remove it from inventory");
+        } else {
+            shutter.classList.remove('delete-mode');
+            badge.innerHTML = "AI SCANNER ACTIVATED";
+            badge.style.background = "rgba(0,0,0,0.6)";
+            const next = getNextId();
+            showToast(`If no Factory Serial exists, use Auto-ID: <b>#${next}</b>`);
+        }
 
         document.getElementById('ai-modal').style.display = 'flex';
         try {
@@ -334,6 +358,16 @@
         const apiKey = getApiKey();
         document.getElementById('ai-loading').style.display = 'flex';
         const log = document.getElementById('ai-log');
+        const spinner = document.getElementById('loading-spinner');
+        const text = document.getElementById('loading-text');
+        
+        if(currentScanMode === 'delete') {
+            spinner.style.borderTopColor = "var(--danger)";
+            text.innerText = "Scanning for Deletion...";
+        } else {
+            spinner.style.borderTopColor = "var(--accent)";
+            text.innerText = "Processing Asset...";
+        }
         
         const canvas = document.getElementById('ai-canvas');
         const video = document.getElementById('ai-video');
@@ -348,29 +382,25 @@
             if (!activeModel) {
                 const modelCheck = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${apiKey}`);
                 if (!modelCheck.ok) throw new Error("API Key is INVALID or Regional Access is restricted.");
-                
                 const modelData = await modelCheck.json();
                 const availableModels = modelData.models.map(m => m.name.replace('models/', ''));
-                
                 if (availableModels.includes('gemini-2.5-flash')) activeModel = 'gemini-2.5-flash';
                 else if (availableModels.includes('gemini-2.0-flash')) activeModel = 'gemini-2.0-flash';
                 else if (availableModels.includes('gemini-1.5-flash-latest')) activeModel = 'gemini-1.5-flash-latest';
                 else if (availableModels.includes('gemini-1.5-flash')) activeModel = 'gemini-1.5-flash';
-                else if (availableModels.includes('gemini-1.5-pro')) activeModel = 'gemini-1.5-pro';
                 else activeModel = 'gemini-1.5-flash'; 
-                
                 localStorage.setItem('activeGeminiModel', activeModel);
             }
 
             log.innerText = `Analyzing with ${activeModel}...`;
             
-            // FIXED: Added severe strictness regarding the '0' vs '8' dot-matrix problem
+            // FIXED: Hyper-strict prompt to ignore generic barcodes and focus on dot-matrix serials
             const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${activeModel}:generateContent?key=${apiKey}`, {
                 method: 'POST', 
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ 
                     contents: [{ parts: [
-                        { text: "Analyze 3D filament spool/box. \nPRIORITY 1: Find factory printed alphanumeric serial number (like '000M046933024'). CRITICAL OCR INSTRUCTION: The serial numbers are often printed in a dotted/matrix font. Be extremely careful not to confuse zeros ('0') with eights ('8'). Look closely at the gaps. It usually starts with '000'. \nPRIORITY 2: Find custom handwritten Sharpie number or QR label. \nReturn JSON with keys: brand (string), color (string), type (string: PLA/PETG/ASA/ABS/TPU/PCTG/XPETG), asset_id (string or null), percentage_left (number 0-100), status ('inventory' for cardboard boxes, 'storage' for plastic spools)." },
+                        { text: "Analyze 3D filament spool/box. \nPRIORITY 1: Find the stand-alone factory printed alphanumeric serial number (like '000M046933024'). CRITICAL OCR INSTRUCTION: The serial numbers are often printed in a dotted/matrix font. Be extremely careful not to confuse zeros ('0') with eights ('8'). It usually starts with '000'. \nCRITICAL RULE: IGNORE numbers that belong to standard 1D barcodes (e.g., '02151018A' or typical UPC codes). Only look for the unique factory serial. \nPRIORITY 2: Find a custom QR code label. \n(Do NOT look for Sharpie marker writing). \nReturn JSON with keys: brand (string), color (string), type (string: PLA/PETG/ASA/ABS/TPU/PCTG/XPETG), asset_id (string or null), percentage_left (number 10, 20, 30, 40, 50, 60, 70, 80, 90, 100), status ('inventory' for cardboard boxes, 'storage' for plastic spools)." },
                         { inlineData: { mimeType: "image/jpeg", data: base64 } }
                     ]}],
                     generationConfig: { responseMimeType: "application/json" } 
@@ -387,14 +417,36 @@
             const result = JSON.parse(data.candidates[0].content.parts[0].text);
             
             closeAICamera();
+
+            // Handle DELETION mode
+            if (currentScanMode === 'delete') {
+                if (result.asset_id && result.asset_id !== "null") {
+                    const exists = inventory.find(i => i.id === result.asset_id);
+                    if (exists) {
+                        inventory = inventory.filter(i => i.id !== result.asset_id);
+                        localStorage.setItem('filamentFarmDB', JSON.stringify(inventory));
+                        renderInventory();
+                        alert(`Success: Asset #${result.asset_id} has been removed from inventory.`);
+                    } else {
+                        alert(`Error: Scanned ID #${result.asset_id} was not found in your inventory.`);
+                    }
+                } else {
+                    alert("Could not detect a valid Serial or QR code to delete.");
+                }
+                return; // Stop here, don't open the modal
+            }
+            
+            // Handle NORMAL mode
             document.getElementById('item-id').value = (result.asset_id && result.asset_id !== "null") ? result.asset_id : getNextId();
             document.getElementById('item-brand').value = result.brand || 'Unknown';
             document.getElementById('item-color').value = result.color || 'Unknown';
-            document.getElementById('item-qty').value = result.percentage_left || (result.status === 'inventory' ? 100 : 100);
             
-            // Ensures the material field gets populated properly, automatically casing to Uppercase
+            // Set the strict dropdown percentage
+            let qtyVal = result.percentage_left || (result.status === 'inventory' ? 100 : 100);
+            qtyVal = Math.round(qtyVal / 10) * 10; // ensure it locks to a valid 10s increment
+            document.getElementById('item-qty').value = qtyVal;
+
             document.getElementById('item-type').value = (result.type || 'PLA').toUpperCase();
-            
             document.getElementById('item-status').value = result.status || 'storage';
             
             document.getElementById('modal-title').textContent = "Confirm AI Scan";
@@ -404,8 +456,6 @@
         } catch (e) { 
             alert(`SYSTEM HALT:\n\n${e.message}\n\nPlease tap the 🔑 Key icon and try a new key.`); 
             closeAICamera();
-            document.getElementById('item-id').value = getNextId(); 
-            document.getElementById('item-modal').classList.add('open'); 
         }
         document.getElementById('ai-loading').style.display = 'none';
     }
@@ -418,7 +468,7 @@
             id, brand: document.getElementById('item-brand').value,
             color: document.getElementById('item-color').value,
             qty: document.getElementById('item-qty').value,
-            type: document.getElementById('item-type').value.toUpperCase(), // Force caps for grouping
+            type: document.getElementById('item-type').value.toUpperCase(),
             status: document.getElementById('item-status').value,
             user: activeUser, time: new Date().toISOString()
         };
