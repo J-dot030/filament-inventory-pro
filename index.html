@@ -169,11 +169,20 @@
                 <label class="label">Brand</label>
                 <input type="text" id="item-brand" class="input">
             </div>
+            
             <div class="input-group">
                 <label class="label">Material</label>
-                <select id="item-type" class="input">
-                    <option value="PLA">PLA</option><option value="PETG">PETG</option><option value="ASA">ASA</option><option value="ABS">ABS</option><option value="TPU">TPU</option>
-                </select>
+                <input type="text" id="item-type" list="materials-list" class="input" placeholder="Select or Type">
+                <datalist id="materials-list">
+                    <option value="PLA"></option>
+                    <option value="PETG"></option>
+                    <option value="ASA"></option>
+                    <option value="ABS"></option>
+                    <option value="TPU"></option>
+                    <option value="PCTG"></option>
+                    <option value="XPETG"></option>
+                    <option value="FLEX HARD"></option>
+                </datalist>
             </div>
         </div>
 
@@ -238,8 +247,9 @@
         
         const totalMatCount = {};
         inventory.forEach(i => {
-            if(!totalMatCount[i.type]) totalMatCount[i.type] = 0;
-            totalMatCount[i.type]++;
+            const materialType = (i.type || 'UNKNOWN').toUpperCase();
+            if(!totalMatCount[materialType]) totalMatCount[materialType] = 0;
+            totalMatCount[materialType]++;
         });
 
         const filtered = inventory.filter(i => {
@@ -250,8 +260,9 @@
 
         const grouped = {};
         filtered.forEach(i => {
-            if (!grouped[i.type]) grouped[i.type] = [];
-            grouped[i.type].push(i);
+            const materialType = (i.type || 'UNKNOWN').toUpperCase();
+            if (!grouped[materialType]) grouped[materialType] = [];
+            grouped[materialType].push(i);
         });
 
         Object.keys(grouped).sort().forEach(type => {
@@ -353,12 +364,13 @@
 
             log.innerText = `Analyzing with ${activeModel}...`;
             
+            // FIXED: Added severe strictness regarding the '0' vs '8' dot-matrix problem
             const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${activeModel}:generateContent?key=${apiKey}`, {
                 method: 'POST', 
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ 
                     contents: [{ parts: [
-                        { text: "Analyze 3D filament spool/box. Priority 1: alphanumeric factory serial number. Priority 2: Sharpie number/QR. Return JSON: brand (string), color (string), type (PLA/PETG/ASA/ABS/TPU), asset_id (string or null), percentage_left (number 0-100), status ('inventory' for cardboard boxes, 'storage' for plastic spools)." },
+                        { text: "Analyze 3D filament spool/box. \nPRIORITY 1: Find factory printed alphanumeric serial number (like '000M046933024'). CRITICAL OCR INSTRUCTION: The serial numbers are often printed in a dotted/matrix font. Be extremely careful not to confuse zeros ('0') with eights ('8'). Look closely at the gaps. It usually starts with '000'. \nPRIORITY 2: Find custom handwritten Sharpie number or QR label. \nReturn JSON with keys: brand (string), color (string), type (string: PLA/PETG/ASA/ABS/TPU/PCTG/XPETG), asset_id (string or null), percentage_left (number 0-100), status ('inventory' for cardboard boxes, 'storage' for plastic spools)." },
                         { inlineData: { mimeType: "image/jpeg", data: base64 } }
                     ]}],
                     generationConfig: { responseMimeType: "application/json" } 
@@ -379,7 +391,10 @@
             document.getElementById('item-brand').value = result.brand || 'Unknown';
             document.getElementById('item-color').value = result.color || 'Unknown';
             document.getElementById('item-qty').value = result.percentage_left || (result.status === 'inventory' ? 100 : 100);
-            document.getElementById('item-type').value = result.type || 'PLA';
+            
+            // Ensures the material field gets populated properly, automatically casing to Uppercase
+            document.getElementById('item-type').value = (result.type || 'PLA').toUpperCase();
+            
             document.getElementById('item-status').value = result.status || 'storage';
             
             document.getElementById('modal-title').textContent = "Confirm AI Scan";
@@ -403,7 +418,7 @@
             id, brand: document.getElementById('item-brand').value,
             color: document.getElementById('item-color').value,
             qty: document.getElementById('item-qty').value,
-            type: document.getElementById('item-type').value,
+            type: document.getElementById('item-type').value.toUpperCase(), // Force caps for grouping
             status: document.getElementById('item-status').value,
             user: activeUser, time: new Date().toISOString()
         };
