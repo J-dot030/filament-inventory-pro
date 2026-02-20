@@ -319,7 +319,7 @@
             const key = prompt('Update Gemini API Key:', localStorage.getItem('geminiApiKey') || '');
             if (key) {
                 localStorage.setItem('geminiApiKey', key);
-                localStorage.removeItem('workingModel'); // Reset model cache
+                localStorage.removeItem('workingModel'); 
                 showToast('API_KEY_UPDATED');
             }
         }
@@ -478,14 +478,11 @@
             document.getElementById('camera').style.display = 'none';
             if (aiStream) { aiStream.getTracks().forEach(t => t.stop()); aiStream = null; }
             
-            // Clean up timers if they exit early
             if (window.cooldownTimer) {
                 clearInterval(window.cooldownTimer);
                 window.cooldownTimer = null;
             }
             document.getElementById('processing').style.display = 'none';
-            
-            // Reset spinner UI
             const spinner = document.querySelector('.spinner');
             const text = document.getElementById('proc-text');
             spinner.style.animation = 'spin 1s linear infinite';
@@ -493,8 +490,8 @@
             text.style.color = 'var(--yellow)';
         }
 
-        // --- THE DYNAMIC SELF-HEALING AI LOGIC W/ AUTO-COOLDOWN ---
-        window.capture = async function() {
+        // --- THE DYNAMIC SELF-HEALING AI LOGIC W/ AUTO-COOLDOWN AND OCR FIX---
+        async function capture() {
             const key = getApiKey();
             if (!key) return;
 
@@ -514,7 +511,6 @@
             const base64 = canvas.toDataURL('image/jpeg', 0.8).split(',')[1];
 
             try {
-                // 1. Fetch Working Model to prevent "Not Found" error
                 let modelToUse = localStorage.getItem('workingModel');
                 
                 if (!modelToUse) {
@@ -540,14 +536,14 @@
 
                 log.textContent = `Injecting image to ${modelToUse}...`;
 
-                // 2. Scan with highly specific OCR fix
+                // THE SNIPER PROMPT
                 const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${modelToUse}:generateContent?key=${key}`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
                         contents: [{
                             parts: [
-                                { text: "Analyze this 3D filament spool/box. \nPRIORITY 1: Find the manufacturer's unique alphanumeric factory serial number. \nCRITICAL OCR WARNING: The serial is often printed in a coarse DOT MATRIX font. You will easily confuse '0' (zero) with '8' or '9'. Look extremely closely at the gaps. It almost ALWAYS starts with three zeros, like '000'. Example format: '000M046933024'. \nCRITICAL RULE 2: STRICTLY IGNORE 1D barcodes and their associated numbers (e.g., '02151018A', '9010241202027', or typical UPC codes). \nPRIORITY 2: If no factory serial exists, look for a custom QR code label. \nIf NEITHER a valid factory serial nor a QR code is found, you MUST return 'null' for asset_id. \nRespond strictly with valid JSON (no markdown blocks): {\"brand\": \"string\", \"color\": \"string\", \"type\": \"PLA/PETG/ASA/ABS/TPU/PCTG/XPETG\", \"asset_id\": \"string or null\", \"percentage_left\": 100, \"status\": \"inventory or storage\"}" },
+                                { text: "Analyze this 3D filament spool/box. \nPRIORITY 1: Find the manufacturer's unique alphanumeric factory serial number. \nCRITICAL OCR WARNING: The serial is printed in a coarse DOT MATRIX font. You will easily confuse '0' with '8', and '6' with '9' or '8'. Look extremely closely at the open gaps! A '6' has an opening on the top right. A '9' has an opening on the bottom left. A '0' is completely open in the middle. The serial almost ALWAYS starts with three zeros, like '000'. Example valid format: '000M046933024'. \nCRITICAL RULE 2: STRICTLY IGNORE 1D barcodes and their associated numbers (e.g., '02151018A', '9010241202027', or typical UPC codes). \nPRIORITY 2: If no factory serial exists, look for a custom QR code label. \nIf NEITHER a valid factory serial nor a QR code is found, you MUST return 'null' for asset_id. \nRespond strictly with valid JSON (no markdown blocks): {\"brand\": \"string\", \"color\": \"string\", \"type\": \"PLA/PETG/ASA/ABS/TPU/PCTG/XPETG\", \"asset_id\": \"string or null\", \"percentage_left\": 100, \"status\": \"inventory or storage\"}" },
                                 { inlineData: { mimeType: 'image/jpeg', data: base64 } }
                             ]
                         }]
@@ -558,7 +554,7 @@
                     if (res.status === 429) throw new Error("RATE_LIMIT");
                     
                     if (res.status === 404 || res.status === 403 || res.status === 400) {
-                        localStorage.removeItem('workingModel'); // Clear bad cache
+                        localStorage.removeItem('workingModel'); 
                     }
                     const errorData = await res.json();
                     throw new Error(errorData.error?.message || `HTTP Error ${res.status}`);
@@ -566,7 +562,6 @@
 
                 const data = await res.json();
                 
-                // 3. Safe Manual JSON Parse
                 let rawText = data.candidates[0].content.parts[0].text;
                 rawText = rawText.replace(/```json/gi, '').replace(/```/gi, '').trim();
                 const result = JSON.parse(rawText);
@@ -574,7 +569,16 @@
                 closeCamera();
                 proc.style.display = 'none';
 
-                // 4. Delete Mode Handler
+                // THE JAVASCRIPT AUTO-CORRECTOR (The Sledgehammer)
+                if (result.asset_id && result.asset_id !== 'null') {
+                    result.asset_id = result.asset_id.toUpperCase().trim();
+                    // If AI hallucinates the Extrudr 000M prefix as 888M or OOOM, forcefully correct it.
+                    if (result.asset_id.startsWith('888M') || result.asset_id.startsWith('OOOM') || result.asset_id.startsWith('O00M')) {
+                        result.asset_id = '000M' + result.asset_id.substring(4);
+                    }
+                }
+
+                // Delete Mode
                 if (currentScanMode === 'delete') {
                     if (result.asset_id && String(result.asset_id).toLowerCase() !== 'null' && String(result.asset_id).trim()) {
                         const exists = inventory.find(i => i.id === result.asset_id);
@@ -588,7 +592,7 @@
                     return;
                 }
 
-                // 5. Strict Bouncer (Normal Mode)
+                // Strict Bouncer
                 if (!result.asset_id || String(result.asset_id).toLowerCase() === 'null' || !String(result.asset_id).trim()) {
                     alert('⚠️ SCAN REJECTED\n\nNo serial or QR code detected. System prohibits logging unidentified assets.\n\nPlease apply a QR sticker.');
                     return;
@@ -607,21 +611,19 @@
                 document.getElementById('modal').classList.add('open');
 
             } catch (e) {
-                // AUTO-COOLDOWN SYSTEM
                 if (e.message === "RATE_LIMIT" || e.message.toLowerCase().includes("quota") || e.message.includes("429")) {
                     let timeLeft = 60;
                     spinner.style.animation = 'none';
                     spinner.style.borderTopColor = 'var(--red)';
                     text.style.color = 'var(--red)';
                     text.textContent = `SYS OVERLOAD: ${timeLeft}s`;
-                    log.textContent = "Google API speed limit (15/min) reached. Cooling down...";
+                    log.textContent = "Google API speed limit reached. Cooling down...";
                     
                     window.cooldownTimer = setInterval(() => {
                         timeLeft--;
                         text.textContent = `SYS OVERLOAD: ${timeLeft}s`;
                         if(timeLeft <= 0) {
                             clearInterval(window.cooldownTimer);
-                            // Reset UI & Auto Retry
                             spinner.style.animation = 'spin 1s linear infinite';
                             spinner.style.borderTopColor = 'var(--yellow)';
                             text.style.color = 'var(--yellow)';
