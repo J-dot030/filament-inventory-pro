@@ -3,30 +3,20 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
     <title>Filament OS — Enterprise Inventory</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
     <style>
-        /* (Keep all existing styles exactly as in the original) */
         *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
         :root {
-            --bg: #F3F4F6;
-            --surface: #FFFFFF;
-            --surface-hover: #F9FAFB;
-            --border: #E5E7EB;
-            --border-strong: #D1D5DB;
-            --text-main: #111827; 
-            --text-muted: #6B7280;
-            --accent: #2563EB;
-            --accent-hover: #1D4ED8;
-            --accent-bg: #EFF6FF;
-            --danger: #EF4444;
-            --danger-bg: #FEF2F2;
-            --warning: #F59E0B;
-            --warning-bg: #FFFBEB;
-            --success: #10B981;
-            --success-bg: #ECFDF5;
-            --radius: 12px;
+            --bg: #F3F4F6; --surface: #FFFFFF; --surface-hover: #F9FAFB; --border: #E5E7EB;
+            --border-strong: #D1D5DB; --text-main: #111827; --text-muted: #6B7280;
+            --accent: #2563EB; --accent-hover: #1D4ED8; --accent-bg: #EFF6FF;
+            --danger: #EF4444; --danger-bg: #FEF2F2; --warning: #F59E0B; --warning-bg: #FFFBEB;
+            --success: #10B981; --success-bg: #ECFDF5; --radius: 12px;
             --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
             --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
             --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
@@ -35,35 +25,28 @@
         body { height: 100%; background: var(--bg); color: var(--text-main); font-family: 'Inter', sans-serif; font-size: 14px; -webkit-font-smoothing: antialiased; }
         .app { display: flex; flex-direction: column; min-height: 100vh; max-width: 600px; margin: 0 auto; background: var(--bg); position: relative; }
         
-        /* HEADER */
         header { position: sticky; top: 0; z-index: 40; background: rgba(255, 255, 255, 0.9); backdrop-filter: blur(12px); border-bottom: 1px solid var(--border); padding: 16px 20px; display: flex; align-items: center; justify-content: space-between; }
         .logo { font-weight: 700; font-size: 16px; color: var(--text-main); display: flex; align-items: center; gap: 8px; letter-spacing: -0.02em; }
         .logo-icon { width: 24px; height: 24px; background: var(--accent); color: white; border-radius: 6px; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: bold;}
         .user-badge { font-size: 12px; font-weight: 500; background: var(--surface); padding: 6px 12px; border-radius: 20px; border: 1px solid var(--border); color: var(--text-muted); cursor: pointer; box-shadow: var(--shadow-sm); transition: 0.2s; }
         .user-badge:hover { border-color: var(--border-strong); color: var(--text-main); }
         .api-key-btn { font-size: 12px; font-weight: 500; background: var(--accent-bg); color: var(--accent); padding: 6px 10px; border-radius: 20px; border: 1px solid var(--accent-bg); cursor: pointer; margin-left: 8px; transition: 0.2s; }
-        .api-key-btn:hover { background: var(--accent); color: white; border-color: var(--accent); }
-
+        
         main { flex: 1; padding: 20px; padding-bottom: 120px; }
 
-        /* KPI DASHBOARD */
         .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 20px; }
         .stat-box { background: var(--surface); padding: 16px; border-radius: var(--radius); border: 1px solid var(--border); box-shadow: var(--shadow-sm); }
         .stat-label { font-size: 11px; color: var(--text-muted); text-transform: uppercase; margin-bottom: 6px; font-weight: 600; letter-spacing: 0.05em; }
         .stat-val { font-family: 'JetBrains Mono', monospace; font-size: 28px; font-weight: 600; color: var(--text-main); line-height: 1; }
 
-        /* TABS */
         .tabs { display: flex; background: var(--border); padding: 4px; border-radius: 10px; margin-bottom: 20px; }
         .tab { flex: 1; text-align: center; padding: 10px; font-weight: 600; font-size: 13px; color: var(--text-muted); cursor: pointer; border-radius: 8px; transition: 0.2s; }
         .tab.active { background: var(--surface); color: var(--accent); box-shadow: var(--shadow-sm); }
 
-        /* SEARCH */
         .search-wrap { position: relative; margin-bottom: 24px; }
         .search-input { width: 100%; background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 14px 16px; color: var(--text-main); font-size: 14px; outline: none; box-shadow: var(--shadow-sm); transition: 0.2s; }
         .search-input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-bg); }
-        .search-input::placeholder { color: #9CA3AF; }
 
-        /* INVENTORY LIST */
         .group-container { margin-bottom: 24px; }
         .group-header { display: flex; justify-content: space-between; align-items: center; padding: 10px 4px; font-size: 12px; font-weight: 700; border-bottom: 2px solid var(--border); margin-bottom: 12px; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-main); cursor: pointer;}
         .group-header.low-stock { border-bottom-color: var(--warning); color: var(--warning); }
@@ -71,49 +54,36 @@
         .group-content.open { display: flex; }
 
         .spool-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px; display: flex; align-items: center; gap: 14px; cursor: pointer; transition: 0.2s; box-shadow: var(--shadow-sm); }
-        .spool-card:hover { border-color: var(--border-strong); transform: translateY(-1px); box-shadow: var(--shadow-md); }
         .id-pill { font-family: 'JetBrains Mono', monospace; background: var(--accent-bg); color: var(--accent-hover); padding: 6px 10px; border-radius: 8px; font-size: 13px; font-weight: 700; min-width: 60px; text-align: center; border: 1px solid rgba(37,99,235,0.2); }
         .id-pill.box { background: var(--success-bg); color: var(--success); border-color: rgba(16,185,129,0.2); }
         .spool-info { flex: 1; min-width: 0; }
-        .spool-brand { font-weight: 600; font-size: 15px; color: var(--text-main); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-bottom: 4px; }
-        .spool-meta { font-size: 12px; color: var(--text-muted); display: flex; align-items: center; gap: 6px;}
+        .spool-brand { font-weight: 600; font-size: 15px; color: var(--text-main); margin-bottom: 4px; }
+        .spool-meta { font-size: 12px; color: var(--text-muted); }
         
         .qty-controls { display: flex; align-items: center; background: var(--bg); border: 1px solid var(--border); border-radius: 8px; overflow: hidden; }
-        .qty-btn { width: 32px; height: 32px; border: none; background: transparent; color: var(--text-muted); cursor: pointer; font-size: 16px; display: flex; align-items: center; justify-content: center; transition: 0.2s; }
-        .qty-btn:hover { background: var(--border); color: var(--text-main); }
+        .qty-btn { width: 32px; height: 32px; border: none; background: transparent; color: var(--text-muted); cursor: pointer; font-size: 16px; }
         .qty-val { width: 44px; text-align: center; font-family: 'JetBrains Mono', monospace; font-size: 13px; font-weight: 600; border-left: 1px solid var(--border); border-right: 1px solid var(--border); color: var(--text-main); }
 
-        /* BOTTOM SCAN BUTTON */
         .fab-bar { position: fixed; bottom: 0; left: 50%; transform: translateX(-50%); width: 100%; max-width: 600px; padding: 24px; background: linear-gradient(to top, rgba(243,244,246,1) 60%, rgba(243,244,246,0)); display: flex; z-index: 40; }
-        .btn-scan { flex: 1; background: var(--accent); color: white; border: none; padding: 18px; border-radius: 14px; font-weight: 600; font-size: 15px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; box-shadow: 0 10px 20px -5px rgba(37,99,235,0.4); transition: 0.2s; }
-        .btn-scan:active { transform: scale(0.98); box-shadow: none; }
+        .btn-scan { flex: 1; background: var(--accent); color: white; border: none; padding: 18px; border-radius: 14px; font-weight: 600; font-size: 15px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; box-shadow: 0 10px 20px -5px rgba(37,99,235,0.4); }
 
-        /* CAMERA OVERLAY */
         .camera-overlay { position: fixed; inset: 0; z-index: 100; background: #000; display: none; flex-direction: column; }
         #ai-video { flex: 1; object-fit: cover; }
-        .shutter { position: absolute; bottom: 50px; left: 50%; transform: translateX(-50%); width: 76px; height: 76px; border: 4px solid white; border-radius: 50%; background: rgba(255,255,255,0.3); cursor: pointer; box-shadow: 0 4px 12px rgba(0,0,0,0.5); }
-        .shutter:active { background: white; transform: translateX(-50%) scale(0.95); }
+        .shutter { position: absolute; bottom: 50px; left: 50%; transform: translateX(-50%); width: 76px; height: 76px; border: 4px solid white; border-radius: 50%; background: rgba(255,255,255,0.3); cursor: pointer; }
         .ai-status { position: absolute; inset: 0; background: rgba(0,0,0,0.85); display: none; align-items: center; justify-content: center; color: white; flex-direction: column; z-index: 110; text-align: center; }
         .spinner { border: 4px solid rgba(255,255,255,0.1); border-top: 4px solid var(--accent); border-radius: 50%; width: 48px; height: 48px; animation: spin 1s linear infinite; margin-bottom: 16px; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
 
-        /* MODAL */
         .modal { position: fixed; inset: 0; z-index: 200; background: rgba(17,24,39,0.7); backdrop-filter: blur(4px); display: none; align-items: flex-end; justify-content: center; }
         .modal.open { display: flex; }
-        .modal-sheet { background: var(--surface); width: 100%; max-width: 600px; padding: 24px; border-radius: 24px 24px 0 0; box-shadow: var(--shadow-lg); animation: slideUp 0.3s ease-out; }
-        @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
-        
+        .modal-sheet { background: var(--surface); width: 100%; max-width: 600px; padding: 24px; border-radius: 24px 24px 0 0; }
         .input-group { margin-bottom: 16px; }
-        .label { font-size: 11px; color: var(--text-muted); text-transform: uppercase; margin-bottom: 8px; font-weight: 600; display: block; letter-spacing: 0.05em; }
-        .input { width: 100%; background: var(--surface); border: 1px solid var(--border-strong); border-radius: 10px; padding: 12px 14px; color: var(--text-main); font-size: 15px; font-family: 'Inter', sans-serif; outline: none; transition: 0.2s; box-shadow: var(--shadow-sm); }
-        .input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-bg); }
-        .btn-save { width: 100%; background: var(--accent); color: white; padding: 16px; border-radius: 10px; border: none; font-weight: 600; font-size: 15px; cursor: pointer; margin-top: 8px; box-shadow: var(--shadow-md); transition: 0.2s;}
-        .btn-save:hover { background: var(--accent-hover); }
-        .btn-delete { width: 100%; margin-top: 16px; background: transparent; border: 1px solid var(--danger-bg); color: var(--danger); padding: 12px; border-radius: 10px; font-size: 13px; font-weight: 600; cursor: pointer; transition: 0.2s; }
-        .btn-delete:hover { background: var(--danger-bg); }
+        .label { font-size: 11px; color: var(--text-muted); text-transform: uppercase; margin-bottom: 8px; font-weight: 600; }
+        .input { width: 100%; background: var(--surface); border: 1px solid var(--border-strong); border-radius: 10px; padding: 12px 14px; font-size: 15px; outline: none; }
+        .btn-save { width: 100%; background: var(--accent); color: white; padding: 16px; border-radius: 10px; border: none; font-weight: 600; font-size: 15px; cursor: pointer; margin-top: 8px; }
+        .btn-delete { width: 100%; margin-top: 16px; background: transparent; border: 1px solid var(--danger-bg); color: var(--danger); padding: 12px; border-radius: 10px; font-size: 13px; font-weight: 600; cursor: pointer; }
         
-        /* TOAST */
-        .toast { position: fixed; top: 24px; left: 50%; transform: translateX(-50%); z-index: 300; background: var(--text-main); color: white; padding: 12px 24px; border-radius: 30px; font-weight: 500; font-size: 13px; box-shadow: var(--shadow-lg); display: none; }
+        .toast { position: fixed; top: 24px; left: 50%; transform: translateX(-50%); z-index: 300; background: var(--text-main); color: white; padding: 12px 24px; border-radius: 30px; font-weight: 500; font-size: 13px; display: none; }
     </style>
 </head>
 <body>
@@ -151,40 +121,33 @@
     </main>
 
     <div class="fab-bar">
-        <button class="btn-scan" onclick="openAICamera()">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7V5a2 2 0 0 1 2-2h2"/><path d="M17 3h2a2 2 0 0 1 2 2v2"/><path d="M21 17v2a2 2 0 0 1-2 2h-2"/><path d="M7 21H5a2 2 0 0 1-2-2v-2"/><circle cx="12" cy="12" r="3"/></svg>
-            Scan Asset (AI)
-        </button>
+        <button class="btn-scan" onclick="openAICamera()">Scan Asset (AI)</button>
     </div>
 </div>
 
 <div id="hint-toast" class="toast"></div>
 
 <div class="camera-overlay" id="ai-modal">
-    <div style="position:absolute; top:30px; width:100%; padding:0 24px; display:flex; justify-content:space-between; z-index:10; align-items:center;">
-        <span style="background: rgba(0,0,0,0.6); color: white; padding: 6px 12px; border-radius: 20px; font-size: 11px; font-weight: 600; letter-spacing: 0.05em; border: 1px solid rgba(255,255,255,0.2);">AI SCANNER ACTIVATED</span>
-        <button onclick="closeAICamera()" style="background:rgba(255,255,255,0.2); border:none; color:white; width: 36px; height: 36px; border-radius: 50%; font-size:16px; cursor: pointer; display: flex; align-items: center; justify-content: center;">✕</button>
+    <div style="position:absolute; top:30px; width:100%; padding:0 24px; display:flex; justify-content:space-between; align-items:center; z-index:10;">
+        <span style="background: rgba(0,0,0,0.6); color: white; padding: 6px 12px; border-radius: 20px; font-size: 11px; font-weight: 600;">AI SCANNER ACTIVATED</span>
+        <button onclick="closeAICamera()" style="background:rgba(255,255,255,0.2); border:none; color:white; width: 36px; height: 36px; border-radius: 50%; font-size:16px;">✕</button>
     </div>
     <video id="ai-video" autoplay playsinline></video>
     <canvas id="ai-canvas" style="display:none;"></canvas>
     
-    <div style="position: absolute; bottom: 140px; width: 100%; text-align: center; color: white; font-size: 13px; font-weight: 500; text-shadow: 0 2px 4px rgba(0,0,0,0.8);">
-        Aim at Serial Number, Sharpie, or Box Label
-    </div>
     <button class="shutter" onclick="captureAndAnalyze()"></button>
     
     <div class="ai-status" id="ai-loading">
         <div class="spinner"></div>
-        <div style="font-size: 18px; font-weight: 600; margin-bottom: 6px;">Processing Asset...</div>
-        <div style="color:#D1D5DB; font-size:13px;">Extracting JSON Data via Gemini Vision</div>
+        <div style="font-size: 18px; font-weight: 600;">Processing Asset...</div>
     </div>
 </div>
 
 <div class="modal" id="item-modal">
     <div class="modal-sheet">
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 24px;">
-            <h3 id="modal-title" style="font-size:18px; font-weight: 700; color: var(--text-main);">Sync Asset</h3>
-            <button onclick="closeItemModal()" style="background:var(--surface-2); border:none; width:32px; height:32px; border-radius:50%; color:var(--text-muted); cursor:pointer; font-size: 14px;">✕</button>
+            <h3 id="modal-title" style="font-size:18px; font-weight: 700;">Sync Asset</h3>
+            <button onclick="closeItemModal()" style="background:var(--border); border:none; width:32px; height:32px; border-radius:50%;">✕</button>
         </div>
         
         <div class="input-group">
@@ -208,7 +171,7 @@
             <div class="input-group">
                 <label class="label">Material</label>
                 <select id="item-type" class="input">
-                    <option value="PLA">PLA</option><option value="PETG">PETG</option><option value="ASA">ASA</option><option value="ABS">ABS</option><option value="TPU">TPU</option><option value="OTHER">OTHER</option>
+                    <option value="PLA">PLA</option><option value="PETG">PETG</option><option value="ASA">ASA</option><option value="ABS">ABS</option><option value="TPU">TPU</option>
                 </select>
             </div>
         </div>
@@ -220,11 +183,10 @@
             </div>
             <div class="input-group">
                 <label class="label">Remaining %</label>
-                <input type="number" id="item-qty" list="percents" class="input" placeholder="Type or Select">
+                <input type="number" id="item-qty" list="percents" class="input">
                 <datalist id="percents">
                     <option value="100"></option><option value="90"></option><option value="80"></option><option value="70"></option>
-                    <option value="60"></option><option value="50"></option><option value="40"></option><option value="30"></option>
-                    <option value="20"></option><option value="10"></option><option value="5"></option><option value="0"></option>
+                    <option value="50"></option><option value="25"></option><option value="10"></option>
                 </datalist>
             </div>
         </div>
@@ -235,7 +197,6 @@
 </div>
 
 <script>
-    // --- INTEGRATION SETUP ---
     let inventory = JSON.parse(localStorage.getItem('filamentFarmDB')) || [];
     let activeUser = localStorage.getItem('activeUser') || "Member 1";
     let aiStream = null;
@@ -243,7 +204,6 @@
 
     document.getElementById('current-user').textContent = activeUser;
 
-    // Helper to get API key (from localStorage or prompt)
     function getApiKey() {
         let key = localStorage.getItem('geminiApiKey');
         if (!key) {
@@ -274,21 +234,18 @@
         const search = document.getElementById('search-input').value.toLowerCase();
         grid.innerHTML = '';
         
-        // Count global materials for low stock warning
         const totalMatCount = {};
         inventory.forEach(i => {
             if(!totalMatCount[i.type]) totalMatCount[i.type] = 0;
             totalMatCount[i.type]++;
         });
 
-        // Filter by Search and Tab
         const filtered = inventory.filter(i => {
             const matchesSearch = ((i.id||"") + (i.brand||"") + (i.type||"") + (i.color||"")).toLowerCase().includes(search);
             const itemStatus = i.status || 'storage'; 
             return matchesSearch && (itemStatus === currentTab);
         });
 
-        // Group by Material
         const grouped = {};
         filtered.forEach(i => {
             if (!grouped[i.type]) grouped[i.type] = [];
@@ -303,7 +260,6 @@
             const container = document.createElement('div');
             container.className = 'group-container';
             
-            // Generate List Items
             let htmlList = '';
             items.forEach(i => {
                 const isBox = (i.status === 'inventory');
@@ -311,11 +267,8 @@
                     <div class="spool-card" onclick="editItem('${i.id}')">
                         <div class="id-pill ${isBox ? 'box' : ''}">${isBox ? '📦' : '#'}${i.id}</div>
                         <div class="spool-info">
-                            <div class="spool-brand">${i.brand || 'Unknown Brand'}</div>
-                            <div class="spool-meta">
-                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right:2px"><circle cx="12" cy="12" r="10"/></svg>
-                                ${i.color || 'No Color'} • Updated by ${i.user}
-                            </div>
+                            <div class="spool-brand">${i.brand || 'Unknown'}</div>
+                            <div class="spool-meta">${i.color || 'No Color'} • ${i.user}</div>
                         </div>
                         <div class="qty-controls" onclick="event.stopPropagation()">
                             <button class="qty-btn" onclick="updateQty('${i.id}', -10)">-</button>
@@ -326,20 +279,13 @@
                 `;
             });
 
-            // Container Header
             container.innerHTML = `
                 <div class="group-header ${isLowStock ? 'low-stock' : ''}" onclick="document.getElementById('${groupId}').classList.toggle('open')">
-                    <span style="display:flex; align-items:center; gap:8px;">
-                        ${type} 
-                        ${isLowStock ? '<span style="background:var(--warning-bg); color:var(--warning); padding:2px 6px; border-radius:4px; font-size:9px;">⚠️ < 3 TOTAL</span>' : ''}
-                    </span>
-                    <span style="color:var(--text-muted); font-size:11px;">${items.length} Asset(s) ▼</span>
+                    <span>${type} ${isLowStock ? '⚠️ LOW STOCK' : ''}</span>
+                    <span>${items.length} Asset(s) ▼</span>
                 </div>
-                <div class="group-content open" id="${groupId}">
-                    ${htmlList}
-                </div>
+                <div class="group-content open" id="${groupId}">${htmlList}</div>
             `;
-            
             grid.appendChild(container);
         });
 
@@ -352,32 +298,29 @@
     }
 
     async function openAICamera() {
+        const apiKey = getApiKey();
+        if (!apiKey) return;
+
         const next = getNextId();
         const toast = document.getElementById('hint-toast');
         toast.style.display = 'block';
         toast.innerHTML = `If no Factory Serial exists, write: <b>#${next}</b>`;
-        setTimeout(() => toast.style.display = 'none', 5000);
+        setTimeout(() => toast.style.display = 'none', 4000);
 
         document.getElementById('ai-modal').style.display = 'flex';
         try {
             aiStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
             document.getElementById('ai-video').srcObject = aiStream;
         } catch (e) {
-            alert("Camera access denied. Please check browser permissions.");
+            alert("Camera access denied.");
             closeAICamera();
         }
     }
 
     async function captureAndAnalyze() {
-        // Ensure API key is available
         const apiKey = getApiKey();
-        if (!apiKey) {
-            alert("Gemini API Key is required for AI scanning. Please set it using the 🔑 Key button.");
-            closeAICamera();
-            return;
-        }
-
         document.getElementById('ai-loading').style.display = 'flex';
+        
         const canvas = document.getElementById('ai-canvas');
         const video = document.getElementById('ai-video');
         canvas.width = 800; canvas.height = 600;
@@ -385,22 +328,20 @@
         const base64 = canvas.toDataURL('image/jpeg', 0.8).split(',')[1];
         
         try {
-           const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-latest:generateContent?key=${apiKey}`, {
+            // UPDATED TO GEMINI-2.0-FLASH FOR GUARANTEED ACCESS
+            const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`, {
                 method: 'POST', 
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ 
                     contents: [{ parts: [
-                        { text: "Analyze 3D filament spool/box image. PRIORITY 1: Find factory printed alphanumeric serial number (like '000M046933024'). PRIORITY 2: Find custom handwritten Sharpie number or QR label. PRIORITY 3: Return null for asset_id if none found. Also determine if this is an unopened cardboard BOX ('inventory') or an opened plastic SPOOL ('storage'). Return JSON with keys: brand (string), color (string), type (string: PLA/PETG/ASA/ABS/TPU), asset_id (string or null), percentage_left (number 0-100), status (string: 'inventory' or 'storage')." },
+                        { text: "Analyze 3D filament spool/box. Priority 1: alphanumeric factory serial number. Priority 2: Sharpie number/QR. Return JSON: brand (string), color (string), type (PLA/PETG/ASA/ABS/TPU), asset_id (string or null), percentage_left (number 0-100), status ('inventory' for cardboard boxes, 'storage' for plastic spools)." },
                         { inlineData: { mimeType: "image/jpeg", data: base64 } }
                     ]}],
                     generationConfig: { responseMimeType: "application/json" } 
                 })
             });
             
-            if (!res.ok) {
-                const errorData = await res.json();
-                throw new Error(errorData.error?.message || `HTTP ${res.status}`);
-            }
+            if (!res.ok) throw new Error("API Key Invalid or Model Error.");
             
             const data = await res.json();
             const result = JSON.parse(data.candidates[0].content.parts[0].text);
@@ -418,12 +359,9 @@
             document.getElementById('item-modal').classList.add('open');
             
         } catch (e) { 
-            console.error("AI Error:", e);
-            alert("AI processing failed: " + e.message + "\nFalling back to manual entry."); 
+            alert("AI Error. Please enter manually."); 
             closeAICamera();
             document.getElementById('item-id').value = getNextId(); 
-            document.getElementById('modal-title').textContent = "Add New Asset";
-            document.getElementById('btn-delete').style.display = "none";
             document.getElementById('item-modal').classList.add('open'); 
         }
         document.getElementById('ai-loading').style.display = 'none';
@@ -431,25 +369,22 @@
 
     function saveItem() {
         const id = document.getElementById('item-id').value;
-        if(!id) { alert("ID is required"); return; }
+        if(!id) return;
         
         const newItem = {
-            id, 
-            brand: document.getElementById('item-brand').value,
+            id, brand: document.getElementById('item-brand').value,
             color: document.getElementById('item-color').value,
             qty: document.getElementById('item-qty').value,
             type: document.getElementById('item-type').value,
             status: document.getElementById('item-status').value,
-            user: activeUser,
-            time: new Date().toISOString()
+            user: activeUser, time: new Date().toISOString()
         };
         
         const idx = inventory.findIndex(i => i.id === id);
         if (idx >= 0) inventory[idx] = newItem; else inventory.push(newItem);
         
         localStorage.setItem('filamentFarmDB', JSON.stringify(inventory));
-        closeItemModal(); 
-        renderInventory();
+        closeItemModal(); renderInventory();
     }
 
     function updateQty(id, change) {
@@ -470,8 +405,6 @@
         document.getElementById('item-qty').value = i.qty || 100;
         document.getElementById('item-type').value = i.type || "PLA";
         document.getElementById('item-status').value = i.status || 'storage';
-        
-        document.getElementById('modal-title').textContent = "Edit Asset";
         document.getElementById('btn-delete').style.display = "block";
         document.getElementById('item-modal').classList.add('open');
     }
@@ -483,16 +416,13 @@
 
     function closeAICamera() { document.getElementById('ai-modal').style.display = 'none'; if(aiStream) aiStream.getTracks().forEach(t => t.stop()); }
     function closeItemModal() { document.getElementById('item-modal').classList.remove('open'); }
+    function deleteItem() { if(confirm("Permanently delete this asset?")) { inventory = inventory.filter(i => i.id !== document.getElementById('item-id').value); localStorage.setItem('filamentFarmDB', JSON.stringify(inventory)); closeItemModal(); renderInventory(); } }
     
-    function deleteItem() { 
-        if(confirm("Are you sure you want to permanently delete this asset?")) { 
-            inventory = inventory.filter(i => i.id !== document.getElementById('item-id').value); 
-            localStorage.setItem('filamentFarmDB', JSON.stringify(inventory)); 
-            closeItemModal(); 
-            renderInventory(); 
-        } 
+    // Add cache buster to URL automatically to bypass mobile cache if not present
+    if (window.location.href.indexOf('?v=') === -1 && window.location.href.indexOf('github.io') > -1) {
+        window.location.replace(window.location.href.split('#')[0] + '?v=' + new Date().getTime());
     }
-    
+
     renderInventory();
 </script>
 </body>
