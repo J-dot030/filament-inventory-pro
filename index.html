@@ -198,7 +198,7 @@
         <canvas id="canvas"></canvas>
         <div class="camera-controls">
             <div style="font-family: 'JetBrains Mono', monospace; font-size:11px; color:var(--yellow); background:rgba(0,0,0,0.8); padding:8px 16px; border-radius:4px; margin-bottom:20px; display:inline-block; border:1px solid var(--yellow);">
-                > AIM AT SERIAL OR QR <
+                > ALLOW AUTO-FOCUS BEFORE TAP <
             </div><br>
             <button class="shutter" id="shutter" onclick="capture()"></button>
         </div>
@@ -240,7 +240,7 @@
                     <datalist id="mat-list">
                         <option value="PLA"></option><option value="PETG"></option><option value="ASA"></option>
                         <option value="ABS"></option><option value="TPU"></option><option value="PCTG"></option>
-                        <option value="XPETG"></option><option value="FLEX"></option>
+                        <option value="XPETG"></option>
                     </datalist>
                 </div>
             </div>
@@ -465,7 +465,14 @@
             document.getElementById('camera').style.display = 'flex';
 
             try {
-                aiStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
+                // HIGH DEFINITION CAMERA REQUEST
+                aiStream = await navigator.mediaDevices.getUserMedia({ 
+                    video: { 
+                        facingMode: 'environment',
+                        width: { ideal: 2560 }, // Request up to 1440p to prevent blur
+                        height: { ideal: 1440 }
+                    } 
+                });
                 document.getElementById('video').srcObject = aiStream;
             } catch (e) {
                 showToast('ERR: CAM_DENIED', 'error');
@@ -489,7 +496,6 @@
             text.style.color = 'var(--yellow)';
         }
 
-        // --- SMART GEOMETRY AND PATTERN FIX ---
         window.capture = async function() {
             const key = getApiKey();
             if (!key) return;
@@ -501,13 +507,18 @@
 
             proc.style.display = 'flex';
             text.textContent = 'ANALYZING...';
-            log.textContent = 'Extracting typography data...';
+            log.textContent = 'Extracting high-res typography...';
 
             const canvas = document.getElementById('canvas');
             const video = document.getElementById('video');
-            canvas.width = 800; canvas.height = 600;
-            canvas.getContext('2d').drawImage(video, 0, 0, 800, 600);
-            const base64 = canvas.toDataURL('image/jpeg', 0.8).split(',')[1];
+            
+            // FULL NATIVE RESOLUTION MAPPING (Fixes Blur)
+            canvas.width = video.videoWidth; 
+            canvas.height = video.videoHeight;
+            canvas.getContext('2d').drawImage(video, 0, 0, canvas.width, canvas.height);
+            
+            // HIGH FIDELITY JPEG (Quality 0.95 instead of 0.80)
+            const base64 = canvas.toDataURL('image/jpeg', 0.95).split(',')[1];
 
             try {
                 let modelToUse = localStorage.getItem('workingModel');
@@ -521,7 +532,6 @@
                     }
                     const data = await req.json();
                     const models = data.models.map(m => m.name.replace('models/', ''));
-                    
                     if (models.includes('gemini-2.5-flash')) modelToUse = 'gemini-2.5-flash';
                     else if (models.includes('gemini-2.0-flash')) modelToUse = 'gemini-2.0-flash';
                     else if (models.includes('gemini-1.5-flash-latest')) modelToUse = 'gemini-1.5-flash-latest';
@@ -565,15 +575,11 @@
                 let finalId = result.asset_id;
                 if (String(finalId).toLowerCase() === 'null') finalId = null;
 
-                // JS FILTER: Reject Sunlu barcodes or generic 13-digit EAN barcodes without an 'M'
                 if (finalId && (finalId.includes('02151018A') || finalId.match(/^[0-9]{12,14}$/))) {
                     finalId = null;
                 }
 
-                // JS FALLBACK: If AI couldn't parse the ID directly, hunt for the Extrudr pattern in the raw text dump
                 const rawDump = (result.raw_text_dump || "").toUpperCase().replace(/\s/g, '');
-                
-                // Regex looks for: 3 characters (numbers or common letters confused for numbers), the letter M, and 9 characters.
                 const extrudrPattern = /[0-9OQZSB]{3}M[0-9OQZSB]{9}/; 
 
                 if (result.brand && result.brand.toLowerCase().includes('extrudr') || rawDump.includes('EXTRUDR')) {
@@ -582,19 +588,17 @@
                         finalId = match[0];
                     }
                     
-                    // Sanitize AI font hallucinations based on geometric shape similarities
                     if (finalId && finalId.includes('M')) {
-                        finalId = finalId.replace(/O/g, '0') // Letter O -> Zero
-                                         .replace(/Q/g, '0') // Letter Q -> Zero
-                                         .replace(/B/g, '8') // Letter B -> Eight
-                                         .replace(/S/g, '5') // Letter S -> Five
-                                         .replace(/Z/g, '2'); // Letter Z -> Two
+                        finalId = finalId.replace(/O/g, '0')
+                                         .replace(/Q/g, '0')
+                                         .replace(/B/g, '8')
+                                         .replace(/S/g, '5')
+                                         .replace(/Z/g, '2');
                     }
                 }
 
                 result.asset_id = finalId;
 
-                // Delete Mode Handler
                 if (currentScanMode === 'delete') {
                     if (result.asset_id) {
                         const exists = inventory.find(i => i.id === result.asset_id);
@@ -608,7 +612,6 @@
                     return;
                 }
 
-                // Strict Bouncer
                 if (!result.asset_id) {
                     alert('⚠️ SCAN REJECTED\n\nNo serial or QR code detected. System prohibits logging unidentified assets.\n\nPlease apply a QR sticker.');
                     return;
