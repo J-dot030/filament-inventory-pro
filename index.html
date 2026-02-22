@@ -11,30 +11,18 @@
         * { margin: 0; padding: 0; box-sizing: border-box; }
         
         :root {
-            --bg: #0a0a0a;
-            --surface: #141414;
-            --surface-hover: #1f1f1f;
-            --yellow: #FFD700;
-            --yellow-dim: rgba(255, 215, 0, 0.2);
-            --border: #333333;
-            --text: #ffffff;
-            --text-dim: #888888;
-            --red: #FF4444;
-            --green: #00FF88;
+            --bg: #0a0a0a; --surface: #141414; --surface-hover: #1f1f1f;
+            --yellow: #FFD700; --yellow-dim: rgba(255, 215, 0, 0.2); --border: #333333;
+            --text: #ffffff; --text-dim: #888888; --red: #FF4444; --green: #00FF88;
         }
         
         body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
         
         /* CRT Scanline */
-        body::before {
-            content: ''; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: repeating-linear-gradient(0deg, rgba(0,0,0,0.15), rgba(0,0,0,0.15) 1px, transparent 1px, transparent 2px);
-            pointer-events: none; z-index: 999;
-        }
+        body::before { content: ''; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: repeating-linear-gradient(0deg, rgba(0,0,0,0.15), rgba(0,0,0,0.15) 1px, transparent 1px, transparent 2px); pointer-events: none; z-index: 999; }
         
         .container { max-width: 600px; margin: 0 auto; position: relative; padding-bottom: 120px; }
         
-        /* Header */
         header { background: var(--surface); border-bottom: 2px solid var(--yellow); padding: 16px 20px; position: sticky; top: 0; z-index: 100; box-shadow: 0 4px 20px rgba(255, 215, 0, 0.1); }
         .header-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
         .logo { font-family: 'JetBrains Mono', monospace; font-size: 20px; font-weight: 800; color: var(--yellow); letter-spacing: 1px; display: flex; align-items: center; gap: 8px; }
@@ -48,23 +36,19 @@
         .header-btn { background: transparent; border: 1px solid var(--border); color: var(--text-dim); padding: 6px 12px; border-radius: 4px; font-size: 11px; font-weight: 700; cursor: pointer; transition: 0.2s; font-family: 'JetBrains Mono', monospace; text-transform: uppercase; }
         .header-btn:hover { border-color: var(--yellow); color: var(--yellow); }
         
-        /* Stats */
         .stats { padding: 20px; display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
         .stat-card { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 16px; border-left: 3px solid var(--yellow); }
         .stat-label { font-size: 10px; color: var(--text-dim); text-transform: uppercase; font-weight: 700; letter-spacing: 1px; margin-bottom: 4px; }
         .stat-value { font-family: 'JetBrains Mono', monospace; font-size: 28px; font-weight: 800; color: var(--text); }
         
-        /* Tabs */
         .tabs { display: flex; padding: 0 20px; gap: 8px; margin-bottom: 20px; }
         .tab { flex: 1; padding: 12px; background: var(--surface); border: 1px solid var(--border); border-radius: 6px; text-align: center; font-weight: 700; font-size: 12px; cursor: pointer; color: var(--text-dim); text-transform: uppercase; letter-spacing: 1px; }
         .tab.active { background: var(--yellow-dim); color: var(--yellow); border-color: var(--yellow); }
         
-        /* Search */
         .search { padding: 0 20px; margin-bottom: 24px; }
         .search-input { width: 100%; background: var(--surface); border: 1px solid var(--border); border-radius: 6px; padding: 14px 16px; color: var(--text); font-size: 14px; outline: none; font-family: 'JetBrains Mono', monospace; }
         .search-input:focus { border-color: var(--yellow); box-shadow: 0 0 15px var(--yellow-dim); }
         
-        /* Inventory List */
         .inventory { padding: 0 20px; }
         .group-header { color: var(--yellow); font-family: 'JetBrains Mono', monospace; font-size: 12px; font-weight: 700; border-bottom: 1px dashed var(--border); padding-bottom: 8px; margin-bottom: 12px; display: flex; justify-content: space-between; cursor: pointer; }
         .group-items { display: none; flex-direction: column; gap: 8px; margin-bottom: 24px; }
@@ -83,12 +67,10 @@
         .qty-btn:hover { color: var(--yellow); background: var(--surface-hover); }
         .qty-val { font-family: 'JetBrains Mono', monospace; font-size: 12px; font-weight: 700; width: 44px; text-align: center; color: var(--yellow); border-left: 1px solid var(--border); border-right: 1px solid var(--border); }
         
-        /* Action Bar */
         .actions { position: fixed; bottom: 0; left: 50%; transform: translateX(-50%); width: 100%; max-width: 600px; background: var(--bg); border-top: 2px solid var(--yellow); padding: 16px 20px; display: flex; gap: 12px; z-index: 50; }
         .btn-main { flex: 2; padding: 16px; border-radius: 6px; border: none; background: var(--yellow); color: var(--bg); font-weight: 800; font-size: 14px; cursor: pointer; text-transform: uppercase; font-family: 'JetBrains Mono', monospace; }
         .btn-secondary { flex: 1; padding: 16px; border-radius: 6px; border: 1px solid var(--red); background: transparent; color: var(--red); font-weight: 700; font-size: 12px; cursor: pointer; text-transform: uppercase; font-family: 'JetBrains Mono', monospace; }
         
-        /* Camera */
         .camera { position: fixed; inset: 0; background: #000; z-index: 400; display: none; flex-direction: column; }
         .camera-header { padding: 20px; display: flex; justify-content: space-between; position: absolute; width: 100%; z-index: 10; }
         .camera-badge { background: var(--yellow); color: var(--bg); padding: 6px 12px; border-radius: 4px; font-weight: 800; font-size: 11px; font-family: 'JetBrains Mono', monospace; }
@@ -108,7 +90,6 @@
         .process-text { font-family: 'JetBrains Mono', monospace; font-size: 14px; font-weight: 700; color: var(--yellow); margin-bottom: 8px; }
         .process-log { font-size: 11px; color: var(--text-dim); font-family: 'JetBrains Mono', monospace; }
         
-        /* Modal */
         .modal { position: fixed; inset: 0; background: rgba(0, 0, 0, 0.85); z-index: 450; display: none; align-items: center; justify-content: center; padding: 20px; }
         .modal.open { display: flex; }
         .modal-content { background: var(--surface); border: 2px solid var(--yellow); border-radius: 8px; padding: 24px; width: 100%; max-width: 400px; }
@@ -122,11 +103,9 @@
         .form-input[readonly] { color: var(--yellow); font-family: 'JetBrains Mono', monospace; font-weight: 700; background: var(--surface-hover); }
         .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
         
-        /* Toast */
         .toast { position: fixed; top: 20px; left: 50%; transform: translateX(-50%); background: var(--yellow); color: var(--bg); padding: 12px 24px; border-radius: 4px; font-family: 'JetBrains Mono', monospace; font-weight: 800; font-size: 12px; z-index: 600; display: none; text-align: center; box-shadow: 0 4px 15px rgba(255,215,0,0.3); }
         .toast.error { background: var(--red); color: white; box-shadow: 0 4px 15px rgba(255,68,68,0.3); }
         
-        /* Login */
         .login-screen { position: fixed; inset: 0; background: var(--bg); z-index: 500; display: flex; align-items: center; justify-content: center; padding: 20px; }
         .login-screen.hidden { display: none; }
         .login-box { background: var(--surface); border: 2px solid var(--border); border-left: 4px solid var(--yellow); border-radius: 8px; padding: 32px; width: 100%; max-width: 360px; }
@@ -270,7 +249,6 @@
     <div class="toast" id="toast"></div>
 
     <script>
-        // Database Init
         let inventory = JSON.parse(localStorage.getItem('filamentFarmDB')) || [];
         let activeUser = localStorage.getItem('activeUser');
         let aiStream = null;
@@ -278,7 +256,6 @@
         let currentScanMode = 'scan'; 
         window.cooldownTimer = null;
 
-        // Auto-login check
         if(activeUser) {
             document.getElementById('login-screen').classList.add('hidden');
             document.getElementById('main-app').style.display = 'block';
@@ -319,7 +296,7 @@
             const key = prompt('Update Gemini API Key:', localStorage.getItem('geminiApiKey') || '');
             if (key) {
                 localStorage.setItem('geminiApiKey', key);
-                localStorage.removeItem('workingModel'); // Reset model cache
+                localStorage.removeItem('workingModel'); 
                 showToast('API_KEY_UPDATED');
             }
         }
@@ -490,7 +467,6 @@
             text.style.color = 'var(--yellow)';
         }
 
-        // --- THE DYNAMIC SELF-HEALING AI LOGIC W/ AUTO-COOLDOWN AND ADVANCED DOT-MATRIX OCR FIX ---
         window.capture = async function() {
             const key = getApiKey();
             if (!key) return;
@@ -536,14 +512,14 @@
 
                 log.textContent = `Injecting image to ${modelToUse}...`;
 
-                // THE NEW "SLASHED ZERO" SNIPER PROMPT
+                // --- THE ULTIMATE "SLASHED ZERO" TRAINING PROMPT ---
                 const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${modelToUse}:generateContent?key=${key}`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
                         contents: [{
                             parts: [
-                                { text: "Analyze this 3D filament spool/box.\nPRIORITY 1: Find the manufacturer's unique alphanumeric factory serial number.\nCRITICAL OCR WARNING FOR DOT-MATRIX FONTS:\nPay extreme attention to the dot patterns for numbers:\n- ZERO ('0'): It is a SLASHED zero. It contains a diagonal line running through the center. Do NOT confuse it with an 8.\n- EIGHT ('8'): Has two closed loops (top and bottom) with a horizontal crossbar in the middle. No diagonal line.\n- SIX ('6'): Has a closed loop at the bottom and an open gap on the top right.\n- NINE ('9'): Has a closed loop at the top and an open gap on the bottom left.\nExtrudr spools almost always start with three slashed zeros followed by an M (e.g., '000M...').\nCRITICAL RULE 2: STRICTLY IGNORE 1D barcodes and their associated numbers (e.g., '02151018A', '9010241202027').\nPRIORITY 2: If no factory serial exists, look for a custom QR code label.\nIf NEITHER a valid factory serial nor a QR code is found, return 'null' for asset_id.\nRespond strictly with valid JSON (no markdown blocks): {\"brand\": \"string\", \"color\": \"string\", \"type\": \"PLA/PETG/ASA/ABS/TPU/PCTG/XPETG\", \"asset_id\": \"string or null\", \"percentage_left\": 100, \"status\": \"inventory or storage\"}" },
+                                { text: "Analyze this 3D filament spool/box and extract data into JSON.\n\nCRITICAL RULES FOR EXTRUDR SPOOLS (DOT-MATRIX FONT):\n- Extrudr serials are exactly 13 characters, starting with '000M'.\n- The font uses a slashed zero (Ø). If you see a dot-matrix number with a diagonal slash inside it, it is ALWAYS a zero '0'.\n- Do NOT confuse slashed zeros '0' with the number '8'.\n- Do NOT confuse '6' or '9' with '8'. Look at the open gaps.\n- Example of a correct read: '000M046933024'. Example of an INCORRECT read: '888M846933824'.\n\nCRITICAL RULES FOR BARCODES:\n- Strictly IGNORE numbers attached to 1D barcodes (like '02151018A' or '9010241202027'). These are generic product codes, not unique asset IDs.\n\nReturn ONLY valid JSON (no markdown text) with keys: brand, color, type (PLA/PETG/ASA/ABS/TPU), asset_id (unique serial/QR, or null), percentage_left (10-100), status ('inventory' or 'storage')." },
                                 { inlineData: { mimeType: 'image/jpeg', data: base64 } }
                             ]
                         }]
@@ -552,9 +528,8 @@
 
                 if (!res.ok) {
                     if (res.status === 429) throw new Error("RATE_LIMIT");
-                    
                     if (res.status === 404 || res.status === 403 || res.status === 400) {
-                        localStorage.removeItem('workingModel'); // Clear bad cache
+                        localStorage.removeItem('workingModel'); 
                     }
                     const errorData = await res.json();
                     throw new Error(errorData.error?.message || `HTTP Error ${res.status}`);
@@ -562,7 +537,6 @@
 
                 const data = await res.json();
                 
-                // Safe Manual JSON Parse
                 let rawText = data.candidates[0].content.parts[0].text;
                 rawText = rawText.replace(/```json/gi, '').replace(/```/gi, '').trim();
                 const result = JSON.parse(rawText);
@@ -570,14 +544,22 @@
                 closeCamera();
                 proc.style.display = 'none';
 
-                // THE JAVASCRIPT AUTO-CORRECTOR (Safety Net)
+                // --- THE SLEDGEHAMMER AUTO-CORRECTOR ---
                 if (result.asset_id && result.asset_id !== 'null') {
-                    result.asset_id = result.asset_id.toUpperCase().trim();
-                    // If AI hallucinates the Extrudr 000M prefix as a mix of 8/O/0/Q followed by M, force correct it to 000M
-                    result.asset_id = result.asset_id.replace(/^[08OQ]{3}M/, '000M');
+                    result.asset_id = String(result.asset_id).toUpperCase().trim();
+                    
+                    // If it is an Extrudr spool, or the ID looks vaguely like the Extrudr format
+                    if ((result.brand && result.brand.toLowerCase().includes('extrudr')) || result.asset_id.match(/^[08OQ]{1,3}M/)) {
+                        // Strip any accidental spaces
+                        let cleanId = result.asset_id.replace(/\s/g, '');
+                        // Force the exact 000M prefix (overriding 888M, OOOM, O00M, etc.)
+                        cleanId = '000M' + cleanId.substring(4);
+                        // Fix letter O's that the AI accidentally put in the numbers section
+                        cleanId = cleanId.substring(0, 4) + cleanId.substring(4).replace(/[OQ]/g, '0');
+                        result.asset_id = cleanId;
+                    }
                 }
 
-                // Delete Mode Handler
                 if (currentScanMode === 'delete') {
                     if (result.asset_id && String(result.asset_id).toLowerCase() !== 'null' && String(result.asset_id).trim()) {
                         const exists = inventory.find(i => i.id === result.asset_id);
@@ -591,7 +573,6 @@
                     return;
                 }
 
-                // Strict Bouncer (Normal Mode)
                 if (!result.asset_id || String(result.asset_id).toLowerCase() === 'null' || !String(result.asset_id).trim()) {
                     alert('⚠️ SCAN REJECTED\n\nNo serial or QR code detected. System prohibits logging unidentified assets.\n\nPlease apply a QR sticker.');
                     return;
@@ -610,7 +591,6 @@
                 document.getElementById('modal').classList.add('open');
 
             } catch (e) {
-                // AUTO-COOLDOWN SYSTEM
                 if (e.message === "RATE_LIMIT" || e.message.toLowerCase().includes("quota") || e.message.includes("429")) {
                     let timeLeft = 60;
                     spinner.style.animation = 'none';
@@ -624,7 +604,6 @@
                         text.textContent = `SYS OVERLOAD: ${timeLeft}s`;
                         if(timeLeft <= 0) {
                             clearInterval(window.cooldownTimer);
-                            // Reset UI & Auto Retry
                             spinner.style.animation = 'spin 1s linear infinite';
                             spinner.style.borderTopColor = 'var(--yellow)';
                             text.style.color = 'var(--yellow)';
