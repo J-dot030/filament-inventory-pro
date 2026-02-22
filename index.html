@@ -465,11 +465,10 @@
             document.getElementById('camera').style.display = 'flex';
 
             try {
-                // HIGH DEFINITION CAMERA REQUEST
                 aiStream = await navigator.mediaDevices.getUserMedia({ 
                     video: { 
                         facingMode: 'environment',
-                        width: { ideal: 2560 }, // Request up to 1440p to prevent blur
+                        width: { ideal: 2560 }, 
                         height: { ideal: 1440 }
                     } 
                 });
@@ -507,17 +506,15 @@
 
             proc.style.display = 'flex';
             text.textContent = 'ANALYZING...';
-            log.textContent = 'Extracting high-res typography...';
+            log.textContent = 'Extracting typography & objects...';
 
             const canvas = document.getElementById('canvas');
             const video = document.getElementById('video');
             
-            // FULL NATIVE RESOLUTION MAPPING (Fixes Blur)
             canvas.width = video.videoWidth; 
             canvas.height = video.videoHeight;
             canvas.getContext('2d').drawImage(video, 0, 0, canvas.width, canvas.height);
             
-            // HIGH FIDELITY JPEG (Quality 0.95 instead of 0.80)
             const base64 = canvas.toDataURL('image/jpeg', 0.95).split(',')[1];
 
             try {
@@ -541,13 +538,14 @@
 
                 log.textContent = `Processing via ${modelToUse}...`;
 
+                // --- THE UPDATED PROMPT: ADDING VISUAL CLASSIFICATION FOR BOX VS SPOOL ---
                 const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${modelToUse}:generateContent?key=${key}`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
                         contents: [{
                             parts: [
-                                { text: "Analyze this 3D filament spool/box.\n\n1. Find the alphanumeric serial number. EXTRUDR RULE: The serial is EXACTLY 13 characters long. It consists of 3 numbers, the letter 'M', and 9 more numbers (Format: ###M#########). Examples: '000M046933024' or '046M027230093'.\n2. FONT WARNING: It is a DOT MATRIX font. A zero (0) has a diagonal slash through it (Ø). Do not confuse it with an 8. A six (6) has an open gap on the top right. A nine (9) has an open gap on the bottom left.\n3. BARCODE RULE: STRICTLY IGNORE 1D barcodes and their numbers (e.g., '02151018A', '9010241228285').\n4. Include a 'raw_text_dump' string containing all the text you can read on the label to act as a backup.\n\nReturn strictly valid JSON (no markdown formatting): {brand, color, type, asset_id, percentage_left, status, raw_text_dump}" },
+                                { text: "Analyze this 3D filament spool/box.\n\n1. ASSET ID: Find the alphanumeric serial number. EXTRUDR RULE: Exactly 13 characters (3 digits, 'M', 9 digits). Examples: '000M046933024' or '046M027230093'.\n2. FONT WARNING: It is a DOT MATRIX font. Zero (0) has a diagonal slash (Ø). Do not confuse with 8. Six (6) is open top-right. Nine (9) is open bottom-left.\n3. BARCODE RULE: STRICTLY IGNORE 1D barcodes.\n4. PHYSICAL STATE (Status): Look at the physical shape of the object in the image to classify it:\n   - Return 'inventory' IF you see a square/rectangular cardboard box.\n   - Return 'storage' IF you see a circular spool, curved plastic/cardboard rims, wound filament lines, or a center hub hole.\n5. Include a 'raw_text_dump' string containing all text.\n\nReturn strictly valid JSON (no markdown formatting): {brand, color, type, asset_id, percentage_left, status, raw_text_dump}" },
                                 { inlineData: { mimeType: 'image/jpeg', data: base64 } }
                             ]
                         }]
@@ -622,11 +620,14 @@
                 document.getElementById('f-material').value = (result.type || 'PLA').toUpperCase();
                 document.getElementById('f-color').value = result.color || 'Unknown';
                 
-                let qtyVal = result.percentage_left || (result.status === 'inventory' ? 100 : 100);
+                let qtyVal = result.percentage_left || 100;
                 qtyVal = Math.round(qtyVal / 10) * 10;
                 document.getElementById('f-qty').value = qtyVal;
                 
-                document.getElementById('f-status').value = result.status || 'storage';
+                // SAFELY APPLY THE NEW BOX/SPOOL DETECTION
+                let parsedStatus = (result.status && result.status.toLowerCase().includes('inventory')) ? 'inventory' : 'storage';
+                document.getElementById('f-status').value = parsedStatus;
+                
                 document.getElementById('modal').classList.add('open');
 
             } catch (e) {
