@@ -495,6 +495,7 @@
             text.style.color = 'var(--yellow)';
         }
 
+        // --- THE FULL-TEXT DUMP + REGEX AUTO-CORRECT LOGIC ---
         window.capture = async function() {
             const key = getApiKey();
             if (!key) return;
@@ -506,7 +507,7 @@
 
             proc.style.display = 'flex';
             text.textContent = 'ANALYZING...';
-            log.textContent = 'Extracting typography & objects...';
+            log.textContent = 'Extracting label data arrays...';
 
             const canvas = document.getElementById('canvas');
             const video = document.getElementById('video');
@@ -538,14 +539,14 @@
 
                 log.textContent = `Processing via ${modelToUse}...`;
 
-                // --- THE UPDATED PROMPT: ADDING VISUAL CLASSIFICATION FOR BOX VS SPOOL ---
+                // THE NEW PROMPT: Force AI to give us an array of ALL text lines so Javascript can find the ID safely.
                 const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${modelToUse}:generateContent?key=${key}`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
                         contents: [{
                             parts: [
-                                { text: "Analyze this 3D filament spool/box.\n\n1. ASSET ID: Find the alphanumeric serial number. EXTRUDR RULE: Exactly 13 characters (3 digits, 'M', 9 digits). Examples: '000M046933024' or '046M027230093'.\n2. FONT WARNING: It is a DOT MATRIX font. Zero (0) has a diagonal slash (Ø). Do not confuse with 8. Six (6) is open top-right. Nine (9) is open bottom-left.\n3. BARCODE RULE: STRICTLY IGNORE 1D barcodes.\n4. PHYSICAL STATE (Status): Look at the physical shape of the object in the image to classify it:\n   - Return 'inventory' IF you see a square/rectangular cardboard box.\n   - Return 'storage' IF you see a circular spool, curved plastic/cardboard rims, wound filament lines, or a center hub hole.\n5. Include a 'raw_text_dump' string containing all text.\n\nReturn strictly valid JSON (no markdown formatting): {brand, color, type, asset_id, percentage_left, status, raw_text_dump}" },
+                                { text: "Analyze this 3D filament spool/box.\n\n1. ASSET ID (CRITICAL): Find the alphanumeric serial number. \n- EXTRUDR FORMAT: Exactly 13 characters (3 digits, 'M', 9 digits). E.g., '000M046933024' or '046M027230093'.\n- DOT-MATRIX FONT FIX: The font uses a SLASHED ZERO (Ø). Do NOT read slashed zeros as the number '8'. Do not read them as the letter 'O'. They are '0'. \n- 6 vs 9: A '6' is open top-right. A '9' is open bottom-left.\n2. BARCODES: STRICTLY IGNORE 1D barcodes and their numbers (e.g., '02151018A'). Never use these as the asset_id.\n3. PHYSICAL STATE: Return 'inventory' for unopened cardboard boxes. Return 'storage' for circular plastic/cardboard spools.\n4. RAW LINES: Read every line of text on the label from top to bottom into an array of strings called 'raw_text_lines'.\n\nReturn strictly valid JSON (no markdown): {\"brand\": \"string\", \"color\": \"string\", \"type\": \"string\", \"asset_id\": \"string or null\", \"percentage_left\": 100, \"status\": \"inventory or storage\", \"raw_text_lines\": [\"line 1\", \"line 2\", \"line 3...\"]}" },
                                 { inlineData: { mimeType: 'image/jpeg', data: base64 } }
                             ]
                         }]
@@ -570,33 +571,62 @@
                 closeCamera();
                 proc.style.display = 'none';
 
-                let finalId = result.asset_id;
-                if (String(finalId).toLowerCase() === 'null') finalId = null;
+                let finalId = null;
 
-                if (finalId && (finalId.includes('02151018A') || finalId.match(/^[0-9]{12,14}$/))) {
-                    finalId = null;
+                // 1. EXTRACT FROM RAW LINES (Highest Reliability)
+                if (result.raw_text_lines && Array.isArray(result.raw_text_lines)) {
+                    for (let line of result.raw_text_lines) {
+                        let cleanLine = line.toUpperCase().replace(/[\s\-\.]/g, ''); // strip spaces and dots
+                        
+                        // Ignore Barcodes entirely
+                        if (cleanLine.includes('02151018A') || (cleanLine.match(/^[0-9]{12,14}$/) && !cleanLine.includes('M'))) {
+                            continue;
+                        }
+
+                        // Look for the Extrudr format length (allow 12-14 chars for minor AI errors) that contains an M
+                        if (cleanLine.length >= 12 && cleanLine.length <= 14 && cleanLine.includes('M')) {
+                            let mIndex = cleanLine.indexOf('M');
+                            // The 'M' should be near the start (index 2, 3, or 4)
+                            if (mIndex >= 2 && mIndex <= 4) {
+                                finalId = cleanLine;
+                                break;
+                            }
+                        }
+                    }
                 }
 
-                const rawDump = (result.raw_text_dump || "").toUpperCase().replace(/\s/g, '');
-                const extrudrPattern = /[0-9OQZSB]{3}M[0-9OQZSB]{9}/; 
+                // 2. FALLBACK to AI's direct guess
+                if (!finalId && result.asset_id && String(result.asset_id).toLowerCase() !== 'null') {
+                    finalId = String(result.asset_id).toUpperCase().replace(/[\s\-\.]/g, '');
+                }
 
-                if (result.brand && result.brand.toLowerCase().includes('extrudr') || rawDump.includes('EXTRUDR')) {
-                    let match = rawDump.match(extrudrPattern);
-                    if (match && !finalId) {
-                        finalId = match[0];
-                    }
-                    
-                    if (finalId && finalId.includes('M')) {
-                        finalId = finalId.replace(/O/g, '0')
-                                         .replace(/Q/g, '0')
-                                         .replace(/B/g, '8')
-                                         .replace(/S/g, '5')
-                                         .replace(/Z/g, '2');
+                // 3. FINAL SANITIZATION AND CORRECTION
+                if (finalId) {
+                    // Ignore Sunlu barcodes one last time just in case
+                    if (finalId.includes('02151018A') || (finalId.match(/^[0-9]{12,14}$/) && !finalId.includes('M'))) {
+                        finalId = null;
+                    } 
+                    else if (finalId.includes('M') || (result.brand && result.brand.toLowerCase().includes('extrudr'))) {
+                        // Correct AI font hallucinations (O/Q -> 0)
+                        finalId = finalId.replace(/[OQD]/g, '0');
+                        
+                        // Fix the specific "Slashed Zero mistaken as 8" bug for the first 3 digits
+                        if (finalId.startsWith('888M')) finalId = '000M' + finalId.substring(4);
+                        if (finalId.startsWith('846M')) finalId = '046M' + finalId.substring(4);
+                        if (finalId.startsWith('800M')) finalId = '000M' + finalId.substring(4);
+
+                        // Ensure we cut it exactly to 13 characters if extra junk attached
+                        let mIndex = finalId.indexOf('M');
+                        if (mIndex !== -1 && finalId.length > 13) {
+                            let start = Math.max(0, mIndex - 3);
+                            finalId = finalId.substring(start, start + 13);
+                        }
                     }
                 }
 
                 result.asset_id = finalId;
 
+                // Delete Mode Handler
                 if (currentScanMode === 'delete') {
                     if (result.asset_id) {
                         const exists = inventory.find(i => i.id === result.asset_id);
@@ -610,6 +640,7 @@
                     return;
                 }
 
+                // Strict Bouncer (Normal Mode)
                 if (!result.asset_id) {
                     alert('⚠️ SCAN REJECTED\n\nNo serial or QR code detected. System prohibits logging unidentified assets.\n\nPlease apply a QR sticker.');
                     return;
@@ -624,7 +655,6 @@
                 qtyVal = Math.round(qtyVal / 10) * 10;
                 document.getElementById('f-qty').value = qtyVal;
                 
-                // SAFELY APPLY THE NEW BOX/SPOOL DETECTION
                 let parsedStatus = (result.status && result.status.toLowerCase().includes('inventory')) ? 'inventory' : 'storage';
                 document.getElementById('f-status').value = parsedStatus;
                 
