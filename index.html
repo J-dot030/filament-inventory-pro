@@ -319,7 +319,7 @@
             const key = prompt('Update Gemini API Key:', localStorage.getItem('geminiApiKey') || '');
             if (key) {
                 localStorage.setItem('geminiApiKey', key);
-                localStorage.removeItem('workingModel'); 
+                localStorage.removeItem('workingModel'); // Reset model cache
                 showToast('API_KEY_UPDATED');
             }
         }
@@ -490,8 +490,8 @@
             text.style.color = 'var(--yellow)';
         }
 
-        // --- THE DYNAMIC SELF-HEALING AI LOGIC W/ AUTO-COOLDOWN AND OCR FIX---
-        async function capture() {
+        // --- THE DYNAMIC SELF-HEALING AI LOGIC W/ AUTO-COOLDOWN AND ADVANCED DOT-MATRIX OCR FIX ---
+        window.capture = async function() {
             const key = getApiKey();
             if (!key) return;
 
@@ -502,7 +502,7 @@
 
             proc.style.display = 'flex';
             text.textContent = 'ANALYZING...';
-            log.textContent = 'Bypassing generic barcodes...';
+            log.textContent = 'Parsing dot-matrix topology...';
 
             const canvas = document.getElementById('canvas');
             const video = document.getElementById('video');
@@ -536,14 +536,14 @@
 
                 log.textContent = `Injecting image to ${modelToUse}...`;
 
-                // THE SNIPER PROMPT
+                // THE NEW "SLASHED ZERO" SNIPER PROMPT
                 const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${modelToUse}:generateContent?key=${key}`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
                         contents: [{
                             parts: [
-                                { text: "Analyze this 3D filament spool/box. \nPRIORITY 1: Find the manufacturer's unique alphanumeric factory serial number. \nCRITICAL OCR WARNING: The serial is printed in a coarse DOT MATRIX font. You will easily confuse '0' with '8', and '6' with '9' or '8'. Look extremely closely at the open gaps! A '6' has an opening on the top right. A '9' has an opening on the bottom left. A '0' is completely open in the middle. The serial almost ALWAYS starts with three zeros, like '000'. Example valid format: '000M046933024'. \nCRITICAL RULE 2: STRICTLY IGNORE 1D barcodes and their associated numbers (e.g., '02151018A', '9010241202027', or typical UPC codes). \nPRIORITY 2: If no factory serial exists, look for a custom QR code label. \nIf NEITHER a valid factory serial nor a QR code is found, you MUST return 'null' for asset_id. \nRespond strictly with valid JSON (no markdown blocks): {\"brand\": \"string\", \"color\": \"string\", \"type\": \"PLA/PETG/ASA/ABS/TPU/PCTG/XPETG\", \"asset_id\": \"string or null\", \"percentage_left\": 100, \"status\": \"inventory or storage\"}" },
+                                { text: "Analyze this 3D filament spool/box.\nPRIORITY 1: Find the manufacturer's unique alphanumeric factory serial number.\nCRITICAL OCR WARNING FOR DOT-MATRIX FONTS:\nPay extreme attention to the dot patterns for numbers:\n- ZERO ('0'): It is a SLASHED zero. It contains a diagonal line running through the center. Do NOT confuse it with an 8.\n- EIGHT ('8'): Has two closed loops (top and bottom) with a horizontal crossbar in the middle. No diagonal line.\n- SIX ('6'): Has a closed loop at the bottom and an open gap on the top right.\n- NINE ('9'): Has a closed loop at the top and an open gap on the bottom left.\nExtrudr spools almost always start with three slashed zeros followed by an M (e.g., '000M...').\nCRITICAL RULE 2: STRICTLY IGNORE 1D barcodes and their associated numbers (e.g., '02151018A', '9010241202027').\nPRIORITY 2: If no factory serial exists, look for a custom QR code label.\nIf NEITHER a valid factory serial nor a QR code is found, return 'null' for asset_id.\nRespond strictly with valid JSON (no markdown blocks): {\"brand\": \"string\", \"color\": \"string\", \"type\": \"PLA/PETG/ASA/ABS/TPU/PCTG/XPETG\", \"asset_id\": \"string or null\", \"percentage_left\": 100, \"status\": \"inventory or storage\"}" },
                                 { inlineData: { mimeType: 'image/jpeg', data: base64 } }
                             ]
                         }]
@@ -554,7 +554,7 @@
                     if (res.status === 429) throw new Error("RATE_LIMIT");
                     
                     if (res.status === 404 || res.status === 403 || res.status === 400) {
-                        localStorage.removeItem('workingModel'); 
+                        localStorage.removeItem('workingModel'); // Clear bad cache
                     }
                     const errorData = await res.json();
                     throw new Error(errorData.error?.message || `HTTP Error ${res.status}`);
@@ -562,6 +562,7 @@
 
                 const data = await res.json();
                 
+                // Safe Manual JSON Parse
                 let rawText = data.candidates[0].content.parts[0].text;
                 rawText = rawText.replace(/```json/gi, '').replace(/```/gi, '').trim();
                 const result = JSON.parse(rawText);
@@ -569,16 +570,14 @@
                 closeCamera();
                 proc.style.display = 'none';
 
-                // THE JAVASCRIPT AUTO-CORRECTOR (The Sledgehammer)
+                // THE JAVASCRIPT AUTO-CORRECTOR (Safety Net)
                 if (result.asset_id && result.asset_id !== 'null') {
                     result.asset_id = result.asset_id.toUpperCase().trim();
-                    // If AI hallucinates the Extrudr 000M prefix as 888M or OOOM, forcefully correct it.
-                    if (result.asset_id.startsWith('888M') || result.asset_id.startsWith('OOOM') || result.asset_id.startsWith('O00M')) {
-                        result.asset_id = '000M' + result.asset_id.substring(4);
-                    }
+                    // If AI hallucinates the Extrudr 000M prefix as a mix of 8/O/0/Q followed by M, force correct it to 000M
+                    result.asset_id = result.asset_id.replace(/^[08OQ]{3}M/, '000M');
                 }
 
-                // Delete Mode
+                // Delete Mode Handler
                 if (currentScanMode === 'delete') {
                     if (result.asset_id && String(result.asset_id).toLowerCase() !== 'null' && String(result.asset_id).trim()) {
                         const exists = inventory.find(i => i.id === result.asset_id);
@@ -592,7 +591,7 @@
                     return;
                 }
 
-                // Strict Bouncer
+                // Strict Bouncer (Normal Mode)
                 if (!result.asset_id || String(result.asset_id).toLowerCase() === 'null' || !String(result.asset_id).trim()) {
                     alert('⚠️ SCAN REJECTED\n\nNo serial or QR code detected. System prohibits logging unidentified assets.\n\nPlease apply a QR sticker.');
                     return;
@@ -611,6 +610,7 @@
                 document.getElementById('modal').classList.add('open');
 
             } catch (e) {
+                // AUTO-COOLDOWN SYSTEM
                 if (e.message === "RATE_LIMIT" || e.message.toLowerCase().includes("quota") || e.message.includes("429")) {
                     let timeLeft = 60;
                     spinner.style.animation = 'none';
@@ -624,6 +624,7 @@
                         text.textContent = `SYS OVERLOAD: ${timeLeft}s`;
                         if(timeLeft <= 0) {
                             clearInterval(window.cooldownTimer);
+                            // Reset UI & Auto Retry
                             spinner.style.animation = 'spin 1s linear infinite';
                             spinner.style.borderTopColor = 'var(--yellow)';
                             text.style.color = 'var(--yellow)';
