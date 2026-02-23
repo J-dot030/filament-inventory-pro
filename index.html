@@ -5,12 +5,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
     <title>Filament Inventory</title>
-    <link rel="manifest" href="manifest.json">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    
     <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&family=JetBrains+Mono:wght@500;800&display=swap" rel="stylesheet">
     
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
@@ -22,54 +20,41 @@
             --yellow: #FFD700; --yellow-dim: rgba(255, 215, 0, 0.2); --border: #333333;
             --text: #ffffff; --text-dim: #888888; --red: #FF4444; --green: #00FF88;
         }
-        body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
-        body::before {
-            content: ''; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: repeating-linear-gradient(0deg, rgba(0,0,0,0.15), rgba(0,0,0,0.15) 1px, transparent 1px, transparent 2px);
-            pointer-events: none; z-index: 999;
-        }
-        .container { max-width: 600px; margin: 0 auto; position: relative; padding-bottom: 120px; }
-        header { background: var(--surface); border-bottom: 2px solid var(--yellow); padding: 16px 20px; position: sticky; top: 0; z-index: 100; box-shadow: 0 4px 20px rgba(255, 215, 0, 0.1); }
+        body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; overflow-x: hidden; }
+        body::before { content: ''; position: fixed; inset: 0; background: repeating-linear-gradient(0deg, rgba(0,0,0,0.1) 1px, transparent 1px, transparent 2px); pointer-events: none; z-index: 999; }
+        .container { max-width: 600px; margin: 0 auto; padding-bottom: 120px; }
+        header { background: var(--surface); border-bottom: 2px solid var(--yellow); padding: 16px 20px; position: sticky; top: 0; z-index: 100; box-shadow: 0 4px 20px rgba(0,0,0,0.5); }
         .header-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
-        .logo { font-family: 'JetBrains Mono', monospace; font-size: 20px; font-weight: 800; color: var(--yellow); letter-spacing: 1px; display: flex; align-items: center; gap: 8px; }
-        .sync-status { display: flex; align-items: center; gap: 6px; font-size: 11px; color: var(--green); font-weight: 700; font-family: 'JetBrains Mono', monospace; }
-        .sync-dot { width: 8px; height: 8px; background: var(--green); border-radius: 50%; animation: pulse 1.5s infinite; }
-        @keyframes pulse { 0%, 100% { opacity: 1; transform: scale(1); box-shadow: 0 0 8px var(--green); } 50% { opacity: 0.5; transform: scale(0.8); box-shadow: none; } }
-        .user-bar { display: flex; justify-content: space-between; align-items: center; }
+        .logo { font-family: 'JetBrains Mono', monospace; font-size: 18px; font-weight: 800; color: var(--yellow); display: flex; align-items: center; gap: 8px; }
         .user-info { font-family: 'JetBrains Mono', monospace; font-size: 12px; color: var(--text-dim); }
-        .btn-group { display: flex; gap: 8px; }
-        .header-btn { background: transparent; border: 1px solid var(--border); color: var(--text-dim); padding: 6px 12px; border-radius: 4px; font-size: 11px; font-weight: 700; cursor: pointer; transition: 0.2s; font-family: 'JetBrains Mono', monospace; text-transform: uppercase; }
-        .header-btn:hover { border-color: var(--yellow); color: var(--yellow); }
         .stats { padding: 20px; display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
         .stat-card { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 16px; border-left: 3px solid var(--yellow); }
-        .stat-label { font-size: 10px; color: var(--text-dim); text-transform: uppercase; font-weight: 700; letter-spacing: 1px; margin-bottom: 4px; }
-        .stat-value { font-family: 'JetBrains Mono', monospace; font-size: 28px; font-weight: 800; color: var(--text); }
+        .stat-value { font-family: 'JetBrains Mono', monospace; font-size: 28px; font-weight: 800; }
         .tabs { display: flex; padding: 0 20px; gap: 8px; margin-bottom: 20px; }
-        .tab { flex: 1; padding: 12px; background: var(--surface); border: 1px solid var(--border); border-radius: 6px; text-align: center; font-weight: 700; font-size: 12px; cursor: pointer; color: var(--text-dim); text-transform: uppercase; letter-spacing: 1px; }
+        .tab { flex: 1; padding: 12px; background: var(--surface); border: 1px solid var(--border); border-radius: 6px; text-align: center; font-size: 12px; cursor: pointer; color: var(--text-dim); text-transform: uppercase; font-weight: 700; }
         .tab.active { background: var(--yellow-dim); color: var(--yellow); border-color: var(--yellow); }
         .search { padding: 0 20px; margin-bottom: 24px; }
-        .search-input { width: 100%; background: var(--surface); border: 1px solid var(--border); border-radius: 6px; padding: 14px 16px; color: var(--text); font-size: 14px; outline: none; font-family: 'JetBrains Mono', monospace; }
-        .search-input:focus { border-color: var(--yellow); box-shadow: 0 0 15px var(--yellow-dim); }
+        .search-input { width: 100%; background: var(--surface); border: 1px solid var(--border); border-radius: 6px; padding: 14px 16px; color: var(--text); outline: none; font-family: 'JetBrains Mono', monospace; }
         .inventory { padding: 0 20px; }
-        .item { background: var(--surface); border: 1px solid var(--border); border-radius: 6px; padding: 16px; display: flex; align-items: center; gap: 12px; margin-bottom: 10px; cursor: pointer; }
-        .item-id { font-family: 'JetBrains Mono', monospace; font-size: 13px; font-weight: 800; color: var(--bg); background: var(--yellow); padding: 4px 8px; border-radius: 4px; min-width: 70px; text-align: center; }
+        .item { background: var(--surface); border: 1px solid var(--border); border-radius: 6px; padding: 16px; display: flex; align-items: center; gap: 12px; margin-bottom: 8px; cursor: pointer; }
+        .item-id { font-family: 'JetBrains Mono', monospace; font-size: 13px; font-weight: 800; color: var(--bg); background: var(--yellow); padding: 4px 6px; border-radius: 4px; }
         .item-info { flex: 1; }
         .qty-val { font-family: 'JetBrains Mono', monospace; color: var(--yellow); font-weight: 800; }
         .actions { position: fixed; bottom: 0; left: 50%; transform: translateX(-50%); width: 100%; max-width: 600px; background: var(--bg); border-top: 2px solid var(--yellow); padding: 16px 20px; display: flex; gap: 12px; z-index: 50; }
-        .btn-main { flex: 2; padding: 16px; border-radius: 6px; border: none; background: var(--yellow); color: var(--bg); font-weight: 800; font-size: 14px; cursor: pointer; text-transform: uppercase; font-family: 'JetBrains Mono', monospace; }
-        .btn-secondary { flex: 1; padding: 16px; border-radius: 6px; border: 1px solid var(--red); background: transparent; color: var(--red); font-weight: 700; font-size: 12px; cursor: pointer; text-transform: uppercase; font-family: 'JetBrains Mono', monospace; }
-        .camera { position: fixed; inset: 0; background: #000; z-index: 400; display: none; flex-direction: column; }
-        #video { flex: 1; object-fit: cover; }
-        .shutter { width: 72px; height: 72px; border: 4px solid var(--yellow); background: var(--yellow-dim); border-radius: 50%; cursor: pointer; position: absolute; bottom: 40px; left: 50%; transform: translateX(-50%); }
-        .processing { position: absolute; inset: 0; background: rgba(0, 0, 0, 0.9); display: none; flex-direction: column; align-items: center; justify-content: center; z-index: 20; }
-        .spinner { width: 40px; height: 40px; border: 4px solid var(--surface); border-top: 4px solid var(--yellow); border-radius: 50%; animation: spin 1s linear infinite; margin-bottom: 16px; }
+        .btn-main { flex: 2; padding: 16px; border-radius: 6px; border: none; background: var(--yellow); color: var(--bg); font-weight: 800; font-family: 'JetBrains Mono', monospace; cursor: pointer; }
+        .btn-secondary { flex: 1; padding: 16px; border-radius: 6px; border: 1px solid var(--red); background: transparent; color: var(--red); font-weight: 700; font-family: 'JetBrains Mono', monospace; cursor: pointer; }
+        .camera { position: fixed; inset: 0; background: #000; z-index: 400; display: none; }
+        #video { width: 100%; height: 100%; object-fit: cover; }
+        .shutter { width: 72px; height: 72px; border: 4px solid var(--yellow); background: var(--yellow-dim); border-radius: 50%; position: absolute; bottom: 40px; left: 50%; transform: translateX(-50%); }
+        .processing { position: absolute; inset: 0; background: rgba(0,0,0,0.9); display: none; flex-direction: column; align-items: center; justify-content: center; z-index: 500; }
+        .spinner { width: 40px; height: 40px; border: 4px solid #333; border-top: 4px solid var(--yellow); border-radius: 50%; animation: spin 1s linear infinite; margin-bottom: 12px; }
         @keyframes spin { to { transform: rotate(360deg); } }
-        .modal { position: fixed; inset: 0; background: rgba(0, 0, 0, 0.85); z-index: 450; display: none; align-items: center; justify-content: center; padding: 20px; }
+        .modal { position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 600; display: none; align-items: center; justify-content: center; padding: 20px; }
         .modal-content { background: var(--surface); border: 2px solid var(--yellow); border-radius: 8px; padding: 24px; width: 100%; max-width: 400px; }
-        .form-input { width: 100%; background: var(--bg); border: 1px solid var(--border); border-radius: 4px; padding: 12px; color: var(--text); font-size: 14px; margin-bottom: 10px; outline: none; }
-        .login-screen { position: fixed; inset: 0; background: var(--bg); z-index: 500; display: flex; align-items: center; justify-content: center; padding: 20px; }
-        .login-box { background: var(--surface); border: 2px solid var(--border); border-left: 4px solid var(--yellow); border-radius: 8px; padding: 32px; width: 100%; max-width: 360px; text-align: center; }
-        .toast { position: fixed; top: 20px; left: 50%; transform: translateX(-50%); background: var(--yellow); color: var(--bg); padding: 12px 24px; border-radius: 4px; font-weight: 800; font-size: 12px; z-index: 600; display: none; }
+        .form-input { width: 100%; background: var(--bg); border: 1px solid var(--border); border-radius: 4px; padding: 12px; color: var(--text); margin-bottom: 12px; outline: none; }
+        .login-screen { position: fixed; inset: 0; background: var(--bg); z-index: 800; display: flex; align-items: center; justify-content: center; padding: 20px; }
+        .login-box { background: var(--surface); border: 2px solid var(--border); border-left: 4px solid var(--yellow); padding: 32px; width: 100%; max-width: 360px; text-align: center; }
+        .toast { position: fixed; top: 20px; left: 50%; transform: translateX(-50%); background: var(--yellow); color: var(--bg); padding: 12px 24px; border-radius: 4px; font-weight: 800; font-size: 12px; z-index: 1000; display: none; }
     </style>
 </head>
 <body>
@@ -85,27 +70,15 @@
     <div class="container" id="main-app" style="display: none;">
         <header>
             <div class="header-row">
-                <div class="logo">🧵 Filament Inventory</div>
+                <div class="logo"><span>🧵</span> Filament Inventory</div>
                 <div class="sync-status"><div class="sync-dot"></div><span>CLOUD_SYNC</span></div>
             </div>
-            <div class="user-bar">
-                <div class="user-info">OP: <span id="user-name" style="color:var(--text); font-weight:700;">-</span></div>
-                <div class="btn-group">
-                    <button class="header-btn" onclick="setApiKey()">API_KEY</button>
-                    <button class="header-btn" onclick="logout()">LOGOUT</button>
-                </div>
-            </div>
+            <div class="user-info">OP: <span id="user-name" style="color:var(--text); font-weight:700;">-</span> | <span onclick="logout()" style="color:var(--red); font-size:10px; cursor:pointer;">LOGOUT</span></div>
         </header>
 
         <div class="stats">
-            <div class="stat-card">
-                <div class="stat-label">Total Assets</div>
-                <div class="stat-value" id="total">0</div>
-            </div>
-            <div class="stat-card" style="border-left-color: var(--red);">
-                <div class="stat-label">Empty Spools</div>
-                <div class="stat-value" id="low-stock" style="color:var(--red);">0</div>
-            </div>
+            <div class="stat-card"><div class="stat-value" id="total">0</div><div style="font-size:10px; color:var(--text-dim);">TOTAL ASSETS</div></div>
+            <div class="stat-card" style="border-left-color: var(--red);"><div class="stat-value" id="low-stock" style="color:var(--red);">0</div><div style="font-size:10px; color:var(--text-dim);">EMPTY SPOOLS</div></div>
         </div>
 
         <div class="tabs">
@@ -126,39 +99,28 @@
         <video id="video" autoplay playsinline></video>
         <canvas id="canvas" style="display:none;"></canvas>
         <button class="shutter" onclick="capture()"></button>
-        <button onclick="closeCamera()" style="position:absolute; top:20px; right:20px; background:rgba(0,0,0,0.5); color:white; border:1px solid white; padding:10px; border-radius:4px;">✕</button>
-        <div class="processing" id="processing">
-            <div class="spinner"></div>
-            <div style="color:var(--yellow); font-family:'JetBrains Mono'; font-weight:800;" id="proc-text">ANALYZING...</div>
-        </div>
+        <button onclick="closeCamera()" style="position:absolute; top:20px; right:20px; background:rgba(0,0,0,0.5); color:white; border:none; padding:10px; border-radius:4px; cursor:pointer;">✕</button>
+        <div class="processing" id="processing"><div class="spinner"></div><div style="color:var(--yellow); font-family:'JetBrains Mono'; font-weight:800;">ANALYZING...</div></div>
     </div>
 
     <div class="modal" id="modal">
         <div class="modal-content">
-            <div style="color:var(--yellow); font-weight:800; margin-bottom:15px; font-family:'JetBrains Mono'; uppercase">ASSET_DATA</div>
+            <div style="color:var(--yellow); font-weight:800; margin-bottom:15px; font-family:'JetBrains Mono';">ASSET_DATA</div>
             <input type="text" id="f-id" class="form-input" readonly>
             <input type="text" id="f-brand" class="form-input" placeholder="Brand">
             <input type="text" id="f-material" class="form-input" placeholder="Material">
             <input type="text" id="f-color" class="form-input" placeholder="Color">
-            <select id="f-qty" class="form-input">
-                <option value="100">100% Full</option>
-                <option value="50">50% Half</option>
-                <option value="10">10% Low</option>
-                <option value="0">Empty</option>
-            </select>
-            <select id="f-status" class="form-input">
-                <option value="storage">Spool (Opened)</option>
-                <option value="inventory">Box (Unopened)</option>
-            </select>
+            <select id="f-qty" class="form-input"><option value="100">100% Full</option><option value="50">50% Half</option><option value="10">10% Low</option><option value="0">Empty</option></select>
+            <select id="f-status" class="form-input"><option value="storage">Spool</option><option value="inventory">Box</option></select>
             <button class="btn-main" style="width:100%;" onclick="saveItem()">COMMIT_TO_CLOUD</button>
-            <button class="header-btn" onclick="document.getElementById('modal').style.display='none'" style="width:100%; margin-top:10px;">CANCEL</button>
+            <button class="btn-secondary" onclick="document.getElementById('modal').style.display='none'" style="width:100%; margin-top:10px; border-color:#555; color:#888;">CANCEL</button>
         </div>
     </div>
 
     <div class="toast" id="toast"></div>
 
     <script>
-        // --- FIREBASE CONFIG ---
+        // --- Firebase Configuration ---
         const firebaseConfig = {
             apiKey: "AIzaSyCLlCKwujLGtQw9DEvHl-ZYW1Z0cK8Xw-E",
             authDomain: "inventory-86d26.firebaseapp.com",
@@ -172,24 +134,23 @@
         firebase.initializeApp(firebaseConfig);
         const db = firebase.database();
         const inventoryRef = db.ref('inventory');
+        const API_KEY = "AIzaSyDmLS6kfioDv548O6Qg-2sBA1YQQ_IMAlw";
 
-        // State
         let inventoryArr = [];
         let activeUser = localStorage.getItem('activeUser');
         let currentTab = 'storage';
         let currentScanMode = 'scan';
 
-        // --- LOGIN LOGIC ---
         if(activeUser) { loginSuccess(activeUser); }
 
         function login() {
-            const name = document.getElementById('member-id').value.trim().toLowerCase();
+            const nameInput = document.getElementById('member-id').value.trim().toLowerCase();
             const allowed = ["benjamin", "christian", "rahul"];
-            if (allowed.includes(name)) {
-                activeUser = name.charAt(0).toUpperCase() + name.slice(1);
+            if (allowed.includes(nameInput)) {
+                activeUser = nameInput.charAt(0).toUpperCase() + nameInput.slice(1);
                 localStorage.setItem('activeUser', activeUser);
                 loginSuccess(activeUser);
-            } else { showToast("ACCESS_DENIED", "error"); }
+            } else { alert("ACCESS DENIED"); }
         }
 
         function loginSuccess(user) {
@@ -202,7 +163,6 @@
 
         function logout() { localStorage.removeItem('activeUser'); location.reload(); }
 
-        // --- DATA SYNC ---
         function syncData() {
             inventoryRef.on('value', (snapshot) => {
                 const data = snapshot.val();
@@ -216,42 +176,39 @@
             const search = document.getElementById('search').value.toLowerCase();
             container.innerHTML = '';
             const filtered = inventoryArr.filter(item => {
-                const matches = (String(item.id) + String(item.brand) + String(item.color)).toLowerCase().includes(search);
-                return matches && item.status === currentTab;
+                const match = (String(item.id) + String(item.brand) + String(item.color)).toLowerCase().includes(search);
+                return match && item.status === currentTab;
             });
             filtered.forEach(item => {
                 const div = document.createElement('div');
                 div.className = 'item';
                 div.onclick = () => editItem(item);
-                div.innerHTML = `
-                    <div class="item-id">${item.id}</div>
-                    <div class="item-info">
-                        <div style="font-weight:700;">${item.brand} ${item.type}</div>
-                        <div style="font-size:11px; color:#888;">${item.color} • OP: ${item.user}</div>
-                    </div>
-                    <div class="qty-val">${item.qty}%</div>
-                `;
+                div.innerHTML = `<div class="item-id">${item.id}</div><div class="item-info"><div style="font-weight:700;">${item.brand} ${item.type}</div><div style="font-size:11px; color:#888;">${item.color} • OP: ${item.user}</div></div><div class="qty-val">${item.qty}%</div>`;
                 container.appendChild(div);
             });
             document.getElementById('total').textContent = inventoryArr.length;
             document.getElementById('low-stock').textContent = inventoryArr.filter(i => i.qty <= 0).length;
         }
 
+        function setTab(t) {
+            currentTab = t;
+            document.querySelectorAll('.tab').forEach(el => el.classList.remove('active'));
+            document.getElementById('tab-' + t).classList.add('active');
+            renderInventory();
+        }
+
         function saveItem() {
             const id = document.getElementById('f-id').value;
             const item = {
-                id,
-                brand: document.getElementById('f-brand').value,
+                id, brand: document.getElementById('f-brand').value,
                 type: document.getElementById('f-material').value.toUpperCase(),
                 color: document.getElementById('f-color').value,
                 qty: parseInt(document.getElementById('f-qty').value),
                 status: document.getElementById('f-status').value,
-                user: activeUser,
-                timestamp: Date.now()
+                user: activeUser, timestamp: Date.now()
             };
             db.ref('inventory/' + id).set(item);
             document.getElementById('modal').style.display = 'none';
-            showToast("SYNC_COMPLETE");
         }
 
         function editItem(item) {
@@ -264,15 +221,12 @@
             document.getElementById('modal').style.display = 'flex';
         }
 
-        // --- CAMERA & AI (ORIGINAL WORKING LOGIC) ---
         let stream;
         async function openCamera(mode) {
             currentScanMode = mode;
-            document.getElementById('camera').style.display = 'flex';
+            document.getElementById('camera').style.display = 'block';
             try {
-                stream = await navigator.mediaDevices.getUserMedia({ 
-                    video: { facingMode: 'environment', width: { ideal: 1280 } } 
-                });
+                stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment', width: { ideal: 1280 } } });
                 document.getElementById('video').srcObject = stream;
             } catch(e) { alert("Camera Error"); }
         }
@@ -286,22 +240,18 @@
             document.getElementById('processing').style.display = 'flex';
             const vid = document.getElementById('video');
             const canvas = document.getElementById('canvas');
-            
-            // Scaled capture for stability
             const scale = Math.min(1, 1024 / vid.videoWidth);
             canvas.width = vid.videoWidth * scale;
             canvas.height = vid.videoHeight * scale;
             canvas.getContext('2d').drawImage(vid, 0, 0, canvas.width, canvas.height);
-            const base64 = canvas.toDataURL('image/jpeg', 0.8).split(',')[1];
-
-            const key = localStorage.getItem('geminiApiKey') || "AIzaSyDmLS6kfioDv548O6Qg-2sBA1YQQ_IMAlw";
+            const base64 = canvas.toDataURL('image/jpeg', 0.85).split(',')[1];
 
             try {
-                const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${key}`, {
+                const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${API_KEY}`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
-                        contents: [{ parts: [{ text: "Analyze label. DOT MATRIX FONT: Slashed zero is 0. Extrudr ID format is 13 chars (3 nums, M, 9 nums). Return JSON: {brand, color, type, asset_id, status:'inventory' or 'storage'}" }, { inlineData: { mimeType: 'image/jpeg', data: base64 } }] }]
+                        contents: [{ parts: [{ text: "Analyze 3D filament label. DOT MATRIX FIX: Slashed zero is 0. Extrudr ID format is 13 chars (3 nums, M, 9 nums). Return JSON: {brand, color, type, asset_id, status:'inventory' or 'storage'}" }, { inlineData: { mimeType: 'image/jpeg', data: base64 } }] }]
                     })
                 });
                 
@@ -309,17 +259,15 @@
                 let raw = data.candidates[0].content.parts[0].text.replace(/```json|```/g, '').trim();
                 const result = JSON.parse(raw);
 
-                // Auto-fix Extrudr dot matrix errors
                 if(result.asset_id) {
-                    let id = result.asset_id.toUpperCase().replace(/[OQ]/g, '0');
-                    if (id.startsWith('888M')) id = '000M' + id.substring(4);
-                    if (id.startsWith('846M')) id = '046M' + id.substring(4);
-                    result.asset_id = id;
+                    let cleanId = result.asset_id.toUpperCase().replace(/[OQ]/g, '0');
+                    if (cleanId.startsWith('888M')) cleanId = '000M' + cleanId.substring(4);
+                    if (cleanId.startsWith('846M')) cleanId = '046M' + cleanId.substring(4);
+                    result.asset_id = cleanId;
                 }
 
                 if(currentScanMode === 'delete') {
                     if(result.asset_id) await db.ref('inventory/' + result.asset_id).remove();
-                    showToast("PURGED");
                     closeCamera();
                 } else {
                     document.getElementById('f-id').value = result.asset_id || "UNKNOWN";
@@ -330,33 +278,9 @@
                     document.getElementById('modal').style.display = 'flex';
                     closeCamera();
                 }
-            } catch (e) { alert("Scan Failed. hold steady and retry."); }
+            } catch (e) { alert("Scan Failed. Hold steady and retry."); }
             document.getElementById('processing').style.display = 'none';
         }
-
-        // --- HELPERS ---
-        window.setTab = (t) => {
-            currentTab = t;
-            document.querySelectorAll('.tab').forEach(el => el.classList.remove('active'));
-            document.getElementById('tab-' + t).classList.add('active');
-            renderInventory();
-        };
-
-        window.setApiKey = () => {
-            const k = prompt("Enter Gemini API Key:", localStorage.getItem('geminiApiKey') || "");
-            if(k) {
-                localStorage.setItem('geminiApiKey', k);
-                showToast("API_KEY_SAVED");
-            }
-        };
-
-        window.showToast = (m, type) => {
-            const t = document.getElementById('toast');
-            t.textContent = m;
-            t.style.background = type === 'error' ? 'var(--red)' : 'var(--yellow)';
-            t.style.display = 'block';
-            setTimeout(() => t.style.display = 'none', 3000);
-        };
     </script>
 </body>
 </html>
