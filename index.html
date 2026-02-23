@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-    <title>Filament OS — Terminal</title>
+    <title>Filament Inventory</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700;800&display=swap" rel="stylesheet">
     <style>
@@ -37,7 +37,7 @@
         /* Header */
         header { background: var(--surface); border-bottom: 2px solid var(--yellow); padding: 16px 20px; position: sticky; top: 0; z-index: 100; box-shadow: 0 4px 20px rgba(255, 215, 0, 0.1); }
         .header-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
-        .logo { font-family: 'JetBrains Mono', monospace; font-size: 20px; font-weight: 800; color: var(--yellow); letter-spacing: 1px; display: flex; align-items: center; gap: 8px; }
+        .logo { font-family: 'JetBrains Mono', monospace; font-size: 18px; font-weight: 800; color: var(--yellow); letter-spacing: 1px; display: flex; align-items: center; gap: 8px; }
         .sync-status { display: flex; align-items: center; gap: 6px; font-size: 11px; color: var(--green); font-weight: 700; font-family: 'JetBrains Mono', monospace; }
         .sync-dot { width: 8px; height: 8px; background: var(--green); border-radius: 50%; animation: pulse 1.5s infinite; }
         @keyframes pulse { 0%, 100% { opacity: 1; transform: scale(1); box-shadow: 0 0 8px var(--green); } 50% { opacity: 0.5; transform: scale(0.8); box-shadow: none; } }
@@ -130,14 +130,14 @@
         .login-screen { position: fixed; inset: 0; background: var(--bg); z-index: 500; display: flex; align-items: center; justify-content: center; padding: 20px; }
         .login-screen.hidden { display: none; }
         .login-box { background: var(--surface); border: 2px solid var(--border); border-left: 4px solid var(--yellow); border-radius: 8px; padding: 32px; width: 100%; max-width: 360px; }
-        .login-logo { font-family: 'JetBrains Mono', monospace; font-size: 28px; font-weight: 900; color: var(--yellow); margin-bottom: 24px; letter-spacing: 1px; text-align: center; }
+        .login-logo { font-family: 'JetBrains Mono', monospace; font-size: 24px; font-weight: 900; color: var(--yellow); margin-bottom: 24px; letter-spacing: 1px; text-align: center; }
     </style>
 </head>
 <body>
 
     <div class="login-screen" id="login-screen">
         <div class="login-box">
-            <div class="login-logo">FILAMENT_OS</div>
+            <div class="login-logo">FILAMENT INVENTORY</div>
             <div class="form-group">
                 <label class="form-label">System Access ID</label>
                 <input type="text" class="form-input" id="member-id" placeholder="Enter Approved Name..." style="font-family: 'JetBrains Mono', monospace; text-align: center;">
@@ -149,7 +149,7 @@
     <div class="container" id="main-app" style="display: none;">
         <header>
             <div class="header-row">
-                <div class="logo">SYS_OS</div>
+                <div class="logo">🧵 Filament Inventory</div>
                 <div class="sync-status"><div class="sync-dot"></div><span id="sync-text">LOCAL</span></div>
             </div>
             <div class="user-bar">
@@ -185,8 +185,8 @@
     </div>
 
     <div class="actions" id="action-bar" style="display: none;">
-        <button class="btn-secondary" onclick="openCamera('delete')">RM_ASSET</button>
-        <button class="btn-main" onclick="openCamera('scan')">SCAN_NEW_ASSET</button>
+        <button class="btn-secondary" onclick="openCamera('delete')">EMPTY SPOOL</button>
+        <button class="btn-main" onclick="openCamera('scan')">SCAN</button>
     </div>
 
     <div class="camera" id="camera">
@@ -325,7 +325,6 @@
             const key = prompt('Update Gemini API Key:', localStorage.getItem('geminiApiKey') || '');
             if (key) {
                 localStorage.setItem('geminiApiKey', key);
-                localStorage.removeItem('workingModel'); 
                 showToast('API_KEY_UPDATED');
             }
         }
@@ -391,7 +390,6 @@
         }
 
         function updateQty(id, change) {
-            // Fix strict matching for updates
             let cleanIdToFind = String(id).trim().toUpperCase();
             const item = inventory.find(i => String(i.id).trim().toUpperCase() === cleanIdToFind);
             
@@ -403,7 +401,6 @@
         }
 
         function editItem(id) {
-            // Fix strict matching for edits
             let cleanIdToFind = String(id).trim().toUpperCase();
             const item = inventory.find(i => String(i.id).trim().toUpperCase() === cleanIdToFind);
             
@@ -421,7 +418,6 @@
         }
 
         function saveItem() {
-            // Force strict trimming and uppercase to prevent duplicates in DB saving
             const id = String(document.getElementById('f-id').value).trim().toUpperCase();
             if (!id || id === 'UNKNOWN') return showToast('INVALID ID', 'error');
 
@@ -436,7 +432,6 @@
                 time: new Date().toISOString()
             };
 
-            // Double check for duplicate during the save process itself
             const idx = inventory.findIndex(i => String(i.id).trim().toUpperCase() === id);
             
             if (idx >= 0) { 
@@ -479,11 +474,12 @@
             document.getElementById('camera').style.display = 'flex';
 
             try {
+                // LOWERED RESOLUTION FOR MAXIMUM SPEED
                 aiStream = await navigator.mediaDevices.getUserMedia({ 
                     video: { 
                         facingMode: 'environment',
-                        width: { ideal: 2560 }, 
-                        height: { ideal: 1440 }
+                        width: { ideal: 1280 }, 
+                        height: { ideal: 720 }
                     } 
                 });
                 document.getElementById('video').srcObject = aiStream;
@@ -520,36 +516,22 @@
 
             proc.style.display = 'flex';
             text.textContent = 'ANALYZING...';
-            log.textContent = 'Extracting label data arrays...';
+            log.textContent = 'Shrinking image data for fast uplink...';
 
             const canvas = document.getElementById('canvas');
             const video = document.getElementById('video');
             
-            canvas.width = video.videoWidth; 
-            canvas.height = video.videoHeight;
+            // AGGRESSIVE IMAGE COMPRESSION FOR LIGHTNING FAST UPLOADS
+            const scale = Math.min(1, 800 / video.videoWidth); 
+            canvas.width = video.videoWidth * scale; 
+            canvas.height = video.videoHeight * scale;
             canvas.getContext('2d').drawImage(video, 0, 0, canvas.width, canvas.height);
-            const base64 = canvas.toDataURL('image/jpeg', 0.95).split(',')[1];
+            const base64 = canvas.toDataURL('image/jpeg', 0.75).split(',')[1];
 
             try {
-                let modelToUse = localStorage.getItem('workingModel');
-                
-                if (!modelToUse) {
-                    log.textContent = 'Querying API for valid models...';
-                    const req = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${key}`);
-                    if (!req.ok) {
-                        if(req.status === 429) throw new Error("RATE_LIMIT");
-                        throw new Error('API Key Invalid or Restricted.');
-                    }
-                    const data = await req.json();
-                    const models = data.models.map(m => m.name.replace('models/', ''));
-                    if (models.includes('gemini-2.5-flash')) modelToUse = 'gemini-2.5-flash';
-                    else if (models.includes('gemini-2.0-flash')) modelToUse = 'gemini-2.0-flash';
-                    else if (models.includes('gemini-1.5-flash-latest')) modelToUse = 'gemini-1.5-flash-latest';
-                    else modelToUse = 'gemini-1.5-flash'; 
-                    localStorage.setItem('workingModel', modelToUse);
-                }
-
-                log.textContent = `Processing via ${modelToUse}...`;
+                // SKIPPING AUTO-DETECT: HARDCODED TO THE FASTEST MODEL
+                const modelToUse = 'gemini-1.5-flash'; 
+                log.textContent = `Uplinking to ${modelToUse}...`;
 
                 const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${modelToUse}:generateContent?key=${key}`, {
                     method: 'POST',
@@ -566,9 +548,6 @@
 
                 if (!res.ok) {
                     if (res.status === 429) throw new Error("RATE_LIMIT");
-                    if (res.status === 404 || res.status === 403 || res.status === 400) {
-                        localStorage.removeItem('workingModel'); 
-                    }
                     const errorData = await res.json();
                     throw new Error(errorData.error?.message || `HTTP Error ${res.status}`);
                 }
@@ -631,13 +610,11 @@
                     }
                 }
 
-                // If finalId is empty, block the save entirely
                 if (!finalId || finalId === '') {
                     alert('⚠️ SCAN REJECTED\n\nNo valid ID or barcode detected. Please try again.');
                     return;
                 }
 
-                // Force strict upper case and remove any invisible spaces
                 const cleanExtractedId = String(finalId).trim().toUpperCase();
 
                 if (currentScanMode === 'delete') {
@@ -653,18 +630,14 @@
                     return;
                 }
 
-                // ==========================================
-                // BULLETPROOF DUPLICATE CHECK
-                // ==========================================
                 const existingItem = inventory.find(i => String(i.id).trim().toUpperCase() === cleanExtractedId);
                 
                 if (existingItem) {
                     alert(`⚠️ DUPLICATE DETECTED\n\nAsset ID: ${cleanExtractedId} is already in the database!\n\nOpening the existing record so you can update the quantity instead of making a duplicate.`);
-                    editItem(cleanExtractedId); // Opens the exact existing item
-                    return; // STOPS the rest of the code from creating a new item
+                    editItem(cleanExtractedId); 
+                    return; 
                 }
 
-                // If it truly is a new item, proceed here:
                 document.getElementById('f-id').value = cleanExtractedId;
                 document.getElementById('f-brand').value = result.brand || 'Unknown';
                 document.getElementById('f-material').value = (result.type || 'PLA').toUpperCase();
