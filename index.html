@@ -130,7 +130,7 @@
         .login-screen { position: fixed; inset: 0; background: var(--bg); z-index: 500; display: flex; align-items: center; justify-content: center; padding: 20px; }
         .login-screen.hidden { display: none; }
         .login-box { background: var(--surface); border: 2px solid var(--border); border-left: 4px solid var(--yellow); border-radius: 8px; padding: 32px; width: 100%; max-width: 360px; }
-        .login-logo { font-family: 'JetBrains Mono', monospace; font-size: 28px; font-weight: 900; color: var(--yellow); margin-bottom: 24px; letter-spacing: 1px; }
+        .login-logo { font-family: 'JetBrains Mono', monospace; font-size: 28px; font-weight: 900; color: var(--yellow); margin-bottom: 24px; letter-spacing: 1px; text-align: center; }
     </style>
 </head>
 <body>
@@ -139,8 +139,8 @@
         <div class="login-box">
             <div class="login-logo">FILAMENT_OS</div>
             <div class="form-group">
-                <label class="form-label">Approved Operator Name</label>
-                <input type="text" class="form-input" id="member-id" placeholder="Enter Name..." style="font-family: 'JetBrains Mono', monospace; text-align: center;">
+                <label class="form-label">System Access ID</label>
+                <input type="text" class="form-input" id="member-id" placeholder="Enter Approved Name..." style="font-family: 'JetBrains Mono', monospace; text-align: center;">
             </div>
             <button class="btn-main" onclick="login()" style="width:100%; margin-top:8px;">Initialize</button>
         </div>
@@ -316,7 +316,7 @@
             document.getElementById('login-screen').classList.remove('hidden');
             document.getElementById('main-app').style.display = 'none';
             document.getElementById('action-bar').style.display = 'none';
-            showToast('LOGGED OUT SUCCESSFULLY', 'success');
+            showToast('LOGGED OUT SUCCESSFULLY');
         }
 
         function getApiKey() {
@@ -438,7 +438,7 @@
                 color: document.getElementById('f-color').value,
                 qty: document.getElementById('f-qty').value,
                 status: document.getElementById('f-status').value,
-                user: activeUser, // Will now pull the secure name (Benjamin, Christian, or Rahul)
+                user: activeUser, // Will output Benjamin, Christian, or Rahul
                 time: new Date().toISOString()
             };
 
@@ -448,7 +448,7 @@
             localStorage.setItem('filamentFarmDB', JSON.stringify(inventory));
             closeModal();
             renderInventory();
-            showToast('DB_WRITE_SUCCESS', 'success');
+            showToast('DB_WRITE_SUCCESS');
         }
 
         function closeModal() { document.getElementById('modal').classList.remove('open'); }
@@ -456,7 +456,7 @@
         function showToast(msg, type = '') {
             const toast = document.getElementById('toast');
             toast.textContent = msg;
-            toast.className = 'toast ' + type;
+            toast.className = 'toast ' + (type === 'error' ? 'error' : '');
             toast.style.display = 'block';
             setTimeout(() => toast.style.display = 'none', 3000);
         }
@@ -479,6 +479,7 @@
             document.getElementById('camera').style.display = 'flex';
 
             try {
+                // HD Camera request
                 aiStream = await navigator.mediaDevices.getUserMedia({ 
                     video: { 
                         facingMode: 'environment',
@@ -529,6 +530,7 @@
             canvas.height = video.videoHeight;
             canvas.getContext('2d').drawImage(video, 0, 0, canvas.width, canvas.height);
             
+            // High fidelity image export
             const base64 = canvas.toDataURL('image/jpeg', 0.95).split(',')[1];
 
             try {
@@ -585,13 +587,15 @@
 
                 let finalId = null;
 
-                // EXTRACT FROM RAW LINES 
+                // 1. EXTRACT FROM RAW LINES (Highest Reliability)
                 if (result.raw_text_lines && Array.isArray(result.raw_text_lines)) {
                     for (let line of result.raw_text_lines) {
                         let cleanLine = line.toUpperCase().replace(/[\s\-\.]/g, ''); 
+                        
                         if (cleanLine.includes('02151018A') || (cleanLine.match(/^[0-9]{12,14}$/) && !cleanLine.includes('M'))) {
                             continue;
                         }
+
                         if (cleanLine.length >= 12 && cleanLine.length <= 14 && cleanLine.includes('M')) {
                             let mIndex = cleanLine.indexOf('M');
                             if (mIndex >= 2 && mIndex <= 4) {
@@ -602,18 +606,21 @@
                     }
                 }
 
-                // FALLBACK
+                // 2. FALLBACK
                 if (!finalId && result.asset_id && String(result.asset_id).toLowerCase() !== 'null') {
                     finalId = String(result.asset_id).toUpperCase().replace(/[\s\-\.]/g, '');
                 }
 
-                // FINAL SANITIZATION
+                // 3. FINAL SANITIZATION AND CORRECTION
                 if (finalId) {
                     if (finalId.includes('02151018A') || (finalId.match(/^[0-9]{12,14}$/) && !finalId.includes('M'))) {
                         finalId = null;
                     } 
                     else if (finalId.includes('M') || (result.brand && result.brand.toLowerCase().includes('extrudr'))) {
+                        // Correct AI font hallucinations 
                         finalId = finalId.replace(/[OQD]/g, '0');
+                        
+                        // Fix the specific "Slashed Zero mistaken as 8" bug for the first 3 digits
                         if (finalId.startsWith('888M')) finalId = '000M' + finalId.substring(4);
                         if (finalId.startsWith('846M')) finalId = '046M' + finalId.substring(4);
                         if (finalId.startsWith('800M')) finalId = '000M' + finalId.substring(4);
@@ -628,7 +635,6 @@
 
                 result.asset_id = finalId;
 
-                // Delete Mode
                 if (currentScanMode === 'delete') {
                     if (result.asset_id) {
                         const exists = inventory.find(i => i.id === result.asset_id);
@@ -636,13 +642,12 @@
                             inventory = inventory.filter(i => i.id !== result.asset_id);
                             localStorage.setItem('filamentFarmDB', JSON.stringify(inventory));
                             renderInventory();
-                            showToast(`ASSET_${result.asset_id}_PURGED`, 'success');
+                            showToast(`ASSET_${result.asset_id}_PURGED`);
                         } else { showToast('ERR: ID_NOT_FOUND', 'error'); }
                     } else { showToast('ERR: NO_ID_DETECTED', 'error'); }
                     return;
                 }
 
-                // Strict Bouncer 
                 if (!result.asset_id) {
                     alert('⚠️ SCAN REJECTED\n\nNo serial or QR code detected. System prohibits logging unidentified assets.\n\nPlease apply a QR sticker.');
                     return;
