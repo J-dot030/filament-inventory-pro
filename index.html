@@ -34,7 +34,6 @@
             position: relative;
         }
         
-        /* Animated Background Grid */
         body::before {
             content: '';
             position: fixed;
@@ -52,7 +51,6 @@
             50% { opacity: 0.6; }
         }
         
-        /* Scan line effect */
         body::after {
             content: '';
             position: fixed;
@@ -315,20 +313,21 @@
             max-width: 600px; 
             background: linear-gradient(to top, rgba(10, 10, 10, 0.98), rgba(10, 10, 10, 0.95)); 
             border-top: 3px solid var(--yellow); 
-            padding: 16px; 
-            display: flex; 
-            gap: 10px; 
+            padding: 12px; 
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 8px; 
             z-index: 50;
             backdrop-filter: blur(10px);
             box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.5);
         }
+        
         .btn-main { 
-            flex: 1; 
-            padding: 16px 10px; 
+            padding: 14px 10px; 
             border-radius: 10px; 
             border: none; 
             font-weight: 800; 
-            font-size: 12px; 
+            font-size: 11px; 
             cursor: pointer; 
             text-transform: uppercase; 
             font-family: 'Orbitron', monospace; 
@@ -355,17 +354,19 @@
             height: 300px;
         }
         .btn-main:active { transform: scale(0.95); }
+        
         .btn-scan { 
             background: linear-gradient(135deg, var(--yellow), #FFA500);
             box-shadow: 0 6px 20px rgba(255, 215, 0, 0.4);
+            grid-column: 1 / 3;
         }
         .btn-scan:hover {
             box-shadow: 0 8px 30px rgba(255, 215, 0, 0.6);
             transform: translateY(-2px);
         }
+        
         .btn-secondary { 
-            flex: 0.5; 
-            padding: 16px 10px; 
+            padding: 14px 10px; 
             border-radius: 10px; 
             border: 2px solid var(--text-dim); 
             background: rgba(30, 30, 30, 0.6); 
@@ -388,6 +389,13 @@
             border-color: var(--red);
             color: var(--red);
             background: rgba(255, 68, 68, 0.1);
+        }
+        
+        .btn-edit { border-color: var(--blue); color: var(--blue); }
+        .btn-edit:hover {
+            border-color: var(--blue);
+            color: var(--blue);
+            background: rgba(68, 136, 255, 0.1);
         }
         
         .camera { 
@@ -426,6 +434,11 @@
             background: rgba(255,68,68,0.2);
             box-shadow: 0 0 30px rgba(255, 68, 68, 0.5);
         }
+        .shutter.edit { 
+            border-color: var(--blue); 
+            background: rgba(68,136,255,0.2);
+            box-shadow: 0 0 30px rgba(68, 136, 255, 0.5);
+        }
         
         .processing { 
             position: absolute; 
@@ -443,7 +456,7 @@
             border: 5px solid #333; 
             border-top: 5px solid var(--yellow); 
             border-radius: 50%; 
-            animation: spin 1s linear infinite; 
+            animation: spin 0.8s linear infinite; 
             margin-bottom: 20px;
             box-shadow: 0 0 20px rgba(255, 215, 0, 0.5);
         }
@@ -562,7 +575,6 @@
             font-weight: 600;
         }
 
-        /* Scan Result Modal - Simplified */
         .scan-result {
             padding: 20px;
             background: rgba(40, 40, 40, 0.8);
@@ -597,6 +609,45 @@
         .scan-result-value {
             color: var(--text);
             font-weight: 700;
+            font-family: 'Orbitron', monospace;
+        }
+
+        .dashboard-item {
+            background: linear-gradient(135deg, rgba(30, 30, 30, 0.6), rgba(20, 20, 20, 0.6)); 
+            border: 1px solid var(--border); 
+            border-radius: 10px; 
+            padding: 16px; 
+            margin-bottom: 10px; 
+            cursor: pointer; 
+            transition: all 0.3s ease;
+            animation: fadeInUp 0.4s ease-out both;
+        }
+        
+        .dashboard-item:hover {
+            transform: translateX(8px) scale(1.02); 
+            background: linear-gradient(135deg, rgba(40, 40, 40, 0.8), rgba(30, 30, 30, 0.8));
+            border-color: var(--yellow);
+            box-shadow: 0 4px 20px rgba(255, 215, 0, 0.2);
+        }
+
+        .dashboard-type {
+            font-family: 'Orbitron', monospace;
+            font-size: 13px;
+            font-weight: 900;
+            color: var(--yellow);
+            margin-bottom: 8px;
+        }
+
+        .dashboard-color {
+            font-size: 13px;
+            color: var(--text-dim);
+            margin-bottom: 10px;
+        }
+
+        .dashboard-count {
+            font-size: 20px;
+            font-weight: 900;
+            color: var(--green);
             font-family: 'Orbitron', monospace;
         }
     </style>
@@ -634,12 +685,12 @@
 
         <div class="stats">
             <div class="stat-card">
-                <div class="stat-label">Spools</div>
-                <div class="stat-value" id="total-spools">0</div>
+                <div class="stat-label">Total Items</div>
+                <div class="stat-value" id="total-items">0</div>
             </div>
             <div class="stat-card">
-                <div class="stat-label">Boxes</div>
-                <div class="stat-value" id="total-boxes">0</div>
+                <div class="stat-label">Variants</div>
+                <div class="stat-value" id="total-variants">0</div>
             </div>
             <div class="stat-card low">
                 <div class="stat-label">Low Stock</div>
@@ -649,28 +700,29 @@
 
         <div class="tabs">
             <div class="tab active" id="tab-all" onclick="setTab('all')">ALL</div>
-            <div class="tab" id="tab-storage" onclick="setTab('storage')">SPOOLS</div>
-            <div class="tab" id="tab-inventory" onclick="setTab('inventory')">BOXES</div>
+            <div class="tab" id="tab-spools" onclick="setTab('spools')">SPOOLS</div>
+            <div class="tab" id="tab-boxes" onclick="setTab('boxes')">BOXES</div>
             <div class="tab" id="tab-low" onclick="setTab('low')">⚠️ LOW</div>
             <div class="tab" id="tab-recent" onclick="setTab('recent')">🆕 RECENT</div>
         </div>
 
         <div class="search-bar">
-            <input type="text" class="search-input" id="search" placeholder="🔍 Search ID, brand, color..." onkeyup="renderInventory()">
+            <input type="text" class="search-input" id="search" placeholder="🔍 Search material, brand, color..." onkeyup="renderInventory()">
         </div>
         <div class="inventory" id="inventory"></div>
     </div>
 
     <!-- ACTION BAR -->
     <div class="actions" id="action-bar" style="display: none;">
-        <button class="btn-secondary btn-delete" onclick="openCamera('delete')">🗑️</button>
+        <button class="btn-secondary btn-delete" onclick="openCamera('delete')">🗑️ DEL</button>
         <button class="btn-main btn-scan" onclick="openCamera('scan')">🔍 SCAN</button>
-        <button class="btn-secondary" onclick="manualEntry()" style="border-color: var(--purple); color: var(--purple);">✎</button>
+        <button class="btn-secondary btn-edit" onclick="openCamera('edit')">✎ EDT</button>
+        <button class="btn-secondary" onclick="manualEntry()" style="border-color: var(--purple); color: var(--purple);">✎ NEW</button>
     </div>
 
     <!-- CAMERA -->
     <div class="camera" id="camera">
-        <video id="video" autoplay playsinline></video>
+        <video id="video" autoplay playsinline muted></video>
         <canvas id="canvas" style="display:none;"></canvas>
         <button class="shutter" id="shutter" onclick="capture()"></button>
         <button onclick="closeCamera()" style="position:absolute; top:20px; right:20px; background:rgba(0,0,0,0.9); color:white; border:2px solid var(--yellow); padding:12px 18px; border-radius:8px; cursor:pointer; z-index: 402; font-weight: bold; font-family: 'Orbitron', monospace; font-size: 11px;">✕ CLOSE</button>
@@ -683,19 +735,18 @@
 
         <div class="processing" id="processing">
             <div class="spinner"></div>
-            <div style="color:var(--yellow); font-family:'Orbitron'; font-weight:900; font-size: 15px; letter-spacing: 2px;">ANALYZING</div>
-            <div style="color:var(--text-dim); font-family:'Orbitron'; font-weight:700; font-size: 12px; margin-top: 10px;" id="processing-msg">Reading barcode...</div>
+            <div style="color:var(--yellow); font-family:'Orbitron'; font-weight:900; font-size: 15px; letter-spacing: 2px;">SCANNING</div>
+            <div style="color:var(--text-dim); font-family:'Orbitron'; font-weight:700; font-size: 12px; margin-top: 10px;" id="processing-msg">Fast scan processing...</div>
         </div>
     </div>
 
-    <!-- SCAN RESULT MODAL (Simplified) -->
+    <!-- SCAN RESULT MODAL -->
     <div class="modal" id="scan-modal">
         <div class="modal-content">
             <div style="color:var(--yellow); font-weight:900; margin-bottom:20px; font-family:'Orbitron'; font-size: 16px; letter-spacing: 2px;">📡 SCAN RESULT</div>
             
             <div class="scan-result" id="scan-result-display"></div>
 
-            <!-- Stock Level Selector (only for spools) -->
             <div class="form-group" id="stock-selector" style="display: none;">
                 <label class="form-label">Stock Level</label>
                 <select id="scan-qty" class="form-select">
@@ -789,7 +840,26 @@
             
             <div class="scan-result" id="item-details-display"></div>
 
+            <div class="form-group" id="edit-stock-selector" style="display: none;">
+                <label class="form-label">Update Stock Level</label>
+                <select id="edit-qty" class="form-select">
+                    <option value="100">🟢 100% - Full Spool</option>
+                    <option value="90">🟢 90%</option>
+                    <option value="80">🟢 80%</option>
+                    <option value="70">🟡 70%</option>
+                    <option value="60">🟡 60%</option>
+                    <option value="50">🟡 50% - Half Spool</option>
+                    <option value="40">🟡 40%</option>
+                    <option value="30">🟡 30%</option>
+                    <option value="25">🔴 25% - Low Stock</option>
+                    <option value="20">🔴 20%</option>
+                    <option value="10">🔴 10% - Almost Empty</option>
+                    <option value="0">⚫ 0% - Empty</option>
+                </select>
+            </div>
+
             <div class="btn-group">
+                <button class="btn-main btn-scan" id="edit-btn" onclick="saveItemEdit()" style="display:none;">✓ UPDATE</button>
                 <button class="btn-secondary" onclick="closeItemDetails()" style="flex: 1;">CLOSE</button>
             </div>
         </div>
@@ -802,16 +872,12 @@
             
             <div style="margin-bottom: 20px;">
                 <div class="stat-row">
-                    <span>Total Assets</span>
+                    <span>Total Items</span>
                     <span style="color: var(--yellow); font-weight: 800;" id="stat-total">0</span>
                 </div>
                 <div class="stat-row">
-                    <span>Total Spools</span>
-                    <span id="stat-spools">0</span>
-                </div>
-                <div class="stat-row">
-                    <span>Total Boxes</span>
-                    <span id="stat-boxes">0</span>
+                    <span>Total Variants</span>
+                    <span id="stat-variants">0</span>
                 </div>
                 <div class="stat-row">
                     <span>Low Stock Items</span>
@@ -859,11 +925,13 @@
 
         // ===== GLOBAL STATE =====
         let inventoryArr = [];
+        let aggregatedData = {};
         let activeUser = localStorage.getItem('activeUser');
         let currentTab = 'all';
         let currentScanMode = 'scan';
         let stream = null;
         let scannedData = null;
+        let editingVariantKey = null;
 
         if(activeUser) { loginSuccess(activeUser); }
 
@@ -882,7 +950,7 @@
         function loginSuccess(user) {
             document.getElementById('login-screen').style.display = 'none';
             document.getElementById('main-app').style.display = 'block';
-            document.getElementById('action-bar').style.display = 'flex';
+            document.getElementById('action-bar').style.display = 'grid';
             document.getElementById('user-name').textContent = user;
             syncData();
         }
@@ -907,69 +975,108 @@
                 const data = snapshot.val();
                 inventoryArr = data ? Object.values(data) : [];
                 inventoryArr.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
+                aggregateData();
                 renderInventory();
                 updateStats();
             });
         }
 
+        // ===== AGGREGATE DATA BY TYPE + COLOR =====
+        function aggregateData() {
+            aggregatedData = {};
+            inventoryArr.forEach(item => {
+                const key = (item.type || 'UNKNOWN') + '|' + (item.color || 'UNKNOWN');
+                if (!aggregatedData[key]) {
+                    aggregatedData[key] = {
+                        type: item.type || 'UNKNOWN',
+                        color: item.color || 'UNKNOWN',
+                        brand: item.brand || 'UNKNOWN',
+                        status: item.status,
+                        count: 0,
+                        items: [],
+                        totalQty: 0,
+                        avgQty: 0
+                    };
+                }
+                aggregatedData[key].count++;
+                aggregatedData[key].items.push(item);
+                aggregatedData[key].totalQty += (item.qty || 0);
+            });
+
+            // Calculate average qty for each variant
+            Object.keys(aggregatedData).forEach(key => {
+                const variant = aggregatedData[key];
+                variant.avgQty = Math.round(variant.totalQty / variant.count);
+            });
+        }
+
         // ===== UPDATE STATS =====
         function updateStats() {
-            const spools = inventoryArr.filter(i => i.status === 'storage').length;
-            const boxes = inventoryArr.filter(i => i.status === 'inventory').length;
+            const totalItems = inventoryArr.length;
+            const variants = Object.keys(aggregatedData).length;
             const low = inventoryArr.filter(i => i.qty <= 25).length;
 
-            document.getElementById('total-spools').textContent = spools;
-            document.getElementById('total-boxes').textContent = boxes;
+            document.getElementById('total-items').textContent = totalItems;
+            document.getElementById('total-variants').textContent = variants;
             document.getElementById('low-stock').textContent = low;
         }
 
-        // ===== RENDER INVENTORY =====
+        // ===== RENDER INVENTORY (AGGREGATED) =====
         function renderInventory() {
             const container = document.getElementById('inventory');
             const search = document.getElementById('search').value.toLowerCase();
             container.innerHTML = '';
 
-            let filtered = inventoryArr;
+            let dataToRender = Object.values(aggregatedData);
 
-            if (currentTab === 'storage') {
-                filtered = filtered.filter(i => i.status === 'storage');
-            } else if (currentTab === 'inventory') {
-                filtered = filtered.filter(i => i.status === 'inventory');
+            // Filter by tab
+            if (currentTab === 'spools') {
+                dataToRender = dataToRender.filter(v => v.status === 'storage');
+            } else if (currentTab === 'boxes') {
+                dataToRender = dataToRender.filter(v => v.status === 'inventory');
             } else if (currentTab === 'low') {
-                filtered = filtered.filter(i => i.qty <= 25);
+                dataToRender = dataToRender.filter(v => v.avgQty <= 25);
             } else if (currentTab === 'recent') {
-                filtered = filtered.slice(0, 20);
+                // Show only items added in last 24hrs for each variant
+                const oneDayAgo = Date.now() - (24 * 60 * 60 * 1000);
+                dataToRender = dataToRender.filter(v => v.items.some(i => (i.timestamp || 0) > oneDayAgo));
             }
 
+            // Search filter
             if (search) {
-                filtered = filtered.filter(item =>
-                    String(item.id).toLowerCase().includes(search) ||
-                    String(item.brand).toLowerCase().includes(search) ||
-                    String(item.color).toLowerCase().includes(search) ||
-                    String(item.type).toLowerCase().includes(search)
+                dataToRender = dataToRender.filter(v =>
+                    String(v.type).toLowerCase().includes(search) ||
+                    String(v.brand).toLowerCase().includes(search) ||
+                    String(v.color).toLowerCase().includes(search)
                 );
             }
 
-            if (filtered.length === 0) {
+            if (dataToRender.length === 0) {
                 container.innerHTML = '<div class="empty-state">No items found</div>';
                 return;
             }
 
-            filtered.forEach(item => {
+            dataToRender.forEach((variant, idx) => {
                 const div = document.createElement('div');
-                div.className = item.status === 'inventory' ? 'item box' : 'item';
-                const qtyClass = item.qty <= 10 ? 'low' : item.qty <= 50 ? 'mid' : '';
-                const icon = item.status === 'inventory' ? '📫' : '📦';
+                div.className = 'dashboard-item';
+                div.style.animationDelay = (idx * 0.05) + 's';
+                
+                const icon = variant.status === 'inventory' ? '📫' : '📦';
+                const qtyColor = variant.avgQty <= 10 ? 'var(--red)' : variant.avgQty <= 50 ? '#FFAA00' : 'var(--green)';
 
-                div.onclick = () => showItemDetails(item);
                 div.innerHTML = `
-                    <div class="item-id">${item.id}</div>
-                    <div class="item-info">
-                        <div class="item-name">${icon} ${item.type || 'Unknown'}</div>
-                        <div class="item-meta">${item.color || 'N/A'}</div>
+                    <div class="dashboard-type">${icon} ${variant.type}</div>
+                    <div class="dashboard-color">${variant.color}</div>
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <div class="dashboard-count" style="color: ${qtyColor};">${variant.count}x</div>
+                        <div style="font-size: 11px; color: var(--text-dim); text-align: right;">
+                            <div>Avg: ${variant.avgQty}%</div>
+                            <div style="margin-top: 4px; color: var(--yellow);">${variant.brand}</div>
+                        </div>
                     </div>
-                    <div class="item-qty ${qtyClass}">${item.qty}%</div>
                 `;
+
+                div.onclick = () => showVariantDetails(variant);
                 container.appendChild(div);
             });
         }
@@ -981,49 +1088,55 @@
             renderInventory();
         }
 
-        // ===== SHOW ITEM DETAILS =====
-        function showItemDetails(item) {
+        // ===== SHOW VARIANT DETAILS =====
+        function showVariantDetails(variant) {
             const display = document.getElementById('item-details-display');
+            let itemsHtml = '<div style="margin-bottom: 16px; padding-bottom: 16px; border-bottom: 1px solid var(--border);">';
+            itemsHtml += '<div style="font-size: 11px; color: var(--text-dim); margin-bottom: 10px; font-weight: 700;">INDIVIDUAL ITEMS:</div>';
+            
+            variant.items.forEach(item => {
+                itemsHtml += `<div style="font-size: 12px; padding: 8px; background: rgba(0,0,0,0.3); border-radius: 6px; margin-bottom: 6px; display: flex; justify-content: space-between;">
+                    <span>${item.id}</span>
+                    <span style="color: var(--yellow); font-weight: bold;">${item.qty}%</span>
+                </div>`;
+            });
+            itemsHtml += '</div>';
+
             display.innerHTML = `
-                <div class="scan-result-title">FULL INFORMATION</div>
-                <div class="scan-result-item">
-                    <span class="scan-result-label">ID:</span>
-                    <span class="scan-result-value">${item.id || 'N/A'}</span>
-                </div>
-                <div class="scan-result-item">
-                    <span class="scan-result-label">Type:</span>
-                    <span class="scan-result-value">${item.status === 'inventory' ? '📫 BOX' : '📦 SPOOL'}</span>
-                </div>
-                <div class="scan-result-item">
-                    <span class="scan-result-label">Brand:</span>
-                    <span class="scan-result-value">${item.brand || 'Unknown'}</span>
-                </div>
+                <div class="scan-result-title">VARIANT INFORMATION</div>
                 <div class="scan-result-item">
                     <span class="scan-result-label">Material:</span>
-                    <span class="scan-result-value">${item.type || 'Unknown'}</span>
+                    <span class="scan-result-value">${variant.type}</span>
                 </div>
                 <div class="scan-result-item">
                     <span class="scan-result-label">Color:</span>
-                    <span class="scan-result-value">${item.color || 'Unknown'}</span>
+                    <span class="scan-result-value">${variant.color}</span>
                 </div>
                 <div class="scan-result-item">
-                    <span class="scan-result-label">Stock:</span>
-                    <span class="scan-result-value" style="color: ${item.qty <= 25 ? 'var(--red)' : 'var(--green)'}">${item.qty}%</span>
+                    <span class="scan-result-label">Brand:</span>
+                    <span class="scan-result-value">${variant.brand}</span>
                 </div>
                 <div class="scan-result-item">
-                    <span class="scan-result-label">Added By:</span>
-                    <span class="scan-result-value">${item.user || 'Unknown'}</span>
+                    <span class="scan-result-label">Type:</span>
+                    <span class="scan-result-value">${variant.status === 'inventory' ? '📫 BOX' : '📦 SPOOL'}</span>
                 </div>
                 <div class="scan-result-item">
-                    <span class="scan-result-label">Date Added:</span>
-                    <span class="scan-result-value">${item.timestamp ? new Date(item.timestamp).toLocaleDateString() : 'N/A'}</span>
+                    <span class="scan-result-label">Total Count:</span>
+                    <span class="scan-result-value">${variant.count}</span>
                 </div>
+                <div class="scan-result-item">
+                    <span class="scan-result-label">Avg Stock:</span>
+                    <span class="scan-result-value" style="color: ${variant.avgQty <= 25 ? 'var(--red)' : 'var(--green)'}">${variant.avgQty}%</span>
+                </div>
+                ${itemsHtml}
             `;
+
             document.getElementById('item-details-modal').style.display = 'flex';
         }
 
         function closeItemDetails() {
             document.getElementById('item-details-modal').style.display = 'none';
+            editingVariantKey = null;
         }
 
         function manualEntry() {
@@ -1044,6 +1157,11 @@
             const id = String(document.getElementById('m-id').value).trim().toUpperCase();
             if (!id) return alert('Please enter an ID');
 
+            // Check if already exists
+            if (inventoryArr.find(i => String(i.id).toUpperCase() === id)) {
+                return alert('❌ This ID already exists! Please use a different ID.');
+            }
+
             db.ref('inventory/' + id).set({
                 id: id,
                 brand: document.getElementById('m-brand').value,
@@ -1055,24 +1173,22 @@
                 timestamp: Date.now()
             });
             closeManualModal();
+            alert('✅ Item added successfully!');
         }
 
         function closeStatsModal() {
             document.getElementById('stats-modal').style.display = 'none';
         }
 
-        // ===== SCAN RESULT DISPLAY =====
+        // ===== SHOW SCAN RESULT =====
         function showScanResult(data) {
             const display = document.getElementById('scan-result-display');
             const stockSelector = document.getElementById('stock-selector');
             
-            // Show/hide stock selector based on type
             if (data.status === 'inventory') {
-                // BOX - hide selector, auto 100%
                 stockSelector.style.display = 'none';
                 data.qty = 100;
             } else {
-                // SPOOL - show selector
                 stockSelector.style.display = 'block';
                 document.getElementById('scan-qty').value = data.qty || 100;
             }
@@ -1114,11 +1230,9 @@
 
         function confirmScan() {
             if (scannedData && scannedData.id) {
-                // For spools, get the selected stock level
                 if (scannedData.status === 'storage') {
                     scannedData.qty = parseInt(document.getElementById('scan-qty').value);
                 } else {
-                    // For boxes, always 100%
                     scannedData.qty = 100;
                 }
                 
@@ -1129,6 +1243,7 @@
                 });
             }
             closeScanModal();
+            alert('✅ Item added successfully!');
         }
 
         // ===== CAMERA FUNCTIONS =====
@@ -1143,6 +1258,11 @@
                 instructions.textContent = "> SCAN TO DELETE <";
                 instructions.style.color = "var(--red)";
                 instructions.style.borderColor = "var(--red)";
+            } else if (mode === 'edit') {
+                shutter.className = 'shutter edit';
+                instructions.textContent = "> SCAN TO EDIT <";
+                instructions.style.color = "var(--blue)";
+                instructions.style.borderColor = "var(--blue)";
             } else {
                 shutter.className = 'shutter';
                 instructions.textContent = "> HOLD STEADY <";
@@ -1152,7 +1272,13 @@
 
             document.getElementById('camera').style.display = 'block';
             try {
-                stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment', width: { ideal: 1920 } } });
+                stream = await navigator.mediaDevices.getUserMedia({ 
+                    video: { 
+                        facingMode: 'environment', 
+                        width: { ideal: 1280 },
+                        height: { ideal: 720 }
+                    } 
+                });
                 document.getElementById('video').srcObject = stream;
             } catch(e) {
                 alert("Camera Error. Please allow permissions.");
@@ -1165,7 +1291,7 @@
             document.getElementById('processing').style.display = 'none';
         }
 
-        // ===== CAPTURE & GROQ AI WITH ENHANCED OCR =====
+        // ===== OPTIMIZED CAPTURE & FAST GROQ AI =====
         async function capture() {
             const GROQ_KEY = localStorage.getItem('groqKey');
             if(!GROQ_KEY) return alert("Please set your Groq API key first!");
@@ -1178,45 +1304,48 @@
             const vid = document.getElementById('video');
             const canvas = document.getElementById('canvas');
 
-            canvas.width = 1920;
-            canvas.height = 1440;
-            canvas.getContext('2d').drawImage(vid, 0, 0, 1920, 1440);
-            let base64 = canvas.toDataURL('image/jpeg', 0.95);
+            // Optimized canvas settings for faster processing
+            canvas.width = 1024;
+            canvas.height = 768;
+            canvas.getContext('2d').drawImage(vid, 0, 0, 1024, 768);
+            let base64 = canvas.toDataURL('image/jpeg', 0.85);
 
             try {
                 let aiPrompt = "";
 
                 if (currentScanMode === 'scan') {
-                    aiPrompt = `You are analyzing a 3D printer filament product image. Your task is to extract information with EXTREME ACCURACY.
+                    aiPrompt = `FAST BARCODE/SERIAL READING - Return ONLY valid JSON, no explanations.
 
-CRITICAL INSTRUCTIONS FOR DOT MATRIX NUMBERS:
-- The number "0" (zero) has a SLANTED LINE through the middle (diagonal slash)
-- The number "8" is made of TWO STACKED CIRCLES
-- The number "9" has a CIRCLE on top with a vertical line below
-- The number "6" has a CIRCLE on bottom with a curved top
-- Read VERY CAREFULLY character by character
-- If unsure between similar characters, look for distinctive features
+For 3D printer filament:
+- 0=SLANTED LINE through middle (diagonal)
+- 8=TWO STACKED CIRCLES  
+- 9=CIRCLE on top + vertical line
+- 6=CIRCLE on bottom + curved top
 
-ITEM TYPE DETECTION:
-1. BOX: Cardboard packaging with printed barcode (usually under product info)
-2. SPOOL: Plastic reel with dot-matrix printed serial number on the rim
+BOX=Cardboard with barcode | SPOOL=Plastic reel with dot-matrix numbers
 
-EXTRACTION REQUIREMENTS:
-1. ID/Serial Number: Extract EXACTLY as shown. Double-check each digit.
-2. Brand/Manufacturer: Company name on label
-3. Material: PLA, PETG, ABS, TPU, NYLON, etc.
-4. Color: Actual filament color
+EXTRACT EXACTLY:
+1. ID: Serial number as shown (char by char)
+2. Type: BOX or SPOOL
+3. Brand: Manufacturer name
+4. Material: PLA/PETG/ABS/TPU/NYLON/OTHER
+5. Color: Filament color
 
-Return ONLY valid JSON:
-{"asset_id":"EXACT_ID_HERE","item_type":"box_or_spool","brand":"BRAND","type":"MATERIAL","color":"COLOR"}`;
+Return ONLY: {"asset_id":"ID","item_type":"box_or_spool","brand":"BRAND","type":"MATERIAL","color":"COLOR"}`;
+                } else if (currentScanMode === 'edit') {
+                    aiPrompt = `READ SERIAL NUMBER ONLY. Return: {"asset_id":"EXACT_ID","item_type":"unknown","brand":"","type":"","color":""}`;
                 } else {
-                    aiPrompt = "Extract the ID, barcode, or serial number with EXTREME accuracy. Focus on dot-matrix printed numbers. Return JSON: {\"asset_id\":\"ID\",\"item_type\":\"unknown\",\"brand\":\"\",\"type\":\"\",\"color\":\"\"}";
+                    aiPrompt = `READ ID/BARCODE for deletion. {"asset_id":"ID","item_type":"unknown","brand":"","type":"","color":""}`;
                 }
 
-                document.getElementById('processing-msg').textContent = 'AI analyzing image...';
+                document.getElementById('processing-msg').textContent = 'Reading barcode...';
+
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => controller.abort(), 15000);
 
                 const res = await fetch("https://api.groq.com/openai/v1/chat/completions", {
                     method: 'POST',
+                    signal: controller.signal,
                     headers: {
                         'Authorization': `Bearer ${GROQ_KEY}`,
                         'Content-Type': 'application/json'
@@ -1230,17 +1359,20 @@ Return ONLY valid JSON:
                                 { type: "image_url", image_url: { url: base64 } }
                             ]
                         }],
-                        temperature: 0.05,
-                        max_tokens: 600
+                        temperature: 0.02,
+                        max_tokens: 300,
+                        top_p: 0.9
                     })
                 });
+
+                clearTimeout(timeoutId);
 
                 if (!res.ok) {
                     const err = await res.json();
                     throw new Error(`API Error: ${err.error?.message || res.status}`);
                 }
 
-                document.getElementById('processing-msg').textContent = 'Parsing response...';
+                document.getElementById('processing-msg').textContent = 'Parsing...';
 
                 const data = await res.json();
                 let result;
@@ -1253,7 +1385,7 @@ Return ONLY valid JSON:
                     if (jsonMatch) {
                         result = JSON.parse(jsonMatch[0]);
                     } else {
-                        throw new Error('No JSON found in AI response');
+                        throw new Error('No JSON found in response');
                     }
                 }
 
@@ -1261,16 +1393,34 @@ Return ONLY valid JSON:
                 let detectedType = result.item_type ? String(result.item_type).toLowerCase() : 'storage';
 
                 if (!finalId) {
-                    alert('Could not read ID. Please ensure good lighting and hold camera steady.');
+                    alert('Could not read ID. Adjust lighting and hold camera steady.');
                     shutterBtn.disabled = false;
                     document.getElementById('processing').style.display = 'none';
                     return;
                 }
 
+                // EDIT MODE
+                if (currentScanMode === 'edit') {
+                    const existing = inventoryArr.find(i => String(i.id).toUpperCase() === finalId);
+                    if (!existing) {
+                        alert('❌ ID NOT FOUND');
+                        closeCamera();
+                        shutterBtn.disabled = false;
+                        return;
+                    }
+                    closeCamera();
+                    showEditModal(existing);
+                    return;
+                }
+
+                // DELETE MODE
                 if (currentScanMode === 'delete') {
-                    if (inventoryArr.find(i => String(i.id).toUpperCase() === finalId)) {
-                        await db.ref('inventory/' + finalId).remove();
-                        alert("✅ DELETED");
+                    const existing = inventoryArr.find(i => String(i.id).toUpperCase() === finalId);
+                    if (existing) {
+                        if (confirm(`Delete ${existing.id}?\n${existing.type} - ${existing.color}`)) {
+                            await db.ref('inventory/' + finalId).remove();
+                            alert("✅ DELETED");
+                        }
                     } else {
                         alert("❌ NOT FOUND");
                     }
@@ -1278,24 +1428,22 @@ Return ONLY valid JSON:
                     return;
                 }
 
-                // Check if already exists - SHOW ERROR
+                // SCAN MODE - Add new
                 const existing = inventoryArr.find(i => String(i.id).toUpperCase() === finalId);
                 if (existing) {
                     closeCamera();
-                    alert(`⚠️ ERROR: This ${existing.status === 'inventory' ? 'BOX' : 'SPOOL'} already exists in the system!\n\nID: ${existing.id}\nBrand: ${existing.brand || 'Unknown'}\nMaterial: ${existing.type || 'Unknown'}\nColor: ${existing.color || 'Unknown'}\n\nPlease scan a different item.`);
+                    alert(`⚠️ ALREADY EXISTS!\n\nID: ${existing.id}\nMaterial: ${existing.type}\nColor: ${existing.color}\n\nPlease scan a different item.`);
+                    shutterBtn.disabled = false;
                     return;
                 }
 
-                // Determine status and stock level
-                let assignedStatus = 'storage'; // Default to SPOOL
+                let assignedStatus = 'storage';
                 let stockLevel = 100;
 
-                // If AI detected it's a BOX, set to inventory with 100%
                 if (detectedType.includes('box')) {
                     assignedStatus = 'inventory';
                     stockLevel = 100;
                 }
-                // For SPOOLS (storage), stock will be selected by user
 
                 scannedData = {
                     id: finalId,
@@ -1311,13 +1459,65 @@ Return ONLY valid JSON:
 
             } catch (e) {
                 console.error(e);
-                alert(`Error: ${e.message}\n\nTip: Make sure you're using a valid Groq API key`);
+                if (e.name === 'AbortError') {
+                    alert('⏱️ Request timeout. Please try again.');
+                } else {
+                    alert(`Error: ${e.message}`);
+                }
                 shutterBtn.disabled = false;
                 document.getElementById('processing').style.display = 'none';
             }
         }
 
-        // ===== STATS MODAL =====
+        // ===== EDIT MODE =====
+        function showEditModal(item) {
+            const display = document.getElementById('item-details-display');
+            document.getElementById('edit-qty').value = item.qty || 100;
+
+            display.innerHTML = `
+                <div class="scan-result-title">EDITING ITEM</div>
+                <div class="scan-result-item">
+                    <span class="scan-result-label">ID:</span>
+                    <span class="scan-result-value">${item.id}</span>
+                </div>
+                <div class="scan-result-item">
+                    <span class="scan-result-label">Material:</span>
+                    <span class="scan-result-value">${item.type || 'Unknown'}</span>
+                </div>
+                <div class="scan-result-item">
+                    <span class="scan-result-label">Color:</span>
+                    <span class="scan-result-value">${item.color || 'Unknown'}</span>
+                </div>
+                <div class="scan-result-item">
+                    <span class="scan-result-label">Brand:</span>
+                    <span class="scan-result-value">${item.brand || 'Unknown'}</span>
+                </div>
+                <div class="scan-result-item">
+                    <span class="scan-result-label">Current Stock:</span>
+                    <span class="scan-result-value" style="color: var(--green);">${item.qty}%</span>
+                </div>
+            `;
+
+            document.getElementById('edit-stock-selector').style.display = 'block';
+            document.getElementById('edit-btn').style.display = 'block';
+            editingVariantKey = item.id;
+            document.getElementById('item-details-modal').style.display = 'flex';
+        }
+
+        function saveItemEdit() {
+            if (!editingVariantKey) return;
+            const newQty = parseInt(document.getElementById('edit-qty').value);
+            
+            db.ref('inventory/' + editingVariantKey).update({
+                qty: newQty,
+                timestamp: Date.now()
+            });
+
+            alert('✅ Updated successfully!');
+            closeItemDetails();
+        }
+
+        // ===== STATS =====
         function showStats() {
             const material = {};
             const brands = {};
@@ -1330,8 +1530,7 @@ Return ONLY valid JSON:
             const avg = inventoryArr.length > 0 ? Math.round(inventoryArr.reduce((a, b) => a + (b.qty || 0), 0) / inventoryArr.length) : 0;
 
             document.getElementById('stat-total').textContent = inventoryArr.length;
-            document.getElementById('stat-spools').textContent = inventoryArr.filter(i => i.status === 'storage').length;
-            document.getElementById('stat-boxes').textContent = inventoryArr.filter(i => i.status === 'inventory').length;
+            document.getElementById('stat-variants').textContent = Object.keys(aggregatedData).length;
             document.getElementById('stat-low').textContent = inventoryArr.filter(i => i.qty <= 25).length;
             document.getElementById('stat-full').textContent = inventoryArr.filter(i => i.qty >= 100).length;
             document.getElementById('stat-avg').textContent = avg + '%';
@@ -1351,16 +1550,16 @@ Return ONLY valid JSON:
             document.getElementById('stats-modal').style.display = 'flex';
         }
 
-        // ===== EXPORT FEATURE =====
+        // ===== EXPORT =====
         function exportData() {
             if (inventoryArr.length === 0) {
                 alert('No data to export');
                 return;
             }
 
-            let csv = 'ID,Brand,Type,Color,Stock%,User,Date\n';
+            let csv = 'ID,Brand,Type,Color,Stock%,Status,User,Date\n';
             inventoryArr.forEach(item => {
-                csv += `"${item.id}","${item.brand || ''}","${item.type || ''}","${item.color || ''}",${item.qty || 0},"${item.user || ''}","${new Date(item.timestamp).toLocaleDateString()}"\n`;
+                csv += `"${item.id}","${item.brand || ''}","${item.type || ''}","${item.color || ''}",${item.qty || 0},"${item.status || ''}","${item.user || ''}","${new Date(item.timestamp).toLocaleDateString()}"\n`;
             });
 
             const blob = new Blob([csv], { type: 'text/csv' });
