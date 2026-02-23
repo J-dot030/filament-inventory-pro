@@ -695,6 +695,24 @@
             
             <div class="scan-result" id="scan-result-display"></div>
 
+            <!-- Stock Level Selector (only for spools) -->
+            <div class="form-group" id="stock-selector" style="display: none;">
+                <label class="form-label">Stock Level</label>
+                <select id="scan-qty" class="form-select">
+                    <option value="100">🟢 100% - Full Spool</option>
+                    <option value="90">🟢 90%</option>
+                    <option value="80">🟢 80%</option>
+                    <option value="70">🟡 70%</option>
+                    <option value="60">🟡 60%</option>
+                    <option value="50">🟡 50% - Half Spool</option>
+                    <option value="40">🟡 40%</option>
+                    <option value="30">🟡 30%</option>
+                    <option value="25">🔴 25% - Low Stock</option>
+                    <option value="20">🔴 20%</option>
+                    <option value="10">🔴 10% - Almost Empty</option>
+                </select>
+            </div>
+
             <div class="btn-group">
                 <button class="btn-main btn-scan" onclick="confirmScan()">✓ CONFIRM</button>
                 <button class="btn-secondary" onclick="closeScanModal()">✕ CANCEL</button>
@@ -760,6 +778,19 @@
             <div class="btn-group">
                 <button class="btn-main btn-scan" onclick="saveManualEntry()">SAVE</button>
                 <button class="btn-secondary" onclick="closeManualModal()">CANCEL</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ITEM DETAILS MODAL -->
+    <div class="modal" id="item-details-modal">
+        <div class="modal-content">
+            <div style="color:var(--yellow); font-weight:900; margin-bottom:20px; font-family:'Orbitron'; font-size: 16px; letter-spacing: 2px;">📋 ITEM DETAILS</div>
+            
+            <div class="scan-result" id="item-details-display"></div>
+
+            <div class="btn-group">
+                <button class="btn-secondary" onclick="closeItemDetails()" style="flex: 1;">CLOSE</button>
             </div>
         </div>
     </div>
@@ -930,12 +961,12 @@
                 const qtyClass = item.qty <= 10 ? 'low' : item.qty <= 50 ? 'mid' : '';
                 const icon = item.status === 'inventory' ? '📫' : '📦';
 
-                div.onclick = () => editItem(item);
+                div.onclick = () => showItemDetails(item);
                 div.innerHTML = `
                     <div class="item-id">${item.id}</div>
                     <div class="item-info">
-                        <div class="item-name">${icon} ${item.brand || 'Unknown'} ${item.type || ''}</div>
-                        <div class="item-meta">${item.color || 'N/A'} • ${item.user || 'Unknown'}</div>
+                        <div class="item-name">${icon} ${item.type || 'Unknown'}</div>
+                        <div class="item-meta">${item.color || 'N/A'}</div>
                     </div>
                     <div class="item-qty ${qtyClass}">${item.qty}%</div>
                 `;
@@ -950,10 +981,49 @@
             renderInventory();
         }
 
-        // ===== EDIT ITEM =====
-        function editItem(item) {
-            scannedData = item;
-            showScanResult(item);
+        // ===== SHOW ITEM DETAILS =====
+        function showItemDetails(item) {
+            const display = document.getElementById('item-details-display');
+            display.innerHTML = `
+                <div class="scan-result-title">FULL INFORMATION</div>
+                <div class="scan-result-item">
+                    <span class="scan-result-label">ID:</span>
+                    <span class="scan-result-value">${item.id || 'N/A'}</span>
+                </div>
+                <div class="scan-result-item">
+                    <span class="scan-result-label">Type:</span>
+                    <span class="scan-result-value">${item.status === 'inventory' ? '📫 BOX' : '📦 SPOOL'}</span>
+                </div>
+                <div class="scan-result-item">
+                    <span class="scan-result-label">Brand:</span>
+                    <span class="scan-result-value">${item.brand || 'Unknown'}</span>
+                </div>
+                <div class="scan-result-item">
+                    <span class="scan-result-label">Material:</span>
+                    <span class="scan-result-value">${item.type || 'Unknown'}</span>
+                </div>
+                <div class="scan-result-item">
+                    <span class="scan-result-label">Color:</span>
+                    <span class="scan-result-value">${item.color || 'Unknown'}</span>
+                </div>
+                <div class="scan-result-item">
+                    <span class="scan-result-label">Stock:</span>
+                    <span class="scan-result-value" style="color: ${item.qty <= 25 ? 'var(--red)' : 'var(--green)'}">${item.qty}%</span>
+                </div>
+                <div class="scan-result-item">
+                    <span class="scan-result-label">Added By:</span>
+                    <span class="scan-result-value">${item.user || 'Unknown'}</span>
+                </div>
+                <div class="scan-result-item">
+                    <span class="scan-result-label">Date Added:</span>
+                    <span class="scan-result-value">${item.timestamp ? new Date(item.timestamp).toLocaleDateString() : 'N/A'}</span>
+                </div>
+            `;
+            document.getElementById('item-details-modal').style.display = 'flex';
+        }
+
+        function closeItemDetails() {
+            document.getElementById('item-details-modal').style.display = 'none';
         }
 
         function manualEntry() {
@@ -994,6 +1064,19 @@
         // ===== SCAN RESULT DISPLAY =====
         function showScanResult(data) {
             const display = document.getElementById('scan-result-display');
+            const stockSelector = document.getElementById('stock-selector');
+            
+            // Show/hide stock selector based on type
+            if (data.status === 'inventory') {
+                // BOX - hide selector, auto 100%
+                stockSelector.style.display = 'none';
+                data.qty = 100;
+            } else {
+                // SPOOL - show selector
+                stockSelector.style.display = 'block';
+                document.getElementById('scan-qty').value = data.qty || 100;
+            }
+            
             display.innerHTML = `
                 <div class="scan-result-title">DETECTED INFORMATION</div>
                 <div class="scan-result-item">
@@ -1002,7 +1085,7 @@
                 </div>
                 <div class="scan-result-item">
                     <span class="scan-result-label">Type:</span>
-                    <span class="scan-result-value">${data.status === 'inventory' ? 'BOX' : 'SPOOL'}</span>
+                    <span class="scan-result-value">${data.status === 'inventory' ? '📫 BOX' : '📦 SPOOL'}</span>
                 </div>
                 <div class="scan-result-item">
                     <span class="scan-result-label">Brand:</span>
@@ -1016,10 +1099,10 @@
                     <span class="scan-result-label">Color:</span>
                     <span class="scan-result-value">${data.color || 'Unknown'}</span>
                 </div>
-                <div class="scan-result-item">
+                ${data.status === 'inventory' ? `<div class="scan-result-item">
                     <span class="scan-result-label">Stock:</span>
-                    <span class="scan-result-value" style="color: ${data.qty <= 25 ? 'var(--red)' : 'var(--green)'}">${data.qty}%</span>
-                </div>
+                    <span class="scan-result-value" style="color: var(--green)">100% (Box)</span>
+                </div>` : ''}
             `;
             document.getElementById('scan-modal').style.display = 'flex';
         }
@@ -1031,6 +1114,14 @@
 
         function confirmScan() {
             if (scannedData && scannedData.id) {
+                // For spools, get the selected stock level
+                if (scannedData.status === 'storage') {
+                    scannedData.qty = parseInt(document.getElementById('scan-qty').value);
+                } else {
+                    // For boxes, always 100%
+                    scannedData.qty = 100;
+                }
+                
                 db.ref('inventory/' + scannedData.id).set({
                     ...scannedData,
                     user: activeUser,
@@ -1187,22 +1278,24 @@ Return ONLY valid JSON:
                     return;
                 }
 
-                // Check if already exists
+                // Check if already exists - SHOW ERROR
                 const existing = inventoryArr.find(i => String(i.id).toUpperCase() === finalId);
                 if (existing) {
                     closeCamera();
-                    showScanResult(existing);
+                    alert(`⚠️ ERROR: This ${existing.status === 'inventory' ? 'BOX' : 'SPOOL'} already exists in the system!\n\nID: ${existing.id}\nBrand: ${existing.brand || 'Unknown'}\nMaterial: ${existing.type || 'Unknown'}\nColor: ${existing.color || 'Unknown'}\n\nPlease scan a different item.`);
                     return;
                 }
 
                 // Determine status and stock level
-                let assignedStatus = 'storage';
+                let assignedStatus = 'storage'; // Default to SPOOL
                 let stockLevel = 100;
 
+                // If AI detected it's a BOX, set to inventory with 100%
                 if (detectedType.includes('box')) {
                     assignedStatus = 'inventory';
-                    stockLevel = 100; // Boxes are always 100%
+                    stockLevel = 100;
                 }
+                // For SPOOLS (storage), stock will be selected by user
 
                 scannedData = {
                     id: finalId,
