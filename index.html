@@ -201,7 +201,7 @@
     <div class="toast" id="toast"></div>
 
     <script>
-        // --- FIREBASE CONFIGURATION ---
+        // --- 1. FIREBASE CONFIGURATION ---
         const firebaseConfig = {
             apiKey: "AIzaSyCLlCKwujLGtQw9DEvHl-ZYW1Z0cK8Xw-E",
             authDomain: "inventory-86d26.firebaseapp.com",
@@ -215,14 +215,17 @@
         firebase.initializeApp(firebaseConfig);
         const db = firebase.database();
         const inventoryRef = db.ref('inventory');
+        
         const GEMINI_API_KEY = "AIzaSyDmLS6kfioDv548O6Qg-2sBA1YQQ_IMAlw";
 
+        // --- 2. APP STATE ---
         let inventoryArr = [];
         let activeUser = localStorage.getItem('activeUser');
         let aiStream = null;
         let currentTab = 'storage';
         let currentScanMode = 'scan'; 
 
+        // --- 3. LOGIN LOGIC ---
         if(activeUser) {
             document.getElementById('login-screen').classList.add('hidden');
             document.getElementById('main-app').style.display = 'block';
@@ -246,13 +249,21 @@
             syncData();
         }
 
-        function logout() { localStorage.removeItem('activeUser'); location.reload(); }
+        function logout() {
+            localStorage.removeItem('activeUser');
+            location.reload();
+        }
 
         function setApiKey() {
             const key = prompt('Update Gemini API Key:', localStorage.getItem('geminiApiKey') || GEMINI_API_KEY);
-            if (key) { localStorage.setItem('geminiApiKey', key); showToast('API_KEY_UPDATED'); }
+            if (key) { 
+                localStorage.setItem('geminiApiKey', key); 
+                localStorage.removeItem('freeGemmaModel'); // Clear cached model to reset
+                showToast('API_KEY_UPDATED'); 
+            }
         }
 
+        // --- 4. CLOUD SYNC & UI ---
         function syncData() {
             inventoryRef.on('value', (snapshot) => {
                 const data = snapshot.val();
@@ -341,10 +352,11 @@
             setTimeout(() => toast.style.display = 'none', 3000);
         }
 
+        // --- 5. CAMERA & ULTRA-FAST GEMMA SCANNER ---
         async function openCamera(mode) {
             currentScanMode = mode;
             const shutter = document.getElementById('shutter');
-            shutter.disabled = false; // Ensure button is active
+            shutter.disabled = false;
             
             if (mode === 'delete') {
                 shutter.className = 'shutter delete';
@@ -370,8 +382,8 @@
 
         window.capture = async function() {
             const shutterBtn = document.getElementById('shutter');
-            if (shutterBtn.disabled) return; // Prevent double-tap
-            shutterBtn.disabled = true; // Lock button instantly
+            if (shutterBtn.disabled) return; 
+            shutterBtn.disabled = true;
 
             let key = localStorage.getItem('geminiApiKey') || GEMINI_API_KEY;
             key = key.trim(); 
@@ -379,61 +391,69 @@
             const proc = document.getElementById('processing');
             const log = document.getElementById('proc-log');
             const text = document.getElementById('proc-text');
-            const spinner = document.querySelector('.spinner');
 
             proc.style.display = 'flex';
             text.textContent = 'ANALYZING...';
-            log.textContent = 'Compressing image...';
+            log.textContent = 'Compressing image for instant uplink...';
 
             const canvas = document.getElementById('canvas');
             const video = document.getElementById('video');
             
-            // SUPER COMPRESSION (512px) - Stops Google from thinking it's too much data
-            const scale = Math.min(1, 512 / video.videoWidth); 
+            // AGGRESSIVE COMPRESSION
+            const scale = Math.min(1, 640 / video.videoWidth); 
             canvas.width = video.videoWidth * scale; 
             canvas.height = video.videoHeight * scale;
             canvas.getContext('2d').drawImage(video, 0, 0, canvas.width, canvas.height);
             const base64 = canvas.toDataURL('image/jpeg', 0.7).split(',')[1];
 
             try {
-                log.textContent = `Uplinking to Gemini 2.5 Flash...`;
-                const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${key}`;
+                // AUTO-DETECT THE BEST GEMMA 3 MODEL
+                let modelToUse = localStorage.getItem('freeGemmaModel');
                 
-                let res;
-                let attempt = 0;
-                let success = false;
-
-                // SILENT AUTO-RETRY LOOP (Catches false 429s without bothering the user)
-                while (attempt < 2 && !success) {
-                    res = await fetch(url, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({
-                            contents: [{
-                                parts: [
-                                    { text: "Analyze this 3D filament spool/box.\n\n1. PHYSICAL STATE: Return 'inventory' if you see an unopened square/rectangular cardboard box. Return 'storage' if you see a circular plastic/cardboard spool.\n2. ASSET ID: \n- IF SPOOL ('storage'): Find the 13-char alphanumeric serial (3 digits, 'M', 9 digits). Slashed zero is '0'. IGNORE 1D barcodes.\n- IF BOX ('inventory'): Read the standard 1D barcode number as the asset_id.\n3. RAW LINES: Read every line of text into an array 'raw_text_lines'.\n\nReturn strictly valid JSON: {\"brand\": \"string\", \"color\": \"string\", \"type\": \"string\", \"asset_id\": \"string or null\", \"percentage_left\": 100, \"status\": \"inventory or storage\", \"raw_text_lines\": [\"line 1\"]}" },
-                                    { inlineData: { mimeType: 'image/jpeg', data: base64 } }
-                                ]
-                            }]
-                        })
-                    });
-
-                    if (res.status === 429) {
-                        attempt++;
-                        log.textContent = 'API busy. Auto-retrying securely...';
-                        await new Promise(r => setTimeout(r, 2500)); // Wait 2.5s and silently try again
-                        continue; 
-                    }
-                    if (!res.ok) {
-                        const errData = await res.json();
-                        throw new Error(`HTTP ${res.status}: ${errData.error?.message || "Unknown Error"}`);
-                    }
-                    success = true;
+                if (!modelToUse) {
+                    log.textContent = 'Finding best free Gemma model...';
+                    const req = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${key}`);
+                    if (!req.ok) throw new Error("API Key or Network Error");
+                    
+                    const data = await req.json();
+                    const models = data.models.map(m => m.name.replace('models/', ''));
+                    
+                    // Look specifically for Gemma 3 models which have 14.4K daily limit
+                    if (models.includes('gemma-3-27b-it')) modelToUse = 'gemma-3-27b-it';
+                    else if (models.includes('gemma-3-12b-it')) modelToUse = 'gemma-3-12b-it';
+                    else if (models.includes('gemma-3-4b-it')) modelToUse = 'gemma-3-4b-it';
+                    else if (models.includes('gemma-3-27b')) modelToUse = 'gemma-3-27b';
+                    else if (models.includes('gemma-3-12b')) modelToUse = 'gemma-3-12b';
+                    else modelToUse = 'gemini-2.5-flash'; // Fallback if Gemma isn't found
+                    
+                    localStorage.setItem('freeGemmaModel', modelToUse);
                 }
 
-                // If it STILL fails after the auto-retry
-                if (!success && res && res.status === 429) {
-                    throw new Error("RATE_LIMIT");
+                log.textContent = `Uplinking to ${modelToUse}...`;
+                const url = `https://generativelanguage.googleapis.com/v1beta/models/${modelToUse}:generateContent?key=${key}`;
+                
+                let res = await fetch(url, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        contents: [{
+                            parts: [
+                                { text: "Analyze this 3D filament spool/box.\n\n1. PHYSICAL STATE: Return 'inventory' if you see an unopened square/rectangular cardboard box. Return 'storage' if you see a circular plastic/cardboard spool.\n2. ASSET ID: \n- IF SPOOL ('storage'): Find the 13-char alphanumeric serial (3 digits, 'M', 9 digits). Slashed zero is '0'. IGNORE 1D barcodes.\n- IF BOX ('inventory'): Read the standard 1D barcode number as the asset_id.\n3. RAW LINES: Read every line of text into an array 'raw_text_lines'.\n\nReturn strictly valid JSON: {\"brand\": \"string\", \"color\": \"string\", \"type\": \"string\", \"asset_id\": \"string or null\", \"percentage_left\": 100, \"status\": \"inventory or storage\", \"raw_text_lines\": [\"line 1\"]}" },
+                                { inlineData: { mimeType: 'image/jpeg', data: base64 } }
+                            ]
+                        }]
+                    })
+                });
+
+                // If the model fails or gives a 404, clear the cached model to force a re-check next time
+                if (!res.ok) {
+                    if (res.status === 404 || res.status === 400 || res.status === 403) {
+                        localStorage.removeItem('freeGemmaModel');
+                    }
+                    if (res.status === 429) throw new Error("RATE_LIMIT");
+                    
+                    const errData = await res.json();
+                    throw new Error(`Google HTTP ${res.status}: ${errData.error?.message || "Unknown API Error"}`);
                 }
 
                 const data = await res.json();
@@ -535,12 +555,14 @@
                 document.getElementById('processing').style.display = 'none';
                 
                 if (e.message.includes("429") || e.message.includes("RATE_LIMIT")) {
-                    alert(`⚠️ GOOGLE FREE TIER LIMIT REACHED\n\nEven with auto-retries, the system is blocked by Google. Please wait exactly 60 seconds before scanning again.`);
+                    alert(`⚠️ SPEED LIMIT REACHED\n\nYou scanned 30 times in one minute. Please wait 60 seconds and try again.`);
+                } else if (e.message.includes("404")) {
+                    alert(`⚠️ AI MODEL MISSING\n\nThe app tried to use an AI model that Google doesn't allow on this key. The cache has been cleared, so please try scanning again to auto-fix it.`);
                 } else {
                     alert(`⚠️ SCAN FAILED\n\nError: ${e.message}\n\nHold the phone steady, ensure good lighting, and try again.`);
                 }
             } finally {
-                shutterBtn.disabled = false; // Unlock button
+                shutterBtn.disabled = false; 
             }
         };
     </script>
