@@ -5,142 +5,93 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
     <title>Filament Inventory</title>
+    
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
+
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700;800&display=swap" rel="stylesheet">
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        
-        :root {
-            --bg: #0a0a0a;
-            --surface: #141414;
-            --surface-hover: #1f1f1f;
-            --yellow: #FFD700;
-            --yellow-dim: rgba(255, 215, 0, 0.2);
-            --border: #333333;
-            --text: #ffffff;
-            --text-dim: #888888;
-            --red: #FF4444;
-            --green: #00FF88;
-        }
-        
+        :root { --bg: #0a0a0a; --surface: #141414; --surface-hover: #1f1f1f; --yellow: #FFD700; --yellow-dim: rgba(255, 215, 0, 0.2); --border: #333333; --text: #ffffff; --text-dim: #888888; --red: #FF4444; --green: #00FF88; }
         body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
-        
-        /* CRT Scanline */
-        body::before {
-            content: ''; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: repeating-linear-gradient(0deg, rgba(0,0,0,0.15), rgba(0,0,0,0.15) 1px, transparent 1px, transparent 2px);
-            pointer-events: none; z-index: 999;
-        }
-        
+        body::before { content: ''; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: repeating-linear-gradient(0deg, rgba(0,0,0,0.15), rgba(0,0,0,0.15) 1px, transparent 1px, transparent 2px); pointer-events: none; z-index: 999; }
         .container { max-width: 600px; margin: 0 auto; position: relative; padding-bottom: 120px; }
-        
-        /* Header */
         header { background: var(--surface); border-bottom: 2px solid var(--yellow); padding: 16px 20px; position: sticky; top: 0; z-index: 100; box-shadow: 0 4px 20px rgba(255, 215, 0, 0.1); }
         .header-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
-        .logo { font-family: 'JetBrains Mono', monospace; font-size: 18px; font-weight: 800; color: var(--yellow); letter-spacing: 1px; display: flex; align-items: center; gap: 8px; }
+        .logo { font-family: 'JetBrains Mono', monospace; font-size: 20px; font-weight: 800; color: var(--yellow); letter-spacing: 1px; display: flex; align-items: center; gap: 8px; }
         .sync-status { display: flex; align-items: center; gap: 6px; font-size: 11px; color: var(--green); font-weight: 700; font-family: 'JetBrains Mono', monospace; }
         .sync-dot { width: 8px; height: 8px; background: var(--green); border-radius: 50%; animation: pulse 1.5s infinite; }
         @keyframes pulse { 0%, 100% { opacity: 1; transform: scale(1); box-shadow: 0 0 8px var(--green); } 50% { opacity: 0.5; transform: scale(0.8); box-shadow: none; } }
-        
         .user-bar { display: flex; justify-content: space-between; align-items: center; }
         .user-info { font-family: 'JetBrains Mono', monospace; font-size: 12px; color: var(--text-dim); }
         .btn-group { display: flex; gap: 8px; }
         .header-btn { background: transparent; border: 1px solid var(--border); color: var(--text-dim); padding: 6px 12px; border-radius: 4px; font-size: 11px; font-weight: 700; cursor: pointer; transition: 0.2s; font-family: 'JetBrains Mono', monospace; text-transform: uppercase; }
         .header-btn:hover { border-color: var(--yellow); color: var(--yellow); }
-        
-        /* Stats */
         .stats { padding: 20px; display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
         .stat-card { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 16px; border-left: 3px solid var(--yellow); }
         .stat-label { font-size: 10px; color: var(--text-dim); text-transform: uppercase; font-weight: 700; letter-spacing: 1px; margin-bottom: 4px; }
         .stat-value { font-family: 'JetBrains Mono', monospace; font-size: 28px; font-weight: 800; color: var(--text); }
-        
-        /* Tabs */
         .tabs { display: flex; padding: 0 20px; gap: 8px; margin-bottom: 20px; }
         .tab { flex: 1; padding: 12px; background: var(--surface); border: 1px solid var(--border); border-radius: 6px; text-align: center; font-weight: 700; font-size: 12px; cursor: pointer; color: var(--text-dim); text-transform: uppercase; letter-spacing: 1px; }
         .tab.active { background: var(--yellow-dim); color: var(--yellow); border-color: var(--yellow); }
-        
-        /* Search */
         .search { padding: 0 20px; margin-bottom: 24px; }
         .search-input { width: 100%; background: var(--surface); border: 1px solid var(--border); border-radius: 6px; padding: 14px 16px; color: var(--text); font-size: 14px; outline: none; font-family: 'JetBrains Mono', monospace; }
-        .search-input:focus { border-color: var(--yellow); box-shadow: 0 0 15px var(--yellow-dim); }
-        
-        /* Inventory List */
         .inventory { padding: 0 20px; }
         .group-header { color: var(--yellow); font-family: 'JetBrains Mono', monospace; font-size: 12px; font-weight: 700; border-bottom: 1px dashed var(--border); padding-bottom: 8px; margin-bottom: 12px; display: flex; justify-content: space-between; cursor: pointer; }
         .group-items { display: none; flex-direction: column; gap: 8px; margin-bottom: 24px; }
         .group-items.open { display: flex; }
-        
         .item { background: var(--surface); border: 1px solid var(--border); border-radius: 6px; padding: 16px; display: flex; align-items: center; gap: 12px; cursor: pointer; }
-        .item:hover { border-color: var(--yellow); }
         .item-id { font-family: 'JetBrains Mono', monospace; font-size: 13px; font-weight: 800; color: var(--bg); background: var(--yellow); padding: 4px 8px; border-radius: 4px; min-width: 70px; text-align: center; }
         .item.box .item-id { background: var(--green); }
         .item-info { flex: 1; }
         .item-brand { font-weight: 700; font-size: 14px; margin-bottom: 2px; }
         .item-meta { font-size: 11px; color: var(--text-dim); }
-        
         .qty { display: flex; align-items: center; background: var(--bg); border: 1px solid var(--border); border-radius: 4px; }
         .qty-btn { width: 32px; height: 32px; background: transparent; border: none; color: var(--text-dim); font-size: 16px; cursor: pointer; }
-        .qty-btn:hover { color: var(--yellow); background: var(--surface-hover); }
         .qty-val { font-family: 'JetBrains Mono', monospace; font-size: 12px; font-weight: 700; width: 44px; text-align: center; color: var(--yellow); border-left: 1px solid var(--border); border-right: 1px solid var(--border); }
-        
-        /* Action Bar */
         .actions { position: fixed; bottom: 0; left: 50%; transform: translateX(-50%); width: 100%; max-width: 600px; background: var(--bg); border-top: 2px solid var(--yellow); padding: 16px 20px; display: flex; gap: 12px; z-index: 50; }
         .btn-main { flex: 2; padding: 16px; border-radius: 6px; border: none; background: var(--yellow); color: var(--bg); font-weight: 800; font-size: 14px; cursor: pointer; text-transform: uppercase; font-family: 'JetBrains Mono', monospace; }
         .btn-secondary { flex: 1; padding: 16px; border-radius: 6px; border: 1px solid var(--red); background: transparent; color: var(--red); font-weight: 700; font-size: 12px; cursor: pointer; text-transform: uppercase; font-family: 'JetBrains Mono', monospace; }
-        
-        /* Camera */
         .camera { position: fixed; inset: 0; background: #000; z-index: 400; display: none; flex-direction: column; }
         .camera-header { padding: 20px; display: flex; justify-content: space-between; position: absolute; width: 100%; z-index: 10; }
         .camera-badge { background: var(--yellow); color: var(--bg); padding: 6px 12px; border-radius: 4px; font-weight: 800; font-size: 11px; font-family: 'JetBrains Mono', monospace; }
         .camera-close { background: rgba(0,0,0,0.5); border: 1px solid var(--yellow); color: var(--yellow); width: 36px; height: 36px; border-radius: 4px; font-size: 18px; cursor: pointer; }
         #video { flex: 1; object-fit: cover; }
-        
         .camera-controls { position: absolute; bottom: 60px; left: 50%; transform: translateX(-50%); text-align: center; width: 100%; }
         .shutter { width: 72px; height: 72px; border: 4px solid var(--yellow); background: var(--yellow-dim); border-radius: 50%; cursor: pointer; box-shadow: 0 0 20px rgba(255,215,0,0.4); }
-        .shutter:active { background: var(--yellow); transform: scale(0.95); }
         .shutter.delete { border-color: var(--red); background: rgba(255,68,68,0.2); box-shadow: 0 0 20px rgba(255,68,68,0.4); }
-        .shutter.delete:active { background: var(--red); }
         #canvas { display: none; }
-        
         .processing { position: absolute; inset: 0; background: rgba(0, 0, 0, 0.9); display: none; flex-direction: column; align-items: center; justify-content: center; z-index: 20; }
         .spinner { width: 40px; height: 40px; border: 4px solid var(--surface); border-top: 4px solid var(--yellow); border-radius: 50%; animation: spin 1s linear infinite; margin-bottom: 16px; }
         @keyframes spin { to { transform: rotate(360deg); } }
         .process-text { font-family: 'JetBrains Mono', monospace; font-size: 14px; font-weight: 700; color: var(--yellow); margin-bottom: 8px; }
-        .process-log { font-size: 11px; color: var(--text-dim); font-family: 'JetBrains Mono', monospace; }
-        
-        /* Modal */
+        .process-log { font-size: 11px; color: var(--text-dim); font-family: 'JetBrains Mono', monospace; text-align:center; padding: 0 20px; }
         .modal { position: fixed; inset: 0; background: rgba(0, 0, 0, 0.85); z-index: 450; display: none; align-items: center; justify-content: center; padding: 20px; }
         .modal.open { display: flex; }
         .modal-content { background: var(--surface); border: 2px solid var(--yellow); border-radius: 8px; padding: 24px; width: 100%; max-width: 400px; }
         .modal-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); padding-bottom: 16px; margin-bottom: 20px; }
         .modal-title { font-family: 'JetBrains Mono', monospace; font-weight: 800; color: var(--yellow); font-size: 16px; }
-        
         .form-group { margin-bottom: 16px; }
         .form-label { display: block; font-size: 10px; font-weight: 700; color: var(--text-dim); text-transform: uppercase; margin-bottom: 8px; letter-spacing: 1px; }
         .form-input { width: 100%; background: var(--bg); border: 1px solid var(--border); border-radius: 4px; padding: 12px; color: var(--text); font-size: 14px; font-family: 'Inter', sans-serif; outline: none; }
-        .form-input:focus { border-color: var(--yellow); }
-        .form-input[readonly] { color: var(--yellow); font-family: 'JetBrains Mono', monospace; font-weight: 700; background: var(--surface-hover); }
         .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-        
-        /* Toast */
-        .toast { position: fixed; top: 20px; left: 50%; transform: translateX(-50%); background: var(--yellow); color: var(--bg); padding: 12px 24px; border-radius: 4px; font-family: 'JetBrains Mono', monospace; font-weight: 800; font-size: 12px; z-index: 600; display: none; text-align: center; box-shadow: 0 4px 15px rgba(255,215,0,0.3); }
-        .toast.error { background: var(--red); color: white; box-shadow: 0 4px 15px rgba(255,68,68,0.3); }
-        
-        /* Login */
+        .toast { position: fixed; top: 20px; left: 50%; transform: translateX(-50%); background: var(--yellow); color: var(--bg); padding: 12px 24px; border-radius: 4px; font-family: 'JetBrains Mono', monospace; font-weight: 800; font-size: 12px; z-index: 600; display: none; text-align: center; }
+        .toast.error { background: var(--red); color: white; }
         .login-screen { position: fixed; inset: 0; background: var(--bg); z-index: 500; display: flex; align-items: center; justify-content: center; padding: 20px; }
         .login-screen.hidden { display: none; }
         .login-box { background: var(--surface); border: 2px solid var(--border); border-left: 4px solid var(--yellow); border-radius: 8px; padding: 32px; width: 100%; max-width: 360px; }
-        .login-logo { font-family: 'JetBrains Mono', monospace; font-size: 24px; font-weight: 900; color: var(--yellow); margin-bottom: 24px; letter-spacing: 1px; text-align: center; }
+        .login-logo { font-family: 'JetBrains Mono', monospace; font-size: 28px; font-weight: 900; color: var(--yellow); margin-bottom: 24px; letter-spacing: 1px; text-align: center; }
     </style>
 </head>
 <body>
 
     <div class="login-screen" id="login-screen">
         <div class="login-box">
-            <div class="login-logo">FILAMENT INVENTORY</div>
+            <div class="login-logo">FILAMENT_OS</div>
             <div class="form-group">
                 <label class="form-label">System Access ID</label>
-                <input type="text" class="form-input" id="member-id" placeholder="Enter Approved Name..." style="font-family: 'JetBrains Mono', monospace; text-align: center;">
+                <input type="text" class="form-input" id="member-id" placeholder="Enter Name..." style="font-family: 'JetBrains Mono', monospace; text-align: center;">
             </div>
             <button class="btn-main" onclick="login()" style="width:100%; margin-top:8px;">Initialize</button>
         </div>
@@ -149,8 +100,8 @@
     <div class="container" id="main-app" style="display: none;">
         <header>
             <div class="header-row">
-                <div class="logo">🧵 Filament Inventory</div>
-                <div class="sync-status"><div class="sync-dot"></div><span id="sync-text">LOCAL</span></div>
+                <div class="logo">FILAMENT INVENTORY</div>
+                <div class="sync-status"><div class="sync-dot"></div><span>CLOUD_SYNC</span></div>
             </div>
             <div class="user-bar">
                 <div class="user-info">OP: <span id="user-name" style="color:var(--text); font-weight:700;">User</span></div>
@@ -163,11 +114,11 @@
 
         <div class="stats">
             <div class="stat-card">
-                <div class="stat-label">Total Inventory</div>
+                <div class="stat-label">Total Assets</div>
                 <div class="stat-value" id="total">0</div>
             </div>
             <div class="stat-card">
-                <div class="stat-label">Depleted Spools</div>
+                <div class="stat-label">Empty Spools</div>
                 <div class="stat-value" id="low-stock" style="color:var(--red);">0</div>
             </div>
         </div>
@@ -178,7 +129,7 @@
         </div>
 
         <div class="search">
-            <input type="text" class="search-input" id="search" placeholder="> Search asset database..." onkeyup="renderInventory()">
+            <input type="text" class="search-input" id="search" placeholder="> Search database..." onkeyup="renderInventory()">
         </div>
 
         <div class="inventory" id="inventory"></div>
@@ -205,7 +156,7 @@
         <div class="processing" id="processing">
             <div class="spinner"></div>
             <div class="process-text" id="proc-text">ANALYZING...</div>
-            <div class="process-log" id="proc-log">Establishing uplink...</div>
+            <div class="process-log" id="proc-log">Establishing secure uplink...</div>
         </div>
     </div>
 
@@ -231,102 +182,100 @@
 
             <div class="form-row">
                 <div class="form-group">
-                    <label class="form-label">Manufacturer</label>
+                    <label class="form-label">Brand</label>
                     <input type="text" id="f-brand" class="form-input">
                 </div>
                 <div class="form-group">
                     <label class="form-label">Material</label>
-                    <input type="text" id="f-material" list="mat-list" class="form-input" placeholder="Select/Type">
-                    <datalist id="mat-list">
-                        <option value="PLA"></option><option value="PETG"></option><option value="ASA"></option>
-                        <option value="ABS"></option><option value="TPU"></option><option value="PCTG"></option>
-                        <option value="XPETG"></option>
-                    </datalist>
+                    <input type="text" id="f-material" list="mat-list" class="form-input">
                 </div>
             </div>
 
             <div class="form-row">
                 <div class="form-group">
-                    <label class="form-label">Color Profile</label>
+                    <label class="form-label">Color</label>
                     <input type="text" id="f-color" class="form-input">
                 </div>
                 <div class="form-group">
                     <label class="form-label">Volume Left</label>
                     <select id="f-qty" class="form-input">
-                        <option value="100">100%</option><option value="90">90%</option>
-                        <option value="80">80%</option><option value="70">70%</option>
-                        <option value="60">60%</option><option value="50">50%</option>
-                        <option value="40">40%</option><option value="30">30%</option>
-                        <option value="20">20%</option><option value="10">10%</option>
-                        <option value="0">0% (Empty)</option>
+                        <option value="100">100%</option><option value="50">50%</option><option value="10">10%</option><option value="0">0%</option>
                     </select>
                 </div>
             </div>
 
-            <button class="btn-main" style="width:100%; margin-top:16px;" onclick="saveItem()">WRITE_TO_DB</button>
+            <button class="btn-main" style="width:100%; margin-top:16px;" onclick="saveItem()">COMMIT TO CLOUD</button>
         </div>
     </div>
 
     <div class="toast" id="toast"></div>
 
     <script>
-        let inventory = JSON.parse(localStorage.getItem('filamentFarmDB')) || [];
+        // --- 1. FIREBASE CONFIGURATION ---
+        const firebaseConfig = {
+            apiKey: "AIzaSyCLlCKwujLGtQw9DEvHl-ZYW1Z0cK8Xw-E",
+            authDomain: "inventory-86d26.firebaseapp.com",
+            projectId: "inventory-86d26",
+            storageBucket: "inventory-86d26.firebasestorage.app",
+            messagingSenderId: "833068204777",
+            appId: "1:833068204777:web:09b2c6cedde4cfb199a678",
+            databaseURL: "https://inventory-86d26-default-rtdb.europe-west1.firebasedatabase.app"
+        };
+
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.database();
+        const inventoryRef = db.ref('inventory');
+        
+        const GEMINI_API_KEY = "AIzaSyDmLS6kfioDv548O6Qg-2sBA1YQQ_IMAlw";
+
+        // --- 2. APP STATE ---
+        let inventoryArr = [];
         let activeUser = localStorage.getItem('activeUser');
         let aiStream = null;
         let currentTab = 'storage';
         let currentScanMode = 'scan'; 
-        window.cooldownTimer = null;
 
+        // --- 3. LOGIN LOGIC ---
         if(activeUser) {
             document.getElementById('login-screen').classList.add('hidden');
             document.getElementById('main-app').style.display = 'block';
             document.getElementById('action-bar').style.display = 'flex';
             document.getElementById('user-name').textContent = activeUser;
-            renderInventory();
+            syncData();
         }
 
         function login() {
             let inputId = document.getElementById('member-id').value.trim();
-            if(!inputId) return showToast('ERROR: NAME REQUIRED', 'error');
-
             const allowedUsers = ["benjamin", "christian", "rahul"];
             if (!allowedUsers.includes(inputId.toLowerCase())) {
                 return showToast('ERROR: ACCESS DENIED', 'error');
             }
-
             activeUser = inputId.charAt(0).toUpperCase() + inputId.slice(1).toLowerCase();
             localStorage.setItem('activeUser', activeUser);
             document.getElementById('login-screen').classList.add('hidden');
             document.getElementById('main-app').style.display = 'block';
             document.getElementById('action-bar').style.display = 'flex';
             document.getElementById('user-name').textContent = activeUser;
-            renderInventory();
+            syncData();
         }
 
         function logout() {
             localStorage.removeItem('activeUser');
-            document.getElementById('member-id').value = '';
-            document.getElementById('login-screen').classList.remove('hidden');
-            document.getElementById('main-app').style.display = 'none';
-            document.getElementById('action-bar').style.display = 'none';
-            showToast('LOGGED OUT SUCCESSFULLY');
-        }
-
-        function getApiKey() {
-            let key = localStorage.getItem('geminiApiKey');
-            if (!key) {
-                key = prompt('SYSTEM UPLINK: Enter Gemini API Key');
-                if (key) localStorage.setItem('geminiApiKey', key);
-            }
-            return key;
+            location.reload();
         }
 
         function setApiKey() {
-            const key = prompt('Update Gemini API Key:', localStorage.getItem('geminiApiKey') || '');
-            if (key) {
-                localStorage.setItem('geminiApiKey', key);
-                showToast('API_KEY_UPDATED');
-            }
+            const key = prompt('Update Gemini API Key:', localStorage.getItem('geminiApiKey') || GEMINI_API_KEY);
+            if (key) { localStorage.setItem('geminiApiKey', key); showToast('API_KEY_UPDATED'); }
+        }
+
+        // --- 4. CLOUD SYNC & UI ---
+        function syncData() {
+            inventoryRef.on('value', (snapshot) => {
+                const data = snapshot.val();
+                inventoryArr = data ? Object.values(data) : [];
+                renderInventory();
+            });
         }
 
         function setTab(tab) {
@@ -341,78 +290,40 @@
             const search = document.getElementById('search').value.toLowerCase();
             container.innerHTML = '';
 
-            const filtered = inventory.filter(item => {
+            const filtered = inventoryArr.filter(item => {
                 const matches = ((item.id||'') + (item.brand||'') + (item.type||'') + (item.color||'')).toLowerCase().includes(search);
-                const tab = (item.status || 'storage') === currentTab;
-                return matches && tab;
+                return matches && (item.status || 'storage') === currentTab;
             });
 
-            const groups = {};
             filtered.forEach(item => {
-                const mat = (item.type || 'UNKNOWN').toUpperCase();
-                if (!groups[mat]) groups[mat] = [];
-                groups[mat].push(item);
-            });
-
-            Object.keys(groups).sort().forEach(mat => {
-                const items = groups[mat];
-                const id = 'g-' + mat.replace(/\s+/g, '');
-
                 const div = document.createElement('div');
-                div.className = 'group';
+                div.className = 'item';
+                div.onclick = () => editItem(item.id);
                 div.innerHTML = `
-                    <div class="group-header" onclick="document.getElementById('${id}').classList.toggle('open')">
-                        <span>> ${mat}</span>
-                        <span>[${items.length}]</span>
+                    <div class="item-id">${item.id}</div>
+                    <div class="item-info">
+                        <div class="item-brand">${item.brand || 'Unknown'} ${item.type || ''}</div>
+                        <div class="item-meta">${item.color || 'N/A'} • LOG: ${item.user}</div>
                     </div>
-                    <div class="group-items open" id="${id}">
-                        ${items.map(item => `
-                            <div class="item ${item.status === 'inventory' ? 'box' : ''}" onclick="editItem('${item.id}')">
-                                <div class="item-id">${item.id}</div>
-                                <div class="item-info">
-                                    <div class="item-brand">${item.brand || 'Unknown'}</div>
-                                    <div class="item-meta">${item.color || 'N/A'} • LOG: ${item.user}</div>
-                                </div>
-                                <div class="qty" onclick="event.stopPropagation()">
-                                    <button class="qty-btn" onclick="updateQty('${item.id}', -10)">-</button>
-                                    <div class="qty-val">${item.qty}%</div>
-                                    <button class="qty-btn" onclick="updateQty('${item.id}', 10)">+</button>
-                                </div>
-                            </div>
-                        `).join('')}
-                    </div>
+                    <div class="qty-val">${item.qty}%</div>
                 `;
                 container.appendChild(div);
             });
 
-            document.getElementById('total').textContent = inventory.length;
-            document.getElementById('low-stock').textContent = inventory.filter(i => parseInt(i.qty) <= 0).length;
-        }
-
-        function updateQty(id, change) {
-            let cleanIdToFind = String(id).trim().toUpperCase();
-            const item = inventory.find(i => String(i.id).trim().toUpperCase() === cleanIdToFind);
-            
-            if (item) {
-                item.qty = Math.min(100, Math.max(0, parseInt(item.qty) + change));
-                localStorage.setItem('filamentFarmDB', JSON.stringify(inventory));
-                renderInventory();
-            }
+            document.getElementById('total').textContent = inventoryArr.length;
+            document.getElementById('low-stock').textContent = inventoryArr.filter(i => parseInt(i.qty) <= 0).length;
         }
 
         function editItem(id) {
             let cleanIdToFind = String(id).trim().toUpperCase();
-            const item = inventory.find(i => String(i.id).trim().toUpperCase() === cleanIdToFind);
-            
+            const item = inventoryArr.find(i => String(i.id).trim().toUpperCase() === cleanIdToFind);
             if (!item) return;
 
             document.getElementById('f-id').value = item.id;
             document.getElementById('f-brand').value = item.brand || '';
             document.getElementById('f-material').value = item.type || '';
             document.getElementById('f-color').value = item.color || '';
-            
-            let qtyVal = Math.round((item.qty || 100) / 10) * 10;
-            document.getElementById('f-qty').value = qtyVal;
+            document.getElementById('f-qty').value = item.qty || 100;
             document.getElementById('f-status').value = item.status || 'storage';
             document.getElementById('modal').classList.add('open');
         }
@@ -429,21 +340,12 @@
                 qty: document.getElementById('f-qty').value,
                 status: document.getElementById('f-status').value,
                 user: activeUser,
-                time: new Date().toISOString()
+                time: Date.now()
             };
 
-            const idx = inventory.findIndex(i => String(i.id).trim().toUpperCase() === id);
-            
-            if (idx >= 0) { 
-                inventory[idx] = item; 
-            } else { 
-                inventory.push(item); 
-            }
-
-            localStorage.setItem('filamentFarmDB', JSON.stringify(inventory));
+            db.ref('inventory/' + id).set(item);
             closeModal();
-            renderInventory();
-            showToast('DB_WRITE_SUCCESS');
+            showToast('CLOUD_SYNC_SUCCESS');
         }
 
         function closeModal() { document.getElementById('modal').classList.remove('open'); }
@@ -456,13 +358,10 @@
             setTimeout(() => toast.style.display = 'none', 3000);
         }
 
+        // --- 5. CAMERA & FAST SCANNER ---
         async function openCamera(mode) {
-            const key = getApiKey();
-            if (!key) return;
-
             currentScanMode = mode;
             const shutter = document.getElementById('shutter');
-            
             if (mode === 'delete') {
                 shutter.className = 'shutter delete';
                 document.getElementById('cam-status').textContent = 'SYS_DELETE_MODE';
@@ -470,76 +369,53 @@
                 shutter.className = 'shutter';
                 document.getElementById('cam-status').textContent = 'SYS_SCAN_MODE';
             }
-            
             document.getElementById('camera').style.display = 'flex';
-
             try {
-                // LOWERED RESOLUTION FOR MAXIMUM SPEED
                 aiStream = await navigator.mediaDevices.getUserMedia({ 
-                    video: { 
-                        facingMode: 'environment',
-                        width: { ideal: 1280 }, 
-                        height: { ideal: 720 }
-                    } 
+                    video: { facingMode: 'environment', width: { ideal: 1280 } } 
                 });
                 document.getElementById('video').srcObject = aiStream;
-            } catch (e) {
-                showToast('ERR: CAM_DENIED', 'error');
-                closeCamera();
-            }
+            } catch (e) { showToast('ERR: CAM_DENIED', 'error'); closeCamera(); }
         }
 
         function closeCamera() {
             document.getElementById('camera').style.display = 'none';
             if (aiStream) { aiStream.getTracks().forEach(t => t.stop()); aiStream = null; }
-            
-            if (window.cooldownTimer) {
-                clearInterval(window.cooldownTimer);
-                window.cooldownTimer = null;
-            }
             document.getElementById('processing').style.display = 'none';
-            const spinner = document.querySelector('.spinner');
-            const text = document.getElementById('proc-text');
-            spinner.style.animation = 'spin 1s linear infinite';
-            spinner.style.borderTopColor = 'var(--yellow)';
-            text.style.color = 'var(--yellow)';
         }
 
         window.capture = async function() {
-            const key = getApiKey();
-            if (!key) return;
+            let key = localStorage.getItem('geminiApiKey') || GEMINI_API_KEY;
+            key = key.trim(); // PREVENTS 404 ERRORS FROM INVISIBLE SPACES
 
             const proc = document.getElementById('processing');
             const log = document.getElementById('proc-log');
-            const text = document.getElementById('proc-text');
-            const spinner = document.querySelector('.spinner');
-
             proc.style.display = 'flex';
-            text.textContent = 'ANALYZING...';
-            log.textContent = 'Shrinking image data for fast uplink...';
+            log.textContent = 'Compressing image for instant uplink...';
 
             const canvas = document.getElementById('canvas');
             const video = document.getElementById('video');
             
-            // AGGRESSIVE IMAGE COMPRESSION FOR LIGHTNING FAST UPLOADS
+            // SMALLER IMAGE = FASTER UPLOAD & PREVENTS 400 ERRORS
             const scale = Math.min(1, 800 / video.videoWidth); 
             canvas.width = video.videoWidth * scale; 
             canvas.height = video.videoHeight * scale;
             canvas.getContext('2d').drawImage(video, 0, 0, canvas.width, canvas.height);
-            const base64 = canvas.toDataURL('image/jpeg', 0.75).split(',')[1];
+            const base64 = canvas.toDataURL('image/jpeg', 0.8).split(',')[1];
 
             try {
-                // SKIPPING AUTO-DETECT: HARDCODED TO THE FASTEST MODEL
-                const modelToUse = 'gemini-1.5-flash'; 
-                log.textContent = `Uplinking to ${modelToUse}...`;
+                log.textContent = `Analyzing via Gemini 1.5 Flash...`;
+                
+                // HARDCODED FASTEST MODEL URL TO PREVENT 404 ERRORS
+                const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${key}`;
 
-                const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${modelToUse}:generateContent?key=${key}`, {
+                const res = await fetch(url, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
                         contents: [{
                             parts: [
-                                { text: "Analyze this 3D filament spool/box.\n\n1. PHYSICAL STATE: Return 'inventory' if you see an unopened square/rectangular cardboard box. Return 'storage' if you see a circular plastic/cardboard spool.\n2. ASSET ID (CRITICAL): \n- IF SPOOL ('storage'): Find the 13-character alphanumeric serial (3 digits, 'M', 9 digits). DOT-MATRIX FONT FIX: Slashed zero is '0'. Open top-right is '6'. Open bottom-left is '9'. IGNORE 1D barcodes.\n- IF BOX ('inventory'): Read the standard 1D barcode number or product SKU as the asset_id.\n3. RAW LINES: Read every line of text on the label from top to bottom into an array of strings called 'raw_text_lines'.\n\nReturn strictly valid JSON (no markdown): {\"brand\": \"string\", \"color\": \"string\", \"type\": \"string\", \"asset_id\": \"string or null\", \"percentage_left\": 100, \"status\": \"inventory or storage\", \"raw_text_lines\": [\"line 1\", \"line 2\"]}" },
+                                { text: "Analyze this 3D filament spool/box.\n\n1. PHYSICAL STATE: Return 'inventory' if you see an unopened square/rectangular cardboard box. Return 'storage' if you see a circular plastic/cardboard spool.\n2. ASSET ID: \n- IF SPOOL ('storage'): Find the 13-char alphanumeric serial (3 digits, 'M', 9 digits). Slashed zero is '0'. IGNORE 1D barcodes.\n- IF BOX ('inventory'): Read the standard 1D barcode number as the asset_id.\n3. RAW LINES: Read every line of text into an array 'raw_text_lines'.\n\nReturn strictly valid JSON: {\"brand\": \"string\", \"color\": \"string\", \"type\": \"string\", \"asset_id\": \"string or null\", \"percentage_left\": 100, \"status\": \"inventory or storage\", \"raw_text_lines\": [\"line 1\"]}" },
                                 { inlineData: { mimeType: 'image/jpeg', data: base64 } }
                             ]
                         }]
@@ -547,13 +423,11 @@
                 });
 
                 if (!res.ok) {
-                    if (res.status === 429) throw new Error("RATE_LIMIT");
-                    const errorData = await res.json();
-                    throw new Error(errorData.error?.message || `HTTP Error ${res.status}`);
+                    const errData = await res.json();
+                    throw new Error(`Google HTTP ${res.status}: ${errData.error?.message || "Unknown API Error"}`);
                 }
 
                 const data = await res.json();
-                
                 let rawText = data.candidates[0].content.parts[0].text;
                 rawText = rawText.replace(/```json/gi, '').replace(/```/gi, '').trim();
                 const result = JSON.parse(rawText);
@@ -565,6 +439,7 @@
                 let parsedStatus = (result.status && result.status.toLowerCase().includes('inventory')) ? 'inventory' : 'storage';
                 let isBox = (parsedStatus === 'inventory');
 
+                // DUAL MODE LOGIC
                 if (!isBox) {
                     if (result.raw_text_lines && Array.isArray(result.raw_text_lines)) {
                         for (let line of result.raw_text_lines) {
@@ -602,10 +477,7 @@
                     if (!finalId && result.raw_text_lines && Array.isArray(result.raw_text_lines)) {
                         for (let line of result.raw_text_lines) {
                             let cleanLine = line.toUpperCase().replace(/[\s\-\.]/g, '');
-                            if (cleanLine.match(/^[0-9A-Z]{8,15}$/) && cleanLine.length > 6) {
-                                finalId = cleanLine;
-                                break;
-                            }
+                            if (cleanLine.match(/^[0-9A-Z]{8,15}$/) && cleanLine.length > 6) { finalId = cleanLine; break; }
                         }
                     }
                 }
@@ -618,20 +490,16 @@
                 const cleanExtractedId = String(finalId).trim().toUpperCase();
 
                 if (currentScanMode === 'delete') {
-                    const exists = inventory.find(i => String(i.id).trim().toUpperCase() === cleanExtractedId);
+                    const exists = inventoryArr.find(i => String(i.id).trim().toUpperCase() === cleanExtractedId);
                     if (exists) {
-                        inventory = inventory.filter(i => String(i.id).trim().toUpperCase() !== cleanExtractedId);
-                        localStorage.setItem('filamentFarmDB', JSON.stringify(inventory));
-                        renderInventory();
+                        db.ref('inventory/' + cleanExtractedId).remove();
                         showToast(`ASSET_${cleanExtractedId}_PURGED`);
-                    } else { 
-                        showToast('ERR: ID_NOT_FOUND', 'error'); 
-                    }
+                    } else { showToast('ERR: ID_NOT_FOUND', 'error'); }
                     return;
                 }
 
-                const existingItem = inventory.find(i => String(i.id).trim().toUpperCase() === cleanExtractedId);
-                
+                // DUPLICATE PREVENTION
+                const existingItem = inventoryArr.find(i => String(i.id).trim().toUpperCase() === cleanExtractedId);
                 if (existingItem) {
                     alert(`⚠️ DUPLICATE DETECTED\n\nAsset ID: ${cleanExtractedId} is already in the database!\n\nOpening the existing record so you can update the quantity instead of making a duplicate.`);
                     editItem(cleanExtractedId); 
@@ -646,42 +514,24 @@
                 let qtyVal = result.percentage_left || 100;
                 qtyVal = Math.round(qtyVal / 10) * 10;
                 document.getElementById('f-qty').value = qtyVal;
-                
                 document.getElementById('f-status').value = parsedStatus;
                 
                 document.getElementById('modal').classList.add('open');
 
             } catch (e) {
-                if (e.message === "RATE_LIMIT" || e.message.toLowerCase().includes("quota") || e.message.includes("429")) {
-                    let timeLeft = 60;
-                    spinner.style.animation = 'none';
-                    spinner.style.borderTopColor = 'var(--red)';
-                    text.style.color = 'var(--red)';
-                    text.textContent = `SYS OVERLOAD: ${timeLeft}s`;
-                    log.textContent = "Google API speed limit reached. Cooling down...";
-                    
-                    window.cooldownTimer = setInterval(() => {
-                        timeLeft--;
-                        text.textContent = `SYS OVERLOAD: ${timeLeft}s`;
-                        if(timeLeft <= 0) {
-                            clearInterval(window.cooldownTimer);
-                            spinner.style.animation = 'spin 1s linear infinite';
-                            spinner.style.borderTopColor = 'var(--yellow)';
-                            text.style.color = 'var(--yellow)';
-                            text.textContent = "RETRYING UPLINK...";
-                            log.textContent = "Executing automatic scan...";
-                            window.capture(); 
-                        }
-                    }, 1000);
+                closeCamera();
+                document.getElementById('processing').style.display = 'none';
+                
+                // NEW DETAILED ERROR REPORTING
+                if (e.message.includes("429") || e.message.includes("RATE_LIMIT")) {
+                    alert(`⚠️ SPEED LIMIT REACHED\n\nYou scanned too fast for the Google Free Tier. Please wait 60 seconds and try again.`);
+                } else if (e.message.includes("404") || e.message.includes("400")) {
+                    alert(`⚠️ API KEY ERROR\n\n${e.message}\n\nPlease tap API_KEY in the top right menu and ensure your key has no invisible spaces.`);
                 } else {
-                    closeCamera();
-                    proc.style.display = 'none';
-                    alert(`SYSTEM ERROR:\n${e.message}\n\nTroubleshooting: Verify your API key in the menu.`); 
+                    alert(`⚠️ SCAN FAILED\n\nError: ${e.message}\n\nHold the phone steady, ensure good lighting, and try again.`);
                 }
             }
         };
-
-        if (!localStorage.getItem('geminiApiKey')) { setTimeout(getApiKey, 1000); }
     </script>
 </body>
 </html>
