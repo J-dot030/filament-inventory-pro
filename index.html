@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Filament Inventory — Groq Powered</title>
+    <title>Filament Inventory Pro — AI Powered</title>
     
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
@@ -12,126 +12,285 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;800&family=JetBrains+Mono:wght@500;800&display=swap" rel="stylesheet">
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        :root { --bg: #0a0a0a; --surface: #141414; --yellow: #FFD700; --yellow-dim: rgba(255, 215, 0, 0.2); --border: #333333; --text: #ffffff; --text-dim: #888888; --red: #FF4444; --green: #00FF88; }
+        :root { --bg: #0a0a0a; --surface: #141414; --yellow: #FFD700; --yellow-dim: rgba(255, 215, 0, 0.2); --border: #333333; --text: #ffffff; --text-dim: #888888; --red: #FF4444; --green: #00FF88; --blue: #4488FF; --purple: #BB88FF; }
         body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; overflow-x: hidden; }
         body::before { content: ''; position: fixed; inset: 0; background: repeating-linear-gradient(0deg, rgba(0,0,0,0.1), rgba(0,0,0,0.1) 1px, transparent 1px, transparent 2px); pointer-events: none; z-index: 999; }
-        .container { max-width: 600px; margin: 0 auto; padding-bottom: 120px; }
+        .container { max-width: 600px; margin: 0 auto; padding-bottom: 140px; }
         header { background: var(--surface); border-bottom: 2px solid var(--yellow); padding: 16px 20px; position: sticky; top: 0; z-index: 100; }
         .logo { font-family: 'JetBrains Mono', monospace; font-size: 18px; font-weight: 800; color: var(--yellow); display: flex; align-items: center; gap: 8px; }
-        .stats { padding: 20px; display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-        .stat-card { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 16px; border-left: 3px solid var(--yellow); }
-        .stat-value { font-family: 'JetBrains Mono', monospace; font-size: 28px; font-weight: 800; }
-        .tabs { display: flex; padding: 0 20px; gap: 8px; margin-bottom: 20px; }
-        .tab { flex: 1; padding: 12px; background: var(--surface); border: 1px solid var(--border); border-radius: 6px; text-align: center; font-size: 12px; cursor: pointer; color: var(--text-dim); text-transform: uppercase; font-weight: 700; }
+        .header-info { font-size: 10px; color: var(--text-dim); margin-top: 8px; }
+        .header-info span { color: var(--yellow); cursor: pointer; font-weight: bold; }
+        .stats { padding: 20px; display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; }
+        .stat-card { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 12px; border-left: 3px solid var(--yellow); }
+        .stat-card.low { border-left-color: var(--red); }
+        .stat-card.success { border-left-color: var(--green); }
+        .stat-value { font-family: 'JetBrains Mono', monospace; font-size: 24px; font-weight: 800; }
+        .stat-label { font-size: 9px; color: var(--text-dim); text-transform: uppercase; margin-bottom: 4px; }
+        .tabs { display: flex; padding: 0 20px; gap: 6px; margin-bottom: 16px; overflow-x: auto; }
+        .tab { flex-shrink: 0; padding: 10px 16px; background: var(--surface); border: 1px solid var(--border); border-radius: 6px; text-align: center; font-size: 11px; cursor: pointer; color: var(--text-dim); text-transform: uppercase; font-weight: 700; white-space: nowrap; }
         .tab.active { background: var(--yellow-dim); color: var(--yellow); border-color: var(--yellow); }
+        .search-bar { padding: 0 20px 16px; }
+        .search-input { width: 100%; background: var(--surface); border: 1px solid var(--border); border-radius: 6px; padding: 12px; color: var(--text); outline: none; font-family: 'JetBrains Mono', monospace; font-size: 12px; }
         .inventory { padding: 0 20px; }
-        .item { background: var(--surface); border: 1px solid var(--border); border-radius: 6px; padding: 16px; display: flex; align-items: center; gap: 12px; margin-bottom: 8px; cursor: pointer; }
-        .item-id { font-family: 'JetBrains Mono', monospace; font-size: 11px; font-weight: 800; color: var(--bg); background: var(--yellow); padding: 4px 6px; border-radius: 4px; }
+        .item { background: var(--surface); border: 1px solid var(--border); border-radius: 6px; padding: 14px; display: flex; align-items: center; gap: 12px; margin-bottom: 8px; cursor: pointer; transition: all 0.2s; }
+        .item:active { transform: scale(0.98); background: rgba(255,215,0,0.1); }
+        .item-id { font-family: 'JetBrains Mono', monospace; font-size: 10px; font-weight: 800; color: var(--bg); background: var(--yellow); padding: 4px 6px; border-radius: 4px; min-width: 60px; text-align: center; }
         .item.box .item-id { background: var(--green); }
-        
-        /* Split Brain Actions */
+        .item-info { flex: 1; min-width: 0; }
+        .item-name { font-weight: 700; font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .item-meta { font-size: 10px; color: var(--text-dim); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .item-qty { color: var(--yellow); font-weight: 800; font-size: 12px; min-width: 50px; text-align: right; }
+        .item-qty.low { color: var(--red); }
+        .item-qty.mid { color: #FFAA00; }
         .actions { position: fixed; bottom: 0; left: 50%; transform: translateX(-50%); width: 100%; max-width: 600px; background: var(--bg); border-top: 2px solid var(--yellow); padding: 12px; display: flex; gap: 8px; z-index: 50; }
-        .btn-main { flex: 1; padding: 14px 8px; border-radius: 6px; border: none; font-weight: 800; font-size: 12px; cursor: pointer; text-transform: uppercase; font-family: 'JetBrains Mono', monospace; color: var(--bg); }
+        .btn-main { flex: 1; padding: 14px 8px; border-radius: 6px; border: none; font-weight: 800; font-size: 11px; cursor: pointer; text-transform: uppercase; font-family: 'JetBrains Mono', monospace; color: var(--bg); transition: all 0.2s; }
+        .btn-main:active { transform: scale(0.95); }
         .btn-spool { background: var(--yellow); }
         .btn-box { background: var(--green); }
-        .btn-secondary { flex: 0.5; padding: 14px 8px; border-radius: 6px; border: 1px solid var(--red); background: transparent; color: var(--red); font-weight: 700; font-size: 11px; cursor: pointer; text-transform: uppercase; font-family: 'JetBrains Mono', monospace; }
-        
+        .btn-secondary { flex: 0.5; padding: 14px 8px; border-radius: 6px; border: 1px solid var(--text-dim); background: transparent; color: var(--text-dim); font-weight: 700; font-size: 10px; cursor: pointer; text-transform: uppercase; font-family: 'JetBrains Mono', monospace; }
+        .btn-delete { border-color: var(--red); color: var(--red); }
         .camera { position: fixed; inset: 0; background: #000; z-index: 400; display: none; }
         #video { width: 100%; height: 100%; object-fit: cover; }
-        .shutter { width: 72px; height: 72px; border: 4px solid var(--yellow); background: var(--yellow-dim); border-radius: 50%; position: absolute; bottom: 40px; left: 50%; transform: translateX(-50%); z-index: 401; }
+        .shutter { width: 72px; height: 72px; border: 4px solid var(--yellow); background: var(--yellow-dim); border-radius: 50%; position: absolute; bottom: 40px; left: 50%; transform: translateX(-50%); z-index: 401; cursor: pointer; transition: all 0.1s; }
+        .shutter:active { transform: translateX(-50%) scale(0.9); }
         .shutter.box-mode { border-color: var(--green); background: rgba(0,255,136,0.2); }
         .shutter.delete { border-color: var(--red); background: rgba(255,68,68,0.2); }
-        .processing { position: absolute; inset: 0; background: rgba(0,0,0,0.9); display: none; flex-direction: column; align-items: center; justify-content: center; z-index: 500; }
-        .spinner { width: 40px; height: 40px; border: 4px solid #333; border-top: 4px solid var(--yellow); border-radius: 50%; animation: spin 1s linear infinite; margin-bottom: 12px; }
+        .processing { position: absolute; inset: 0; background: rgba(0,0,0,0.95); display: none; flex-direction: column; align-items: center; justify-content: center; z-index: 500; }
+        .spinner { width: 50px; height: 50px; border: 4px solid #333; border-top: 4px solid var(--yellow); border-radius: 50%; animation: spin 1s linear infinite; margin-bottom: 16px; }
         @keyframes spin { to { transform: rotate(360deg); } }
-        .modal { position: fixed; inset: 0; background: rgba(0,0,0,0.95); z-index: 600; display: none; align-items: center; justify-content: center; padding: 20px; }
-        .modal-content { background: var(--surface); border: 2px solid var(--yellow); border-radius: 8px; padding: 24px; width: 100%; max-width: 400px; }
-        .form-input { width: 100%; background: var(--bg); border: 1px solid var(--border); border-radius: 4px; padding: 12px; color: var(--text); margin-bottom: 12px; outline: none; }
+        .modal { position: fixed; inset: 0; background: rgba(0,0,0,0.95); z-index: 600; display: none; align-items: center; justify-content: center; padding: 20px; overflow-y: auto; }
+        .modal-content { background: var(--surface); border: 2px solid var(--yellow); border-radius: 8px; padding: 24px; width: 100%; max-width: 420px; max-height: 90vh; overflow-y: auto; }
+        .form-group { margin-bottom: 12px; }
+        .form-label { font-size: 10px; color: var(--text-dim); text-transform: uppercase; margin-bottom: 4px; display: block; font-weight: 700; }
+        .form-input, .form-select { width: 100%; background: var(--bg); border: 1px solid var(--border); border-radius: 4px; padding: 11px; color: var(--text); outline: none; font-family: inherit; font-size: 13px; }
+        .form-input:focus, .form-select:focus { border-color: var(--yellow); background: rgba(255,215,0,0.05); }
         .login-screen { position: fixed; inset: 0; background: var(--bg); z-index: 800; display: flex; align-items: center; justify-content: center; padding: 20px; }
-        .login-box { background: var(--surface); border: 2px solid var(--border); border-left: 4px solid var(--yellow); padding: 32px; width: 100%; max-width: 360px; text-align: center; }
-        .search { padding: 0 20px; margin-bottom: 16px; }
-        .search-input { width: 100%; background: var(--surface); border: 1px solid var(--border); border-radius: 6px; padding: 12px; color: var(--text); outline: none; font-family: 'JetBrains Mono', monospace; font-size: 12px; }
+        .login-box { background: var(--surface); border: 2px solid var(--border); border-left: 4px solid var(--yellow); padding: 40px; width: 100%; max-width: 360px; text-align: center; }
+        .alert { background: rgba(255,68,68,0.1); border-left: 3px solid var(--red); padding: 12px; border-radius: 4px; margin-bottom: 12px; font-size: 12px; }
+        .alert.success { background: rgba(0,255,136,0.1); border-left-color: var(--green); }
+        .btn-group { display: flex; gap: 8px; }
+        .btn-group .btn-main { flex: 1; }
+        .stat-row { display: flex; justify-content: space-between; padding: 12px 0; border-bottom: 1px solid var(--border); font-size: 12px; }
+        .stat-row:last-child { border-bottom: none; }
+        .export-btn { background: var(--blue); color: var(--bg); padding: 10px 16px; border-radius: 4px; font-weight: 700; font-size: 11px; cursor: pointer; border: none; margin: 8px 0; }
+        .empty-state { text-align: center; padding: 40px 20px; color: var(--text-dim); font-size: 12px; }
     </style>
 </head>
 <body>
 
+    <!-- LOGIN SCREEN -->
     <div class="login-screen" id="login-screen">
         <div class="login-box">
-            <div style="font-family: 'JetBrains Mono', monospace; font-size: 22px; color: var(--yellow); margin-bottom: 20px; font-weight: 900;">🧵 FILAMENT INVENTORY</div>
-            <input type="text" class="form-input" id="member-id" placeholder="Benjamin/Christian/Rahul" style="text-align: center;">
-            <button class="btn-main btn-spool" onclick="login()" style="width: 100%;">ACCESS_SYSTEM</button>
+            <div style="font-family: 'JetBrains Mono', monospace; font-size: 28px; color: var(--yellow); margin-bottom: 8px; font-weight: 900;">🧵 PRO</div>
+            <div style="font-size: 12px; color: var(--text-dim); margin-bottom: 24px;">Filament Inventory Management</div>
+            <input type="text" class="form-input" id="member-id" placeholder="Name" style="text-align: center; margin-bottom: 12px;">
+            <button class="btn-main btn-spool" onclick="login()" style="width: 100%; margin-bottom: 8px;">ACCESS</button>
+            <div style="font-size: 10px; color: var(--text-dim);">Demo: Enter any username</div>
         </div>
     </div>
 
+    <!-- MAIN APP -->
     <div class="container" id="main-app" style="display: none;">
         <header>
-            <div style="display:flex; justify-content:space-between; align-items:center;">
-                <div class="logo">🧵 Filament Inventory</div>
-                <div style="font-size:10px; color:var(--red); font-weight:bold; cursor:pointer;" onclick="logout()">LOGOUT</div>
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 12px;">
+                <div class="logo">🧵 FILAMENT PRO</div>
+                <div style="display: flex; gap: 12px; align-items: center;">
+                    <span style="font-size:10px; color:var(--green); font-weight:bold;">●</span>
+                    <span style="font-size:10px; color:var(--red); font-weight:bold; cursor:pointer;" onclick="logout()">LOGOUT</span>
+                </div>
             </div>
-            <div style="font-size:11px; color:var(--text-dim); margin-top:8px;">
-                OP: <span id="user-name" style="color:white; font-weight:bold;">-</span> | 
-                <span onclick="setGroqKey()" style="color:var(--yellow); cursor:pointer; font-weight:bold;">UPDATE GROQ KEY</span>
+            <div class="header-info">
+                OP: <span id="user-name">-</span> | 
+                <span onclick="setGroqKey()">🔑 KEY</span> |
+                <span onclick="showStats()">📊 STATS</span> |
+                <span onclick="exportData()">⬇️ EXPORT</span>
             </div>
         </header>
 
         <div class="stats">
             <div class="stat-card">
-                <div style="font-size:10px; color:var(--text-dim);">TOTAL ASSETS</div>
-                <div class="stat-value" id="total">0</div>
+                <div class="stat-label">Spools</div>
+                <div class="stat-value" id="total-spools">0</div>
             </div>
-            <div class="stat-card" style="border-left-color: var(--red);">
-                <div style="font-size:10px; color:var(--text-dim);">EMPTY SPOOLS</div>
+            <div class="stat-card">
+                <div class="stat-label">Boxes</div>
+                <div class="stat-value" id="total-boxes">0</div>
+            </div>
+            <div class="stat-card low">
+                <div class="stat-label">Low Stock</div>
                 <div class="stat-value" id="low-stock" style="color:var(--red);">0</div>
             </div>
         </div>
 
         <div class="tabs">
-            <div class="tab active" id="tab-storage" onclick="setTab('storage')">Spools</div>
-            <div class="tab" id="tab-inventory" onclick="setTab('inventory')">Boxes</div>
+            <div class="tab active" id="tab-all" onclick="setTab('all')">ALL</div>
+            <div class="tab" id="tab-storage" onclick="setTab('storage')">SPOOLS</div>
+            <div class="tab" id="tab-inventory" onclick="setTab('inventory')">BOXES</div>
+            <div class="tab" id="tab-low" onclick="setTab('low')">⚠️ LOW</div>
+            <div class="tab" id="tab-recent" onclick="setTab('recent')">🆕 RECENT</div>
         </div>
 
-        <div class="search"><input type="text" class="search-input" id="search" placeholder="> Search inventory..." onkeyup="renderInventory()"></div>
+        <div class="search-bar">
+            <input type="text" class="search-input" id="search" placeholder="🔍 Search ID, brand, color..." onkeyup="renderInventory()">
+        </div>
         <div class="inventory" id="inventory"></div>
     </div>
 
+    <!-- ACTION BAR -->
     <div class="actions" id="action-bar" style="display: none;">
-        <button class="btn-secondary" onclick="openCamera('delete')">EMPTY</button>
+        <button class="btn-secondary btn-delete" onclick="openCamera('delete')">🗑️</button>
         <button class="btn-main btn-box" onclick="openCamera('box')">SCAN BOX</button>
         <button class="btn-main btn-spool" onclick="openCamera('spool')">SCAN SPOOL</button>
+        <button class="btn-secondary" onclick="manualEntry()" style="border-color: var(--purple); color: var(--purple);">✎</button>
     </div>
 
+    <!-- CAMERA -->
     <div class="camera" id="camera">
         <video id="video" autoplay playsinline></video>
         <canvas id="canvas" style="display:none;"></canvas>
         <button class="shutter" id="shutter" onclick="capture()"></button>
-        <button onclick="closeCamera()" style="position:absolute; top:20px; right:20px; background:rgba(0,0,0,0.5); color:white; border:1px solid var(--yellow); padding:10px; border-radius:4px; cursor:pointer; z-index: 402;">✕</button>
+        <button onclick="closeCamera()" style="position:absolute; top:20px; right:20px; background:rgba(0,0,0,0.7); color:white; border:1px solid var(--yellow); padding:10px 16px; border-radius:4px; cursor:pointer; z-index: 402; font-weight: bold;">✕</button>
         
         <div style="position:absolute; bottom:130px; left:50%; transform:translateX(-50%); text-align:center; width:100%; z-index: 402;">
-            <div style="font-family:'JetBrains Mono', monospace; font-size:11px; color:var(--yellow); background:rgba(0,0,0,0.8); padding:8px 16px; border-radius:4px; display:inline-block;" id="scan-instructions">
+            <div style="font-family:'JetBrains Mono', monospace; font-size:12px; color:var(--yellow); background:rgba(0,0,0,0.8); padding:12px 20px; border-radius:4px; display:inline-block;" id="scan-instructions">
                 > HOLD CLOSE TO BARCODE <
             </div>
         </div>
 
-        <div class="processing" id="processing"><div class="spinner"></div><div style="color:var(--yellow); font-family:'JetBrains Mono'; font-weight:800;">GROQ_UPLINKING...</div></div>
+        <div class="processing" id="processing">
+            <div class="spinner"></div>
+            <div style="color:var(--yellow); font-family:'JetBrains Mono'; font-weight:800; font-size: 13px;">GROQ_PROCESSING</div>
+            <div style="color:var(--text-dim); font-family:'JetBrains Mono'; font-weight:600; font-size: 11px; margin-top: 8px;" id="processing-msg">Reading image...</div>
+        </div>
     </div>
 
+    <!-- EDIT MODAL -->
     <div class="modal" id="modal">
         <div class="modal-content">
-            <div style="color:var(--yellow); font-weight:800; margin-bottom:15px; font-family:'JetBrains Mono';">ASSET_DATA</div>
-            <select id="f-status" class="form-input"><option value="storage">Storage (Spool)</option><option value="inventory">Inventory (Box)</option></select>
-            <input type="text" id="f-id" class="form-input" readonly style="color: var(--yellow); font-family: 'JetBrains Mono', monospace; font-weight: bold;">
-            <input type="text" id="f-brand" class="form-input" placeholder="Brand">
-            <input type="text" id="f-material" class="form-input" placeholder="Material">
-            <input type="text" id="f-color" class="form-input" placeholder="Color">
-            <select id="f-qty" class="form-input"><option value="100">100% Full</option><option value="50">50% Half</option><option value="10">10% Low</option><option value="0">Empty</option></select>
-            <button class="btn-main btn-spool" style="width:100%;" onclick="saveItem()">COMMIT_TO_CLOUD</button>
-            <button class="btn-secondary" onclick="document.getElementById('modal').style.display='none'" style="width:100%; margin-top:10px; border-color:#555; color:#888;">CANCEL</button>
+            <div style="color:var(--yellow); font-weight:800; margin-bottom:16px; font-family:'JetBrains Mono'; font-size: 14px;">⚙️ ASSET_DATA</div>
+            
+            <div class="alert" id="modal-alert" style="display: none;"></div>
+
+            <div class="form-group">
+                <label class="form-label">Status</label>
+                <select id="f-status" class="form-select">
+                    <option value="storage">📦 Storage (Spool)</option>
+                    <option value="inventory">📫 Inventory (Box)</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Asset ID</label>
+                <input type="text" id="f-id" class="form-input" readonly style="color: var(--yellow); font-family: 'JetBrains Mono', monospace; font-weight: bold;">
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Brand</label>
+                <input type="text" id="f-brand" class="form-input" placeholder="e.g., Extrudr, MatterHackers...">
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Material Type</label>
+                <select id="f-material" class="form-select">
+                    <option value="">Select material...</option>
+                    <option value="PLA">PLA</option>
+                    <option value="ABS">ABS</option>
+                    <option value="PETG">PETG</option>
+                    <option value="TPU">TPU / Flexible</option>
+                    <option value="NYLON">Nylon</option>
+                    <option value="COMPOSITE">Composite / Carbon</option>
+                    <option value="RESIN">Resin</option>
+                    <option value="OTHER">Other</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Color</label>
+                <input type="text" id="f-color" class="form-input" placeholder="e.g., Black, Red, Blue...">
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Stock Level</label>
+                <select id="f-qty" class="form-select">
+                    <option value="100">🟢 100% - Full Spool</option>
+                    <option value="75">🟡 75% - 3/4 Remaining</option>
+                    <option value="50">🟡 50% - Half Spool</option>
+                    <option value="25">🔴 25% - Low Stock</option>
+                    <option value="10">🔴 10% - Almost Empty</option>
+                    <option value="0">⚫ 0% - Empty/Used</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Weight (g)</label>
+                <input type="number" id="f-weight" class="form-input" placeholder="e.g., 1000">
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Cost ($)</label>
+                <input type="number" id="f-cost" class="form-input" placeholder="e.g., 25.99">
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Notes</label>
+                <input type="text" id="f-notes" class="form-input" placeholder="Any notes...">
+            </div>
+
+            <div class="btn-group">
+                <button class="btn-main btn-spool" onclick="saveItem()">COMMIT</button>
+                <button class="btn-secondary" onclick="closeModal()" style="flex: 0.5;">CANCEL</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- STATS MODAL -->
+    <div class="modal" id="stats-modal">
+        <div class="modal-content" style="max-height: 80vh; overflow-y: auto;">
+            <div style="color:var(--yellow); font-weight:800; margin-bottom:16px; font-family:'JetBrains Mono'; font-size: 14px;">📊 ANALYTICS</div>
+            
+            <div style="margin-bottom: 16px;">
+                <div class="stat-row">
+                    <span>Total Assets</span>
+                    <span style="color: var(--yellow); font-weight: 800;" id="stat-total">0</span>
+                </div>
+                <div class="stat-row">
+                    <span>Total Spools</span>
+                    <span id="stat-spools">0</span>
+                </div>
+                <div class="stat-row">
+                    <span>Total Boxes</span>
+                    <span id="stat-boxes">0</span>
+                </div>
+                <div class="stat-row">
+                    <span>Low Stock Items</span>
+                    <span style="color: var(--red);" id="stat-low">0</span>
+                </div>
+                <div class="stat-row">
+                    <span>Full Stock Items</span>
+                    <span style="color: var(--green);" id="stat-full">0</span>
+                </div>
+                <div class="stat-row">
+                    <span>Avg Stock Level</span>
+                    <span id="stat-avg">0%</span>
+                </div>
+            </div>
+
+            <div style="border-top: 1px solid var(--border); padding-top: 16px; margin-bottom: 16px;">
+                <div style="font-size: 11px; color: var(--text-dim); text-transform: uppercase; margin-bottom: 12px; font-weight: 700;">Material Breakdown</div>
+                <div id="material-stats"></div>
+            </div>
+
+            <div style="border-top: 1px solid var(--border); padding-top: 16px;">
+                <div style="font-size: 11px; color: var(--text-dim); text-transform: uppercase; margin-bottom: 12px; font-weight: 700;">Brand Breakdown</div>
+                <div id="brand-stats"></div>
+            </div>
+
+            <button class="btn-secondary" onclick="closeStatsModal()" style="width: 100%; margin-top: 16px;">CLOSE</button>
         </div>
     </div>
 
     <script>
-        // --- Firebase Setup ---
+        // ===== FIREBASE CONFIG =====
         const firebaseConfig = {
             apiKey: "AIzaSyCLlCKwujLGtQw9DEvHl-ZYW1Z0cK8Xw-E",
             authDomain: "inventory-86d26.firebaseapp.com",
@@ -141,24 +300,30 @@
             appId: "1:833068204777:web:09b2c6cedde4cfb199a678",
             databaseURL: "https://inventory-86d26-default-rtdb.europe-west1.firebasedatabase.app"
         };
+        
         firebase.initializeApp(firebaseConfig);
         const db = firebase.database();
         const inventoryRef = db.ref('inventory');
 
+        // ===== GLOBAL STATE =====
         let inventoryArr = [];
         let activeUser = localStorage.getItem('activeUser');
-        let currentTab = 'storage';
-        let currentScanMode = 'scan';
+        let currentTab = 'all';
+        let currentScanMode = 'spool';
+        let stream = null;
 
         if(activeUser) { loginSuccess(activeUser); }
 
+        // ===== AUTHENTICATION =====
         function login() {
-            const name = document.getElementById('member-id').value.trim().toLowerCase();
-            if (["benjamin", "christian", "rahul"].includes(name)) {
-                activeUser = name.charAt(0).toUpperCase() + name.slice(1);
-                localStorage.setItem('activeUser', activeUser);
-                loginSuccess(activeUser);
-            } else { alert("ACCESS DENIED"); }
+            const name = document.getElementById('member-id').value.trim();
+            if (!name) {
+                alert("Please enter a name");
+                return;
+            }
+            activeUser = name.charAt(0).toUpperCase() + name.slice(1);
+            localStorage.setItem('activeUser', activeUser);
+            loginSuccess(activeUser);
         }
 
         function loginSuccess(user) {
@@ -169,42 +334,91 @@
             syncData();
         }
 
-        function logout() { localStorage.removeItem('activeUser'); location.reload(); }
-        function setGroqKey() { const k = prompt("Enter Groq API Key:", localStorage.getItem('groqKey') || ""); if(k) localStorage.setItem('groqKey', k); }
+        function logout() {
+            localStorage.removeItem('activeUser');
+            location.reload();
+        }
 
+        // ===== GROQ API KEY =====
+        function setGroqKey() {
+            const k = prompt("Enter Groq API Key:\n\nGet it from: https://console.groq.com/keys", localStorage.getItem('groqKey') || "");
+            if(k) {
+                localStorage.setItem('groqKey', k);
+                alert("✅ API Key saved!");
+            }
+        }
+
+        // ===== FIREBASE SYNC =====
         function syncData() {
             inventoryRef.on('value', (snapshot) => {
                 const data = snapshot.val();
                 inventoryArr = data ? Object.values(data) : [];
+                inventoryArr.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
                 renderInventory();
+                updateStats();
             });
         }
 
+        // ===== UPDATE STATS =====
+        function updateStats() {
+            const spools = inventoryArr.filter(i => i.status === 'storage').length;
+            const boxes = inventoryArr.filter(i => i.status === 'inventory').length;
+            const low = inventoryArr.filter(i => i.qty <= 25).length;
+
+            document.getElementById('total-spools').textContent = spools;
+            document.getElementById('total-boxes').textContent = boxes;
+            document.getElementById('low-stock').textContent = low;
+        }
+
+        // ===== RENDER INVENTORY =====
         function renderInventory() {
             const container = document.getElementById('inventory');
             const search = document.getElementById('search').value.toLowerCase();
             container.innerHTML = '';
-            const filtered = inventoryArr.filter(item => {
-                const match = (String(item.id) + String(item.brand) + String(item.color)).toLowerCase().includes(search);
-                return match && item.status === currentTab;
-            });
+
+            let filtered = inventoryArr;
+
+            if (currentTab === 'storage') {
+                filtered = filtered.filter(i => i.status === 'storage');
+            } else if (currentTab === 'inventory') {
+                filtered = filtered.filter(i => i.status === 'inventory');
+            } else if (currentTab === 'low') {
+                filtered = filtered.filter(i => i.qty <= 25);
+            } else if (currentTab === 'recent') {
+                filtered = filtered.slice(0, 20);
+            }
+
+            if (search) {
+                filtered = filtered.filter(item =>
+                    String(item.id).toLowerCase().includes(search) ||
+                    String(item.brand).toLowerCase().includes(search) ||
+                    String(item.color).toLowerCase().includes(search) ||
+                    String(item.type).toLowerCase().includes(search)
+                );
+            }
+
+            if (filtered.length === 0) {
+                container.innerHTML = '<div class="empty-state">No items found</div>';
+                return;
+            }
+
             filtered.forEach(item => {
                 const div = document.createElement('div');
                 div.className = item.status === 'inventory' ? 'item box' : 'item';
-                div.onclick = () => {
-                    document.getElementById('f-id').value = item.id;
-                    document.getElementById('f-brand').value = item.brand || "";
-                    document.getElementById('f-material').value = item.type || "";
-                    document.getElementById('f-color').value = item.color || "";
-                    document.getElementById('f-qty').value = item.qty || 100;
-                    document.getElementById('f-status').value = item.status || "storage";
-                    document.getElementById('modal').style.display = 'flex';
-                };
-                div.innerHTML = `<div class="item-id">${item.id}</div><div class="item-info"><div style="font-weight:700;">${item.brand || 'Unknown'} ${item.type || ''}</div><div style="font-size:11px; color:#888;">${item.color || 'N/A'} • OP: ${item.user}</div></div><div style="color:var(--yellow); font-weight:800;">${item.qty}%</div>`;
+                const qtyClass = item.qty <= 10 ? 'low' : item.qty <= 50 ? 'mid' : '';
+                const icon = item.status === 'inventory' ? '📫' : '📦';
+
+                div.onclick = () => editItem(item);
+                div.innerHTML = `
+                    <div class="item-id">${item.id}</div>
+                    <div class="item-info">
+                        <div class="item-name">${icon} ${item.brand || 'Unknown'} ${item.type || ''}</div>
+                        <div class="item-meta">${item.color || 'N/A'} • ${item.user || 'Unknown'}</div>
+                    </div>
+                    <div class="item-qty ${qtyClass}">${item.qty}%</div>
+                `;
                 container.appendChild(div);
             });
-            document.getElementById('total').textContent = inventoryArr.length;
-            document.getElementById('low-stock').textContent = inventoryArr.filter(i => i.qty <= 0).length;
         }
 
         function setTab(t) {
@@ -214,53 +428,90 @@
             renderInventory();
         }
 
-        function saveItem() {
-            const id = String(document.getElementById('f-id').value).trim().toUpperCase();
-            if (!id || id === 'UNKNOWN') return alert('INVALID ID');
+        // ===== EDIT ITEM =====
+        function editItem(item) {
+            document.getElementById('f-status').value = item.status || 'storage';
+            document.getElementById('f-id').value = item.id;
+            document.getElementById('f-brand').value = item.brand || "";
+            document.getElementById('f-material').value = item.type || "";
+            document.getElementById('f-color').value = item.color || "";
+            document.getElementById('f-qty').value = item.qty || 100;
+            document.getElementById('f-weight').value = item.weight || "";
+            document.getElementById('f-cost').value = item.cost || "";
+            document.getElementById('f-notes').value = item.notes || "";
+            document.getElementById('modal').style.display = 'flex';
+        }
 
-            db.ref('inventory/' + id).set({
-                id: id, 
-                brand: document.getElementById('f-brand').value,
-                type: document.getElementById('f-material').value.toUpperCase(),
-                color: document.getElementById('f-color').value,
-                qty: parseInt(document.getElementById('f-qty').value),
-                status: document.getElementById('f-status').value,
-                user: activeUser, 
-                timestamp: Date.now()
-            });
+        function manualEntry() {
+            document.getElementById('f-status').value = 'storage';
+            document.getElementById('f-id').value = 'MANUAL-' + Date.now().toString(36).toUpperCase();
+            document.getElementById('f-brand').value = '';
+            document.getElementById('f-material').value = '';
+            document.getElementById('f-color').value = '';
+            document.getElementById('f-qty').value = 100;
+            document.getElementById('f-weight').value = '';
+            document.getElementById('f-cost').value = '';
+            document.getElementById('f-notes').value = '';
+            document.getElementById('modal').style.display = 'flex';
+        }
+
+        function closeModal() {
             document.getElementById('modal').style.display = 'none';
         }
 
-        let stream;
+        function closeStatsModal() {
+            document.getElementById('stats-modal').style.display = 'none';
+        }
+
+        // ===== SAVE ITEM =====
+        function saveItem() {
+            const id = String(document.getElementById('f-id').value).trim().toUpperCase();
+            if (!id) return alert('INVALID ID');
+
+            db.ref('inventory/' + id).set({
+                id: id,
+                brand: document.getElementById('f-brand').value,
+                type: document.getElementById('f-material').value.toUpperCase(),
+                color: document.getElementById('f-color').value,
+                qty: parseInt(document.getElementById('f-qty').value) || 100,
+                status: document.getElementById('f-status').value,
+                weight: document.getElementById('f-weight').value || null,
+                cost: document.getElementById('f-cost').value || null,
+                notes: document.getElementById('f-notes').value || null,
+                user: activeUser,
+                timestamp: Date.now()
+            });
+            closeModal();
+        }
+
+        // ===== CAMERA FUNCTIONS =====
         async function openCamera(mode) {
             currentScanMode = mode;
             const shutter = document.getElementById('shutter');
             const instructions = document.getElementById('scan-instructions');
             shutter.disabled = false;
-            
-            // Apply visual changes based on split-brain mode
+
             if (mode === 'box') {
                 shutter.className = 'shutter box-mode';
                 instructions.textContent = "> HOLD CLOSE TO BOX BARCODE <";
                 instructions.style.color = "var(--green)";
-                instructions.style.borderColor = "var(--green)";
             } else if (mode === 'spool') {
                 shutter.className = 'shutter';
                 instructions.textContent = "> CENTER SERIAL NUMBER IN VIEW <";
                 instructions.style.color = "var(--yellow)";
-                instructions.style.borderColor = "var(--yellow)";
             } else {
                 shutter.className = 'shutter delete';
                 instructions.textContent = "> SCAN ASSET TO PURGE <";
                 instructions.style.color = "var(--red)";
-                instructions.style.borderColor = "var(--red)";
             }
 
             document.getElementById('camera').style.display = 'block';
             try {
                 stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment', width: { ideal: 1280 } } });
                 document.getElementById('video').srcObject = stream;
-            } catch(e) { alert("Camera Error. Please allow permissions."); }
+            } catch(e) {
+                alert("Camera Error. Please allow permissions.");
+            }
         }
 
         function closeCamera() {
@@ -269,9 +520,10 @@
             document.getElementById('processing').style.display = 'none';
         }
 
+        // ===== CAPTURE & GROQ AI =====
         async function capture() {
             const GROQ_KEY = localStorage.getItem('groqKey');
-            if(!GROQ_KEY) return alert("Please click 'UPDATE GROQ KEY' at the top first!");
+            if(!GROQ_KEY) return alert("Please set your Groq API key first!");
 
             const shutterBtn = document.getElementById('shutter');
             if (shutterBtn.disabled) return;
@@ -280,60 +532,31 @@
             document.getElementById('processing').style.display = 'flex';
             const vid = document.getElementById('video');
             const canvas = document.getElementById('canvas');
-            
-            const scale = Math.min(1, 800 / vid.videoWidth);
-            canvas.width = vid.videoWidth * scale;
-            canvas.height = vid.videoHeight * scale;
-            canvas.getContext('2d').drawImage(vid, 0, 0, canvas.width, canvas.height);
-            
-            // ✅ FIXED: Ensure base64 has proper data URI prefix
+
+            canvas.width = 800;
+            canvas.height = 600;
+            canvas.getContext('2d').drawImage(vid, 0, 0, 800, 600);
             let base64 = canvas.toDataURL('image/jpeg', 0.8);
-            if (!base64.startsWith('data:image')) {
-                base64 = 'data:image/jpeg;base64,' + base64;
-            }
 
             try {
-                // SPLIT-BRAIN PROMPT LOGIC
                 let aiPrompt = "";
                 let assignedStatus = "";
 
                 if (currentScanMode === 'box') {
-                    aiPrompt = `Extract the standard 1D barcode number from this cardboard box. 
-Ignore everything else. 
-
-RESPOND WITH ONLY A JSON OBJECT (no markdown, no code blocks, just raw JSON):
-{
-  "asset_id": "barcode_number_extracted",
-  "brand": "brand_name_if_visible",
-  "type": "material_type_if_visible",
-  "color": "color_if_visible",
-  "raw_text_lines": ["line1", "line2"]
-}`;
+                    aiPrompt = "Extract the 1D barcode number from this box. Return ONLY this JSON: {\"asset_id\":\"number\",\"brand\":\"name\",\"type\":\"type\",\"color\":\"color\",\"raw_text_lines\":[]}";
                     assignedStatus = "inventory";
                 } else {
-                    aiPrompt = `Analyze this 3D filament spool image. Find the 13-character alphanumeric serial number in the format: 3 digits, 'M', 9 digits (e.g., 000M123456789). 
-
-IMPORTANT: In dot-matrix fonts, slashed zero looks like '0', and open-top-right looks like '6'.
-
-Read every visible line of text on the label and include in the raw_text_lines array.
-
-RESPOND WITH ONLY A JSON OBJECT (no markdown, no code blocks, just raw JSON):
-{
-  "brand": "brand_name",
-  "color": "color_name",
-  "type": "filament_type",
-  "asset_id": "000M123456789",
-  "raw_text_lines": ["line 1", "line 2", "line 3"]
-}`;
+                    aiPrompt = "Find the 13-char serial (000M123456789) on this filament spool. Return ONLY this JSON: {\"asset_id\":\"000M123456789\",\"brand\":\"name\",\"color\":\"color\",\"type\":\"type\",\"raw_text_lines\":[]}";
                     assignedStatus = "storage";
                 }
 
-                // ✅ FIXED: Removed response_format (not supported by Groq vision)
+                document.getElementById('processing-msg').textContent = 'Sending to Groq...';
+
                 const res = await fetch("https://api.groq.com/openai/v1/chat/completions", {
                     method: 'POST',
-                    headers: { 
-                        'Authorization': `Bearer ${GROQ_KEY}`, 
-                        'Content-Type': 'application/json' 
+                    headers: {
+                        'Authorization': `Bearer ${GROQ_KEY}`,
+                        'Content-Type': 'application/json'
                     },
                     body: JSON.stringify({
                         model: "llama-3.2-90b-vision-preview",
@@ -341,154 +564,152 @@ RESPOND WITH ONLY A JSON OBJECT (no markdown, no code blocks, just raw JSON):
                             role: "user",
                             content: [
                                 { type: "text", text: aiPrompt },
-                                { 
-                                    type: "image_url", 
-                                    image_url: { 
-                                        url: base64  // ✅ Direct base64 data URI
-                                    } 
-                                }
+                                { type: "image_url", image_url: { url: base64 } }
                             ]
                         }],
                         temperature: 0.1,
-                        max_tokens: 500  // ✅ Added explicit token limit
+                        max_tokens: 300
                     })
                 });
-                
+
                 if (!res.ok) {
-                    const errorData = await res.json();
-                    console.error('Groq API Error:', errorData);
-                    throw new Error(`HTTP ${res.status}: ${JSON.stringify(errorData)}`);
+                    const err = await res.json();
+                    throw new Error(`API Error: ${err.error?.message || res.status}`);
                 }
 
+                document.getElementById('processing-msg').textContent = 'Parsing response...';
+
                 const data = await res.json();
-                
-                // ✅ IMPROVED: Robust JSON extraction from response
                 let result;
                 const content = data.choices[0].message.content;
-                
-                // Try direct JSON parsing first
+
                 try {
                     result = JSON.parse(content);
-                } catch (e) {
-                    // Fallback: Extract JSON from markdown code blocks
-                    const jsonMatch = content.match(/```(?:json)?\s*([\s\S]*?)\s*```/);
+                } catch {
+                    const jsonMatch = content.match(/\{[\s\S]*\}/);
                     if (jsonMatch) {
-                        result = JSON.parse(jsonMatch[1]);
+                        result = JSON.parse(jsonMatch[0]);
                     } else {
-                        // Last resort: Find JSON object pattern
-                        const jsonStart = content.indexOf('{');
-                        const jsonEnd = content.lastIndexOf('}');
-                        if (jsonStart !== -1 && jsonEnd !== -1) {
-                            result = JSON.parse(content.substring(jsonStart, jsonEnd + 1));
-                        } else {
-                            throw new Error('Could not parse JSON from response');
-                        }
+                        throw new Error('No JSON in response');
                     }
                 }
 
                 let finalId = result.asset_id ? String(result.asset_id).toUpperCase().replace(/[\s\-\.]/g, '') : null;
 
-                // --- THE JAVASCRIPT SAFETY NET (Enhanced) ---
-                if (currentScanMode !== 'box') {
-                    // Fallback 1: Scan every raw text line for the 'M' format
-                    if (result.raw_text_lines && Array.isArray(result.raw_text_lines)) {
-                        for (let line of result.raw_text_lines) {
-                            let cleanLine = line.toUpperCase().replace(/[\s\-\.]/g, ''); 
-                            if (cleanLine.length >= 12 && cleanLine.length <= 14 && cleanLine.includes('M')) {
-                                let mIndex = cleanLine.indexOf('M');
-                                if (mIndex >= 2 && mIndex <= 4) { 
-                                    finalId = cleanLine; 
-                                    console.log('✅ Found in raw_text_lines:', cleanLine);
-                                    break; 
-                                }
+                if (currentScanMode !== 'box' && result.raw_text_lines) {
+                    for (let line of result.raw_text_lines) {
+                        let clean = line.toUpperCase().replace(/[\s\-\.]/g, '');
+                        if (clean.includes('M') && clean.length >= 12 && clean.length <= 14) {
+                            let m = clean.indexOf('M');
+                            if (m >= 2 && m <= 4) {
+                                finalId = clean;
+                                break;
                             }
                         }
                     }
 
-                    // Fallback 2: Fix common dot-matrix OCR errors
                     if (finalId) {
-                        const originalId = finalId;
-                        
-                        // Fix classic OCR misreads
-                        finalId = finalId.replace(/[OQD]/g, '0');      // O,Q,D → 0
-                        finalId = finalId.replace(/[IL]/g, '1');       // I,L → 1
-                        finalId = finalId.replace(/[S]/g, '5');        // S → 5
-                        finalId = finalId.replace(/[Z]/g, '2');        // Z → 2
-                        
-                        // Fix leading digit misreads (very common in dot matrix)
+                        finalId = finalId.replace(/[OQD]/g, '0').replace(/[IL]/g, '1');
                         if (finalId.startsWith('888M')) finalId = '000M' + finalId.substring(4);
                         if (finalId.startsWith('846M')) finalId = '046M' + finalId.substring(4);
-                        if (finalId.startsWith('800M')) finalId = '000M' + finalId.substring(4);
-                        if (finalId.startsWith('8M')) finalId = '0M' + finalId.substring(2);
-
-                        // Ensure exactly 13 characters with M at position 3
-                        let mIndex = finalId.indexOf('M');
-                        if (mIndex !== -1 && finalId.length > 13) {
-                            let start = Math.max(0, mIndex - 3);
-                            finalId = finalId.substring(start, start + 13);
-                        }
-
-                        if (originalId !== finalId) {
-                            console.log('🔧 Auto-corrected:', originalId, '→', finalId);
-                        }
                     }
                 }
 
-                if (!finalId || finalId === '' || finalId === 'NULL') {
-                    alert('⚠️ SCAN REJECTED\n\nCould not read the tag cleanly. Please hold closer and ensure good lighting.');
+                if (!finalId) {
+                    alert('Could not read code. Try better lighting and hold steady.');
                     shutterBtn.disabled = false;
                     document.getElementById('processing').style.display = 'none';
                     return;
                 }
 
-                const cleanExtractedId = finalId;
-                console.log('📦 Final ID:', cleanExtractedId);
-
-                // Delete Mode
-                if(currentScanMode === 'delete') {
-                    if(inventoryArr.find(i => String(i.id).trim().toUpperCase() === cleanExtractedId)) {
-                        await db.ref('inventory/' + cleanExtractedId).remove();
-                        alert("ASSET PURGED");
+                if (currentScanMode === 'delete') {
+                    if (inventoryArr.find(i => String(i.id).toUpperCase() === finalId)) {
+                        await db.ref('inventory/' + finalId).remove();
+                        alert("✅ DELETED");
                     } else {
-                        alert("ERROR: ID NOT FOUND");
+                        alert("❌ NOT FOUND");
                     }
                     closeCamera();
                     return;
                 }
 
-                // Duplicate Prevention Mode
-                const existingItem = inventoryArr.find(i => String(i.id).trim().toUpperCase() === cleanExtractedId);
-                if (existingItem) {
-                    alert(`⚠️ DUPLICATE DETECTED\n\nAsset ID: ${cleanExtractedId} is already in the database. Opening record...`);
-                    // Open edit modal with existing data
-                    document.getElementById('f-id').value = existingItem.id;
-                    document.getElementById('f-brand').value = existingItem.brand || "";
-                    document.getElementById('f-material').value = existingItem.type || "";
-                    document.getElementById('f-color').value = existingItem.color || "";
-                    document.getElementById('f-qty').value = existingItem.qty || 100;
-                    document.getElementById('f-status').value = existingItem.status || "storage";
-                    document.getElementById('modal').style.display = 'flex';
+                const existing = inventoryArr.find(i => String(i.id).toUpperCase() === finalId);
+                if (existing) {
+                    editItem(existing);
                     closeCamera();
-                    return; 
+                    return;
                 }
 
-                // Normal Mode: Pre-fill modal with extracted data
-                document.getElementById('f-id').value = cleanExtractedId;
+                document.getElementById('f-id').value = finalId;
                 document.getElementById('f-brand').value = result.brand || "";
                 document.getElementById('f-material').value = result.type || "";
                 document.getElementById('f-color').value = result.color || "";
                 document.getElementById('f-qty').value = 100;
                 document.getElementById('f-status').value = assignedStatus;
                 document.getElementById('modal').style.display = 'flex';
-                
                 closeCamera();
-                
-            } catch (e) { 
-                console.error('Full error:', e);
-                alert(`⚠️ API ERROR: ${e.message}\n\nMake sure:\n1. Groq key is valid\n2. Image is clear\n3. You're connected to internet`); 
+
+            } catch (e) {
+                console.error(e);
+                alert(`Error: ${e.message}`);
                 shutterBtn.disabled = false;
                 document.getElementById('processing').style.display = 'none';
             }
+        }
+
+        // ===== STATS MODAL =====
+        function showStats() {
+            const material = {};
+            const brands = {};
+
+            inventoryArr.forEach(item => {
+                if (item.type) material[item.type] = (material[item.type] || 0) + 1;
+                if (item.brand) brands[item.brand] = (brands[item.brand] || 0) + 1;
+            });
+
+            const avg = inventoryArr.length > 0 ? Math.round(inventoryArr.reduce((a, b) => a + (b.qty || 0), 0) / inventoryArr.length) : 0;
+
+            document.getElementById('stat-total').textContent = inventoryArr.length;
+            document.getElementById('stat-spools').textContent = inventoryArr.filter(i => i.status === 'storage').length;
+            document.getElementById('stat-boxes').textContent = inventoryArr.filter(i => i.status === 'inventory').length;
+            document.getElementById('stat-low').textContent = inventoryArr.filter(i => i.qty <= 25).length;
+            document.getElementById('stat-full').textContent = inventoryArr.filter(i => i.qty >= 100).length;
+            document.getElementById('stat-avg').textContent = avg + '%';
+
+            let materialHtml = '';
+            Object.keys(material).sort((a, b) => material[b] - material[a]).forEach(m => {
+                materialHtml += `<div class="stat-row"><span>${m}</span><span>${material[m]}</span></div>`;
+            });
+            document.getElementById('material-stats').innerHTML = materialHtml || '<div style="font-size: 10px; color: var(--text-dim);">No data</div>';
+
+            let brandHtml = '';
+            Object.keys(brands).sort((a, b) => brands[b] - brands[a]).slice(0, 10).forEach(b => {
+                brandHtml += `<div class="stat-row"><span>${b}</span><span>${brands[b]}</span></div>`;
+            });
+            document.getElementById('brand-stats').innerHTML = brandHtml || '<div style="font-size: 10px; color: var(--text-dim);">No data</div>';
+
+            document.getElementById('stats-modal').style.display = 'flex';
+        }
+
+        // ===== EXPORT FEATURE =====
+        function exportData() {
+            if (inventoryArr.length === 0) {
+                alert('No data to export');
+                return;
+            }
+
+            let csv = 'ID,Brand,Type,Color,Stock%,Weight(g),Cost($),User,Date\n';
+            inventoryArr.forEach(item => {
+                csv += `"${item.id}","${item.brand || ''}","${item.type || ''}","${item.color || ''}",${item.qty || 0},"${item.weight || ''}","${item.cost || ''}","${item.user || ''}","${new Date(item.timestamp).toLocaleDateString()}"\n`;
+            });
+
+            const blob = new Blob([csv], { type: 'text/csv' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `filament-inventory-${Date.now()}.csv`;
+            a.click();
+            alert('✅ Exported as CSV');
         }
     </script>
 </body>
