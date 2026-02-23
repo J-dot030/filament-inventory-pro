@@ -53,14 +53,15 @@
         .camera-close { background: rgba(0,0,0,0.5); border: 1px solid var(--yellow); color: var(--yellow); width: 36px; height: 36px; border-radius: 4px; font-size: 18px; cursor: pointer; }
         #video { flex: 1; object-fit: cover; }
         .camera-controls { position: absolute; bottom: 60px; left: 50%; transform: translateX(-50%); text-align: center; width: 100%; }
-        .shutter { width: 72px; height: 72px; border: 4px solid var(--yellow); background: var(--yellow-dim); border-radius: 50%; position: absolute; bottom: 60px; left: 50%; transform: translateX(-50%); cursor: pointer; }
+        .shutter { width: 72px; height: 72px; border: 4px solid var(--yellow); background: var(--yellow-dim); border-radius: 50%; position: absolute; bottom: 60px; left: 50%; transform: translateX(-50%); cursor: pointer; transition: 0.1s; }
+        .shutter:disabled { opacity: 0.5; border-color: gray; cursor: not-allowed; }
         .shutter.delete { border-color: var(--red); background: rgba(255,68,68,0.2); box-shadow: 0 0 20px rgba(255,68,68,0.4); }
         #canvas { display: none; }
         .processing { position: absolute; inset: 0; background: rgba(0, 0, 0, 0.9); display: none; flex-direction: column; align-items: center; justify-content: center; z-index: 500; }
         .spinner { width: 40px; height: 40px; border: 4px solid var(--surface); border-top: 4px solid var(--yellow); border-radius: 50%; animation: spin 1s linear infinite; margin-bottom: 16px; }
         @keyframes spin { to { transform: rotate(360deg); } }
         .process-text { font-family: 'JetBrains Mono', monospace; font-size: 14px; font-weight: 700; color: var(--yellow); margin-bottom: 8px; }
-        .process-log { font-size: 11px; color: var(--text-dim); font-family: 'JetBrains Mono', monospace; }
+        .process-log { font-size: 11px; color: var(--text-dim); font-family: 'JetBrains Mono', monospace; text-align:center; padding: 0 20px; }
         .modal { position: fixed; inset: 0; background: rgba(0, 0, 0, 0.85); z-index: 450; display: none; align-items: center; justify-content: center; padding: 20px; }
         .modal.open { display: flex; }
         .modal-content { background: var(--surface); border: 2px solid var(--yellow); border-radius: 8px; padding: 24px; width: 100%; max-width: 400px; }
@@ -200,7 +201,7 @@
     <div class="toast" id="toast"></div>
 
     <script>
-        // --- 1. FIREBASE CONFIGURATION ---
+        // --- FIREBASE CONFIGURATION ---
         const firebaseConfig = {
             apiKey: "AIzaSyCLlCKwujLGtQw9DEvHl-ZYW1Z0cK8Xw-E",
             authDomain: "inventory-86d26.firebaseapp.com",
@@ -214,17 +215,14 @@
         firebase.initializeApp(firebaseConfig);
         const db = firebase.database();
         const inventoryRef = db.ref('inventory');
-        
         const GEMINI_API_KEY = "AIzaSyDmLS6kfioDv548O6Qg-2sBA1YQQ_IMAlw";
 
-        // --- 2. APP STATE ---
         let inventoryArr = [];
         let activeUser = localStorage.getItem('activeUser');
         let aiStream = null;
         let currentTab = 'storage';
         let currentScanMode = 'scan'; 
 
-        // --- 3. LOGIN LOGIC ---
         if(activeUser) {
             document.getElementById('login-screen').classList.add('hidden');
             document.getElementById('main-app').style.display = 'block';
@@ -248,17 +246,13 @@
             syncData();
         }
 
-        function logout() {
-            localStorage.removeItem('activeUser');
-            location.reload();
-        }
+        function logout() { localStorage.removeItem('activeUser'); location.reload(); }
 
         function setApiKey() {
             const key = prompt('Update Gemini API Key:', localStorage.getItem('geminiApiKey') || GEMINI_API_KEY);
             if (key) { localStorage.setItem('geminiApiKey', key); showToast('API_KEY_UPDATED'); }
         }
 
-        // --- 4. CLOUD SYNC & UI ---
         function syncData() {
             inventoryRef.on('value', (snapshot) => {
                 const data = snapshot.val();
@@ -347,10 +341,11 @@
             setTimeout(() => toast.style.display = 'none', 3000);
         }
 
-        // --- 5. CAMERA & ULTRA-FAST SCANNER ---
         async function openCamera(mode) {
             currentScanMode = mode;
             const shutter = document.getElementById('shutter');
+            shutter.disabled = false; // Ensure button is active
+            
             if (mode === 'delete') {
                 shutter.className = 'shutter delete';
                 document.getElementById('cam-status').textContent = 'SYS_DELETE_MODE';
@@ -374,47 +369,71 @@
         }
 
         window.capture = async function() {
+            const shutterBtn = document.getElementById('shutter');
+            if (shutterBtn.disabled) return; // Prevent double-tap
+            shutterBtn.disabled = true; // Lock button instantly
+
             let key = localStorage.getItem('geminiApiKey') || GEMINI_API_KEY;
             key = key.trim(); 
 
             const proc = document.getElementById('processing');
             const log = document.getElementById('proc-log');
+            const text = document.getElementById('proc-text');
+            const spinner = document.querySelector('.spinner');
+
             proc.style.display = 'flex';
-            log.textContent = 'Compressing image for instant uplink...';
+            text.textContent = 'ANALYZING...';
+            log.textContent = 'Compressing image...';
 
             const canvas = document.getElementById('canvas');
             const video = document.getElementById('video');
             
-            // AGGRESSIVE COMPRESSION FOR INSTANT UPLOAD
-            // Shrinks the massive phone photo to just 640 pixels wide.
-            const scale = Math.min(1, 640 / video.videoWidth); 
+            // SUPER COMPRESSION (512px) - Stops Google from thinking it's too much data
+            const scale = Math.min(1, 512 / video.videoWidth); 
             canvas.width = video.videoWidth * scale; 
             canvas.height = video.videoHeight * scale;
             canvas.getContext('2d').drawImage(video, 0, 0, canvas.width, canvas.height);
             const base64 = canvas.toDataURL('image/jpeg', 0.7).split(',')[1];
 
             try {
-                log.textContent = `Analyzing via Gemini 2.5 Flash...`;
-                
-                // HARDCODED TO 2.5 FLASH TO PREVENT 404 ERRORS
+                log.textContent = `Uplinking to Gemini 2.5 Flash...`;
                 const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${key}`;
+                
+                let res;
+                let attempt = 0;
+                let success = false;
 
-                const res = await fetch(url, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        contents: [{
-                            parts: [
-                                { text: "Analyze this 3D filament spool/box.\n\n1. PHYSICAL STATE: Return 'inventory' if you see an unopened square/rectangular cardboard box. Return 'storage' if you see a circular plastic/cardboard spool.\n2. ASSET ID: \n- IF SPOOL ('storage'): Find the 13-char alphanumeric serial (3 digits, 'M', 9 digits). Slashed zero is '0'. IGNORE 1D barcodes.\n- IF BOX ('inventory'): Read the standard 1D barcode number as the asset_id.\n3. RAW LINES: Read every line of text into an array 'raw_text_lines'.\n\nReturn strictly valid JSON: {\"brand\": \"string\", \"color\": \"string\", \"type\": \"string\", \"asset_id\": \"string or null\", \"percentage_left\": 100, \"status\": \"inventory or storage\", \"raw_text_lines\": [\"line 1\"]}" },
-                                { inlineData: { mimeType: 'image/jpeg', data: base64 } }
-                            ]
-                        }]
-                    })
-                });
+                // SILENT AUTO-RETRY LOOP (Catches false 429s without bothering the user)
+                while (attempt < 2 && !success) {
+                    res = await fetch(url, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            contents: [{
+                                parts: [
+                                    { text: "Analyze this 3D filament spool/box.\n\n1. PHYSICAL STATE: Return 'inventory' if you see an unopened square/rectangular cardboard box. Return 'storage' if you see a circular plastic/cardboard spool.\n2. ASSET ID: \n- IF SPOOL ('storage'): Find the 13-char alphanumeric serial (3 digits, 'M', 9 digits). Slashed zero is '0'. IGNORE 1D barcodes.\n- IF BOX ('inventory'): Read the standard 1D barcode number as the asset_id.\n3. RAW LINES: Read every line of text into an array 'raw_text_lines'.\n\nReturn strictly valid JSON: {\"brand\": \"string\", \"color\": \"string\", \"type\": \"string\", \"asset_id\": \"string or null\", \"percentage_left\": 100, \"status\": \"inventory or storage\", \"raw_text_lines\": [\"line 1\"]}" },
+                                    { inlineData: { mimeType: 'image/jpeg', data: base64 } }
+                                ]
+                            }]
+                        })
+                    });
 
-                if (!res.ok) {
-                    const errData = await res.json();
-                    throw new Error(`Google HTTP ${res.status}: ${errData.error?.message || "Unknown API Error"}`);
+                    if (res.status === 429) {
+                        attempt++;
+                        log.textContent = 'API busy. Auto-retrying securely...';
+                        await new Promise(r => setTimeout(r, 2500)); // Wait 2.5s and silently try again
+                        continue; 
+                    }
+                    if (!res.ok) {
+                        const errData = await res.json();
+                        throw new Error(`HTTP ${res.status}: ${errData.error?.message || "Unknown Error"}`);
+                    }
+                    success = true;
+                }
+
+                // If it STILL fails after the auto-retry
+                if (!success && res && res.status === 429) {
+                    throw new Error("RATE_LIMIT");
                 }
 
                 const data = await res.json();
@@ -474,6 +493,7 @@
 
                 if (!finalId || finalId === '') {
                     alert('⚠️ SCAN REJECTED\n\nNo valid ID or barcode detected. Please try again.');
+                    shutterBtn.disabled = false;
                     return;
                 }
 
@@ -485,6 +505,7 @@
                         db.ref('inventory/' + cleanExtractedId).remove();
                         showToast(`ASSET_${cleanExtractedId}_PURGED`);
                     } else { showToast('ERR: ID_NOT_FOUND', 'error'); }
+                    shutterBtn.disabled = false;
                     return;
                 }
 
@@ -493,6 +514,7 @@
                 if (existingItem) {
                     alert(`⚠️ DUPLICATE DETECTED\n\nAsset ID: ${cleanExtractedId} is already in the database!\n\nOpening the existing record so you can update the quantity instead of making a duplicate.`);
                     editItem(cleanExtractedId); 
+                    shutterBtn.disabled = false;
                     return; 
                 }
 
@@ -513,10 +535,12 @@
                 document.getElementById('processing').style.display = 'none';
                 
                 if (e.message.includes("429") || e.message.includes("RATE_LIMIT")) {
-                    alert(`⚠️ SPEED LIMIT REACHED\n\nYou scanned too fast for the Google Free Tier. Please wait 60 seconds and try again.`);
+                    alert(`⚠️ GOOGLE FREE TIER LIMIT REACHED\n\nEven with auto-retries, the system is blocked by Google. Please wait exactly 60 seconds before scanning again.`);
                 } else {
                     alert(`⚠️ SCAN FAILED\n\nError: ${e.message}\n\nHold the phone steady, ensure good lighting, and try again.`);
                 }
+            } finally {
+                shutterBtn.disabled = false; // Unlock button
             }
         };
     </script>
