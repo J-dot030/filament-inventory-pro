@@ -38,18 +38,12 @@
         .search { padding: 0 20px; margin-bottom: 24px; }
         .search-input { width: 100%; background: var(--surface); border: 1px solid var(--border); border-radius: 6px; padding: 14px 16px; color: var(--text); font-size: 14px; outline: none; font-family: 'JetBrains Mono', monospace; }
         .inventory { padding: 0 20px; }
-        .group-header { color: var(--yellow); font-family: 'JetBrains Mono', monospace; font-size: 12px; font-weight: 700; border-bottom: 1px dashed var(--border); padding-bottom: 8px; margin-bottom: 12px; display: flex; justify-content: space-between; cursor: pointer; }
-        .group-items { display: none; flex-direction: column; gap: 8px; margin-bottom: 24px; }
-        .group-items.open { display: flex; }
-        .item { background: var(--surface); border: 1px solid var(--border); border-radius: 6px; padding: 16px; display: flex; align-items: center; gap: 12px; cursor: pointer; }
+        .item { background: var(--surface); border: 1px solid var(--border); border-radius: 6px; padding: 16px; display: flex; align-items: center; gap: 12px; margin-bottom: 10px; cursor: pointer; }
         .item-id { font-family: 'JetBrains Mono', monospace; font-size: 13px; font-weight: 800; color: var(--bg); background: var(--yellow); padding: 4px 8px; border-radius: 4px; min-width: 70px; text-align: center; }
         .item.box .item-id { background: var(--green); }
         .item-info { flex: 1; }
-        .item-brand { font-weight: 700; font-size: 14px; margin-bottom: 2px; }
-        .item-meta { font-size: 11px; color: var(--text-dim); }
         .qty { display: flex; align-items: center; background: var(--bg); border: 1px solid var(--border); border-radius: 4px; }
-        .qty-btn { width: 32px; height: 32px; background: transparent; border: none; color: var(--text-dim); font-size: 16px; cursor: pointer; }
-        .qty-val { font-family: 'JetBrains Mono', monospace; font-size: 12px; font-weight: 700; width: 44px; text-align: center; color: var(--yellow); border-left: 1px solid var(--border); border-right: 1px solid var(--border); }
+        .qty-val { font-family: 'JetBrains Mono', monospace; font-size: 12px; font-weight: 700; width: 44px; text-align: center; color: var(--yellow); padding: 8px 0; }
         .actions { position: fixed; bottom: 0; left: 50%; transform: translateX(-50%); width: 100%; max-width: 600px; background: var(--bg); border-top: 2px solid var(--yellow); padding: 16px 20px; display: flex; gap: 12px; z-index: 50; }
         .btn-main { flex: 2; padding: 16px; border-radius: 6px; border: none; background: var(--yellow); color: var(--bg); font-weight: 800; font-size: 14px; cursor: pointer; text-transform: uppercase; font-family: 'JetBrains Mono', monospace; }
         .btn-secondary { flex: 1; padding: 16px; border-radius: 6px; border: 1px solid var(--red); background: transparent; color: var(--red); font-weight: 700; font-size: 12px; cursor: pointer; text-transform: uppercase; font-family: 'JetBrains Mono', monospace; }
@@ -59,14 +53,14 @@
         .camera-close { background: rgba(0,0,0,0.5); border: 1px solid var(--yellow); color: var(--yellow); width: 36px; height: 36px; border-radius: 4px; font-size: 18px; cursor: pointer; }
         #video { flex: 1; object-fit: cover; }
         .camera-controls { position: absolute; bottom: 60px; left: 50%; transform: translateX(-50%); text-align: center; width: 100%; }
-        .shutter { width: 72px; height: 72px; border: 4px solid var(--yellow); background: var(--yellow-dim); border-radius: 50%; cursor: pointer; box-shadow: 0 0 20px rgba(255,215,0,0.4); }
+        .shutter { width: 72px; height: 72px; border: 4px solid var(--yellow); background: var(--yellow-dim); border-radius: 50%; position: absolute; bottom: 60px; left: 50%; transform: translateX(-50%); cursor: pointer; }
         .shutter.delete { border-color: var(--red); background: rgba(255,68,68,0.2); box-shadow: 0 0 20px rgba(255,68,68,0.4); }
         #canvas { display: none; }
-        .processing { position: absolute; inset: 0; background: rgba(0, 0, 0, 0.9); display: none; flex-direction: column; align-items: center; justify-content: center; z-index: 20; }
+        .processing { position: absolute; inset: 0; background: rgba(0, 0, 0, 0.9); display: none; flex-direction: column; align-items: center; justify-content: center; z-index: 500; }
         .spinner { width: 40px; height: 40px; border: 4px solid var(--surface); border-top: 4px solid var(--yellow); border-radius: 50%; animation: spin 1s linear infinite; margin-bottom: 16px; }
         @keyframes spin { to { transform: rotate(360deg); } }
         .process-text { font-family: 'JetBrains Mono', monospace; font-size: 14px; font-weight: 700; color: var(--yellow); margin-bottom: 8px; }
-        .process-log { font-size: 11px; color: var(--text-dim); font-family: 'JetBrains Mono', monospace; text-align:center; padding: 0 20px; }
+        .process-log { font-size: 11px; color: var(--text-dim); font-family: 'JetBrains Mono', monospace; }
         .modal { position: fixed; inset: 0; background: rgba(0, 0, 0, 0.85); z-index: 450; display: none; align-items: center; justify-content: center; padding: 20px; }
         .modal.open { display: flex; }
         .modal-content { background: var(--surface); border: 2px solid var(--yellow); border-radius: 8px; padding: 24px; width: 100%; max-width: 400px; }
@@ -80,18 +74,18 @@
         .toast.error { background: var(--red); color: white; }
         .login-screen { position: fixed; inset: 0; background: var(--bg); z-index: 500; display: flex; align-items: center; justify-content: center; padding: 20px; }
         .login-screen.hidden { display: none; }
-        .login-box { background: var(--surface); border: 2px solid var(--border); border-left: 4px solid var(--yellow); border-radius: 8px; padding: 32px; width: 100%; max-width: 360px; }
-        .login-logo { font-family: 'JetBrains Mono', monospace; font-size: 28px; font-weight: 900; color: var(--yellow); margin-bottom: 24px; letter-spacing: 1px; text-align: center; }
+        .login-box { background: var(--surface); border: 2px solid var(--border); border-left: 4px solid var(--yellow); border-radius: 8px; padding: 32px; width: 100%; max-width: 360px; text-align: center; }
+        .login-logo { font-family: 'JetBrains Mono', monospace; font-size: 22px; font-weight: 900; color: var(--yellow); margin-bottom: 24px; }
     </style>
 </head>
 <body>
 
     <div class="login-screen" id="login-screen">
         <div class="login-box">
-            <div class="login-logo">FILAMENT_OS</div>
+            <div class="login-logo">🧵 FILAMENT INVENTORY</div>
             <div class="form-group">
                 <label class="form-label">System Access ID</label>
-                <input type="text" class="form-input" id="member-id" placeholder="Enter Name..." style="font-family: 'JetBrains Mono', monospace; text-align: center;">
+                <input type="text" class="form-input" id="member-id" placeholder="Name (Benjamin/Christian/Rahul)" style="text-align: center;">
             </div>
             <button class="btn-main" onclick="login()" style="width:100%; margin-top:8px;">Initialize</button>
         </div>
@@ -100,11 +94,11 @@
     <div class="container" id="main-app" style="display: none;">
         <header>
             <div class="header-row">
-                <div class="logo">FILAMENT INVENTORY</div>
+                <div class="logo">🧵 Filament Inventory</div>
                 <div class="sync-status"><div class="sync-dot"></div><span>CLOUD_SYNC</span></div>
             </div>
             <div class="user-bar">
-                <div class="user-info">OP: <span id="user-name" style="color:var(--text); font-weight:700;">User</span></div>
+                <div class="user-info">OP: <span id="user-name" style="color:var(--text); font-weight:700;">-</span></div>
                 <div class="btn-group">
                     <button class="header-btn" onclick="setApiKey()">API_KEY</button>
                     <button class="header-btn" onclick="logout()">LOGOUT</button>
@@ -117,15 +111,15 @@
                 <div class="stat-label">Total Assets</div>
                 <div class="stat-value" id="total">0</div>
             </div>
-            <div class="stat-card">
+            <div class="stat-card" style="border-left-color: var(--red);">
                 <div class="stat-label">Empty Spools</div>
                 <div class="stat-value" id="low-stock" style="color:var(--red);">0</div>
             </div>
         </div>
 
         <div class="tabs">
-            <div class="tab active" id="tab-storage" onclick="setTab('storage')">Storage (Open)</div>
-            <div class="tab" id="tab-inventory" onclick="setTab('inventory')">Inventory (Box)</div>
+            <div class="tab active" id="tab-storage" onclick="setTab('storage')">Spools</div>
+            <div class="tab" id="tab-inventory" onclick="setTab('inventory')">Boxes</div>
         </div>
 
         <div class="search">
@@ -147,12 +141,7 @@
         </div>
         <video id="video" autoplay playsinline></video>
         <canvas id="canvas"></canvas>
-        <div class="camera-controls">
-            <div style="font-family: 'JetBrains Mono', monospace; font-size:11px; color:var(--yellow); background:rgba(0,0,0,0.8); padding:8px 16px; border-radius:4px; margin-bottom:20px; display:inline-block; border:1px solid var(--yellow);">
-                > ALLOW AUTO-FOCUS BEFORE TAP <
-            </div><br>
-            <button class="shutter" id="shutter" onclick="capture()"></button>
-        </div>
+        <button class="shutter" id="shutter" onclick="capture()"></button>
         <div class="processing" id="processing">
             <div class="spinner"></div>
             <div class="process-text" id="proc-text">ANALYZING...</div>
@@ -305,7 +294,7 @@
                         <div class="item-brand">${item.brand || 'Unknown'} ${item.type || ''}</div>
                         <div class="item-meta">${item.color || 'N/A'} • LOG: ${item.user}</div>
                     </div>
-                    <div class="qty-val">${item.qty}%</div>
+                    <div class="qty"><div class="qty-val">${item.qty}%</div></div>
                 `;
                 container.appendChild(div);
             });
@@ -358,7 +347,7 @@
             setTimeout(() => toast.style.display = 'none', 3000);
         }
 
-        // --- 5. CAMERA & FAST SCANNER ---
+        // --- 5. CAMERA & ULTRA-FAST SCANNER ---
         async function openCamera(mode) {
             currentScanMode = mode;
             const shutter = document.getElementById('shutter');
@@ -386,7 +375,7 @@
 
         window.capture = async function() {
             let key = localStorage.getItem('geminiApiKey') || GEMINI_API_KEY;
-            key = key.trim(); // PREVENTS 404 ERRORS FROM INVISIBLE SPACES
+            key = key.trim(); 
 
             const proc = document.getElementById('processing');
             const log = document.getElementById('proc-log');
@@ -396,18 +385,19 @@
             const canvas = document.getElementById('canvas');
             const video = document.getElementById('video');
             
-            // SMALLER IMAGE = FASTER UPLOAD & PREVENTS 400 ERRORS
-            const scale = Math.min(1, 800 / video.videoWidth); 
+            // AGGRESSIVE COMPRESSION FOR INSTANT UPLOAD
+            // Shrinks the massive phone photo to just 640 pixels wide.
+            const scale = Math.min(1, 640 / video.videoWidth); 
             canvas.width = video.videoWidth * scale; 
             canvas.height = video.videoHeight * scale;
             canvas.getContext('2d').drawImage(video, 0, 0, canvas.width, canvas.height);
-            const base64 = canvas.toDataURL('image/jpeg', 0.8).split(',')[1];
+            const base64 = canvas.toDataURL('image/jpeg', 0.7).split(',')[1];
 
             try {
-                log.textContent = `Analyzing via Gemini 1.5 Flash...`;
+                log.textContent = `Analyzing via Gemini 2.5 Flash...`;
                 
-                // HARDCODED FASTEST MODEL URL TO PREVENT 404 ERRORS
-                const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${key}`;
+                // HARDCODED TO 2.5 FLASH TO PREVENT 404 ERRORS
+                const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${key}`;
 
                 const res = await fetch(url, {
                     method: 'POST',
@@ -522,11 +512,8 @@
                 closeCamera();
                 document.getElementById('processing').style.display = 'none';
                 
-                // NEW DETAILED ERROR REPORTING
                 if (e.message.includes("429") || e.message.includes("RATE_LIMIT")) {
                     alert(`⚠️ SPEED LIMIT REACHED\n\nYou scanned too fast for the Google Free Tier. Please wait 60 seconds and try again.`);
-                } else if (e.message.includes("404") || e.message.includes("400")) {
-                    alert(`⚠️ API KEY ERROR\n\n${e.message}\n\nPlease tap API_KEY in the top right menu and ensure your key has no invisible spaces.`);
                 } else {
                     alert(`⚠️ SCAN FAILED\n\nError: ${e.message}\n\nHold the phone steady, ensure good lighting, and try again.`);
                 }
