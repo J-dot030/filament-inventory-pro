@@ -3,956 +3,1090 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Filament Inventory Pro — AI Powered</title>
+    <title>Filament Inventory Pro</title>
     
-    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
-
     <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;600;700&family=Orbitron:wght@500;700;900&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+    
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        :root { 
-            --bg: #0a0a0a; 
-            --surface: #141414; 
-            --yellow: #FFD700; 
-            --yellow-dim: rgba(255, 215, 0, 0.2); 
-            --border: #333333; 
-            --text: #ffffff; 
-            --text-dim: #888888; 
-            --red: #FF4444; 
-            --green: #00FF88; 
-            --blue: #4488FF; 
-            --purple: #BB88FF; 
-        }
-        body { 
-            font-family: 'Rajdhani', sans-serif; 
-            background: var(--bg); 
-            color: var(--text); 
-            min-height: 100vh; 
-            overflow-x: hidden;
-            position: relative;
+        
+        :root {
+            --primary: #FFD700;
+            --primary-light: rgba(255, 215, 0, 0.1);
+            --primary-dark: #E6C200;
+            --bg: #FFFFFF;
+            --surface: #F5F5F5;
+            --surface-dark: #EFEFEF;
+            --border: #E0E0E0;
+            --text: #1A1A1A;
+            --text-light: #666666;
+            --text-lighter: #999999;
+            --red: #E53935;
+            --green: #43A047;
+            --blue: #1976D2;
+            --shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.12);
         }
         
-        body::before {
-            content: '';
-            position: fixed;
-            inset: 0;
-            background: 
-                repeating-linear-gradient(90deg, rgba(255, 215, 0, 0.03) 0px, transparent 1px, transparent 50px, rgba(255, 215, 0, 0.03) 51px),
-                repeating-linear-gradient(0deg, rgba(255, 215, 0, 0.03) 0px, transparent 1px, transparent 50px, rgba(255, 215, 0, 0.03) 51px);
-            pointer-events: none;
-            z-index: 1;
-            animation: gridPulse 3s ease-in-out infinite;
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
         }
         
-        @keyframes gridPulse {
-            0%, 100% { opacity: 0.3; }
-            50% { opacity: 0.6; }
-        }
-        
-        body::after {
-            content: '';
-            position: fixed;
+        /* Header */
+        header {
+            background: var(--bg);
+            border-bottom: 2px solid var(--primary);
+            padding: 16px 20px;
+            position: sticky;
             top: 0;
-            left: 0;
-            right: 0;
-            height: 2px;
-            background: linear-gradient(90deg, transparent, var(--yellow), transparent);
-            animation: scanLine 4s linear infinite;
-            z-index: 2;
-            pointer-events: none;
-            opacity: 0.5;
-        }
-        
-        @keyframes scanLine {
-            0% { transform: translateY(0); }
-            100% { transform: translateY(100vh); }
-        }
-
-        .container { max-width: 600px; margin: 0 auto; padding-bottom: 140px; position: relative; z-index: 10; }
-        
-        header { 
-            background: linear-gradient(135deg, rgba(20, 20, 20, 0.95), rgba(40, 40, 40, 0.95)); 
-            border-bottom: 3px solid var(--yellow); 
-            padding: 20px; 
-            position: sticky; 
-            top: 0; 
             z-index: 100;
-            backdrop-filter: blur(10px);
-            box-shadow: 0 4px 20px rgba(255, 215, 0, 0.2);
-            animation: slideDown 0.5s ease-out;
+            box-shadow: var(--shadow);
         }
         
-        @keyframes slideDown {
-            from { transform: translateY(-100%); opacity: 0; }
-            to { transform: translateY(0); opacity: 1; }
+        .header-content {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
         }
         
-        .logo { 
-            font-family: 'Orbitron', monospace; 
-            font-size: 22px; 
-            font-weight: 900; 
-            color: var(--yellow); 
-            display: flex; 
-            align-items: center; 
+        .logo {
+            font-size: 22px;
+            font-weight: 800;
+            color: var(--primary);
+            display: flex;
+            align-items: center;
             gap: 10px;
-            text-shadow: 0 0 20px rgba(255, 215, 0, 0.5);
-            animation: glow 2s ease-in-out infinite;
-        }
-        
-        @keyframes glow {
-            0%, 100% { text-shadow: 0 0 20px rgba(255, 215, 0, 0.5); }
-            50% { text-shadow: 0 0 30px rgba(255, 215, 0, 0.8), 0 0 40px rgba(255, 215, 0, 0.4); }
-        }
-        
-        .header-info { 
-            font-size: 11px; 
-            color: var(--text-dim); 
-            margin-top: 10px; 
-            font-weight: 600;
             letter-spacing: 1px;
         }
-        .header-info span { 
-            color: var(--yellow); 
-            cursor: pointer; 
-            font-weight: bold; 
-            transition: all 0.3s ease;
-            padding: 4px 8px;
-            border-radius: 4px;
-        }
-        .header-info span:hover {
-            background: var(--yellow-dim);
-            transform: scale(1.05);
+        
+        .header-actions {
+            display: flex;
+            align-items: center;
+            gap: 16px;
         }
         
-        .stats { 
-            padding: 20px; 
-            display: grid; 
-            grid-template-columns: 1fr 1fr 1fr; 
-            gap: 12px;
-            animation: fadeInUp 0.6s ease-out 0.2s both;
-        }
-        
-        @keyframes fadeInUp {
-            from { transform: translateY(20px); opacity: 0; }
-            to { transform: translateY(0); opacity: 1; }
-        }
-        
-        .stat-card { 
-            background: linear-gradient(135deg, rgba(30, 30, 30, 0.8), rgba(20, 20, 20, 0.8)); 
-            border: 1px solid var(--border); 
-            border-radius: 12px; 
-            padding: 16px; 
-            border-left: 4px solid var(--yellow);
-            transition: all 0.3s ease;
-            position: relative;
-            overflow: hidden;
-        }
-        
-        .stat-card::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: -100%;
-            width: 100%;
-            height: 100%;
-            background: linear-gradient(90deg, transparent, rgba(255, 215, 0, 0.1), transparent);
-            transition: left 0.5s ease;
-        }
-        
-        .stat-card:hover::before {
-            left: 100%;
-        }
-        
-        .stat-card:hover {
-            transform: translateY(-4px);
-            box-shadow: 0 8px 24px rgba(255, 215, 0, 0.2);
-            border-color: var(--yellow);
-        }
-        
-        .stat-card.low { border-left-color: var(--red); }
-        .stat-value { 
-            font-family: 'Orbitron', monospace; 
-            font-size: 28px; 
-            font-weight: 900;
-            background: linear-gradient(135deg, var(--yellow), #FFA500);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-        }
-        .stat-label { 
-            font-size: 10px; 
-            color: var(--text-dim); 
-            text-transform: uppercase; 
-            margin-bottom: 6px; 
-            font-weight: 700;
-            letter-spacing: 2px;
-        }
-        
-        .tabs { 
-            display: flex; 
-            padding: 0 20px; 
-            gap: 8px; 
-            margin-bottom: 20px; 
-            overflow-x: auto;
-            animation: fadeInUp 0.6s ease-out 0.3s both;
-        }
-        .tab { 
-            flex-shrink: 0; 
-            padding: 12px 18px; 
-            background: rgba(30, 30, 30, 0.6); 
-            border: 2px solid var(--border); 
-            border-radius: 8px; 
-            text-align: center; 
-            font-size: 12px; 
-            cursor: pointer; 
-            color: var(--text-dim); 
-            text-transform: uppercase; 
-            font-weight: 700; 
-            white-space: nowrap;
-            transition: all 0.3s ease;
-            letter-spacing: 1px;
-        }
-        .tab:hover {
-            border-color: var(--yellow);
-            transform: translateY(-2px);
-        }
-        .tab.active { 
-            background: linear-gradient(135deg, rgba(255, 215, 0, 0.2), rgba(255, 215, 0, 0.1)); 
-            color: var(--yellow); 
-            border-color: var(--yellow);
-            box-shadow: 0 0 20px rgba(255, 215, 0, 0.3);
-        }
-        
-        .search-bar { 
-            padding: 0 20px 20px;
-            animation: fadeInUp 0.6s ease-out 0.4s both;
-        }
-        .search-input { 
-            width: 100%; 
-            background: rgba(30, 30, 30, 0.8); 
-            border: 2px solid var(--border); 
-            border-radius: 10px; 
-            padding: 14px 18px; 
-            color: var(--text); 
-            outline: none; 
-            font-family: 'Rajdhani', sans-serif; 
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 8px;
             font-size: 14px;
-            font-weight: 600;
-            transition: all 0.3s ease;
-        }
-        .search-input:focus {
-            border-color: var(--yellow);
-            background: rgba(40, 40, 40, 0.8);
-            box-shadow: 0 0 20px rgba(255, 215, 0, 0.2);
+            color: var(--text-light);
         }
         
-        .inventory { 
-            padding: 0 20px;
-        }
-        .item { 
-            background: linear-gradient(135deg, rgba(30, 30, 30, 0.6), rgba(20, 20, 20, 0.6)); 
-            border: 1px solid var(--border); 
-            border-radius: 10px; 
-            padding: 16px; 
-            display: flex; 
-            align-items: center; 
-            gap: 14px; 
-            margin-bottom: 10px; 
-            cursor: pointer; 
-            transition: all 0.3s ease;
-            animation: fadeInUp 0.4s ease-out both;
-        }
-        .item:nth-child(1) { animation-delay: 0.1s; }
-        .item:nth-child(2) { animation-delay: 0.15s; }
-        .item:nth-child(3) { animation-delay: 0.2s; }
-        .item:nth-child(4) { animation-delay: 0.25s; }
-        .item:nth-child(5) { animation-delay: 0.3s; }
-        
-        .item:hover { 
-            transform: translateX(8px) scale(1.02); 
-            background: linear-gradient(135deg, rgba(40, 40, 40, 0.8), rgba(30, 30, 30, 0.8));
-            border-color: var(--yellow);
-            box-shadow: 0 4px 20px rgba(255, 215, 0, 0.2);
-        }
-
-        .item-id { 
-            font-family: 'Orbitron', monospace; 
-            font-size: 11px; 
-            font-weight: 900; 
-            color: var(--bg); 
-            background: linear-gradient(135deg, var(--yellow), #FFA500); 
-            padding: 6px 10px; 
-            border-radius: 6px; 
-            min-width: 70px; 
-            text-align: center;
-            box-shadow: 0 4px 12px rgba(255, 215, 0, 0.4);
-        }
-        .item.box .item-id { background: linear-gradient(135deg, var(--green), #00CC66); }
-        .item-info { flex: 1; min-width: 0; }
-        .item-name { font-weight: 700; font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-        .item-meta { font-size: 11px; color: var(--text-dim); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-        .item-qty { 
-            color: var(--yellow); 
-            font-weight: 800; 
-            font-size: 14px; 
-            min-width: 55px; 
-            text-align: right;
-            font-family: 'Orbitron', monospace;
-        }
-        .item-qty.low { color: var(--red); }
-        .item-qty.mid { color: #FFAA00; }
-        
-        .actions { 
-            position: fixed; 
-            bottom: 0; 
-            left: 50%; 
-            transform: translateX(-50%); 
-            width: 100%; 
-            max-width: 600px; 
-            background: linear-gradient(to top, rgba(10, 10, 10, 0.98), rgba(10, 10, 10, 0.95)); 
-            border-top: 3px solid var(--yellow); 
-            padding: 12px; 
-            display: grid;
-            grid-template-columns: 1fr 1fr 1fr;
-            gap: 8px; 
-            z-index: 50;
-            backdrop-filter: blur(10px);
-            box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.5);
-        }
-        
-        .btn-main { 
-            padding: 14px 10px; 
-            border-radius: 10px; 
-            border: none; 
-            font-weight: 800; 
-            font-size: 11px; 
-            cursor: pointer; 
-            text-transform: uppercase; 
-            font-family: 'Orbitron', monospace; 
-            color: var(--bg); 
-            transition: all 0.3s ease;
-            letter-spacing: 1px;
-            position: relative;
-            overflow: hidden;
-        }
-        .btn-main::before {
-            content: '';
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            width: 0;
-            height: 0;
-            background: rgba(255, 255, 255, 0.3);
+        .status-indicator {
+            width: 8px;
+            height: 8px;
+            background: var(--green);
             border-radius: 50%;
-            transform: translate(-50%, -50%);
-            transition: width 0.6s, height 0.6s;
-        }
-        .btn-main:active::before {
-            width: 300px;
-            height: 300px;
-        }
-        .btn-main:active { transform: scale(0.95); }
-        
-        .btn-scan { 
-            background: linear-gradient(135deg, var(--yellow), #FFA500);
-            box-shadow: 0 6px 20px rgba(255, 215, 0, 0.4);
-            grid-column: 1 / 3;
-        }
-        .btn-scan:hover {
-            box-shadow: 0 8px 30px rgba(255, 215, 0, 0.6);
-            transform: translateY(-2px);
-        }
-        
-        .btn-secondary { 
-            padding: 14px 10px; 
-            border-radius: 10px; 
-            border: 2px solid var(--text-dim); 
-            background: rgba(30, 30, 30, 0.6); 
-            color: var(--text-dim); 
-            font-weight: 700; 
-            font-size: 11px; 
-            cursor: pointer; 
-            text-transform: uppercase; 
-            font-family: 'Orbitron', monospace;
-            transition: all 0.3s ease;
-            letter-spacing: 1px;
-        }
-        .btn-secondary:hover {
-            border-color: var(--purple);
-            color: var(--purple);
-            transform: translateY(-2px);
-        }
-        .btn-delete { border-color: var(--red); color: var(--red); }
-        .btn-delete:hover {
-            border-color: var(--red);
-            color: var(--red);
-            background: rgba(255, 68, 68, 0.1);
-        }
-        
-        .btn-edit { border-color: var(--blue); color: var(--blue); }
-        .btn-edit:hover {
-            border-color: var(--blue);
-            color: var(--blue);
-            background: rgba(68, 136, 255, 0.1);
-        }
-        
-        .camera { 
-            position: fixed; 
-            inset: 0; 
-            background: #000; 
-            z-index: 400; 
-            display: none;
-        }
-        #video { width: 100%; height: 100%; object-fit: cover; }
-        .shutter { 
-            width: 80px; 
-            height: 80px; 
-            border: 5px solid var(--yellow); 
-            background: var(--yellow-dim); 
-            border-radius: 50%; 
-            position: absolute; 
-            bottom: 40px; 
-            left: 50%; 
-            transform: translateX(-50%); 
-            z-index: 401; 
-            cursor: pointer; 
-            transition: all 0.2s ease;
-            box-shadow: 0 0 30px rgba(255, 215, 0, 0.5);
-            animation: pulse 2s ease-in-out infinite;
+            animation: pulse 2s infinite;
         }
         
         @keyframes pulse {
-            0%, 100% { transform: translateX(-50%) scale(1); }
-            50% { transform: translateX(-50%) scale(1.05); }
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
         }
         
-        .shutter:active { transform: translateX(-50%) scale(0.9); }
-        .shutter.delete { 
-            border-color: var(--red); 
-            background: rgba(255,68,68,0.2);
-            box-shadow: 0 0 30px rgba(255, 68, 68, 0.5);
-        }
-        .shutter.edit { 
-            border-color: var(--blue); 
-            background: rgba(68,136,255,0.2);
-            box-shadow: 0 0 30px rgba(68, 136, 255, 0.5);
-        }
-        
-        .processing { 
-            position: absolute; 
-            inset: 0; 
-            background: rgba(0,0,0,0.95); 
-            display: none; 
-            flex-direction: column; 
-            align-items: center; 
-            justify-content: center; 
-            z-index: 500;
-        }
-        .spinner { 
-            width: 60px; 
-            height: 60px; 
-            border: 5px solid #333; 
-            border-top: 5px solid var(--yellow); 
-            border-radius: 50%; 
-            animation: spin 0.8s linear infinite; 
-            margin-bottom: 20px;
-            box-shadow: 0 0 20px rgba(255, 215, 0, 0.5);
-        }
-        @keyframes spin { to { transform: rotate(360deg); } }
-        
-        .modal { 
-            position: fixed; 
-            inset: 0; 
-            background: rgba(0,0,0,0.95); 
-            z-index: 600; 
-            display: none; 
-            align-items: center; 
-            justify-content: center; 
-            padding: 20px; 
-            overflow-y: auto;
-            backdrop-filter: blur(10px);
-        }
-        .modal-content { 
-            background: linear-gradient(135deg, rgba(30, 30, 30, 0.95), rgba(20, 20, 20, 0.95)); 
-            border: 3px solid var(--yellow); 
-            border-radius: 12px; 
-            padding: 28px; 
-            width: 100%; 
-            max-width: 420px; 
-            max-height: 90vh; 
-            overflow-y: auto;
-            box-shadow: 0 20px 60px rgba(255, 215, 0, 0.3);
-            animation: modalSlideIn 0.3s ease-out;
-        }
-        
-        @keyframes modalSlideIn {
-            from { transform: scale(0.9) translateY(20px); opacity: 0; }
-            to { transform: scale(1) translateY(0); opacity: 1; }
-        }
-        
-        .form-group { margin-bottom: 16px; }
-        .form-label { 
-            font-size: 11px; 
-            color: var(--text-dim); 
-            text-transform: uppercase; 
-            margin-bottom: 6px; 
-            display: block; 
-            font-weight: 700;
-            letter-spacing: 1px;
-        }
-        .form-input, .form-select { 
-            width: 100%; 
-            background: rgba(10, 10, 10, 0.8); 
-            border: 2px solid var(--border); 
-            border-radius: 8px; 
-            padding: 12px; 
-            color: var(--text); 
-            outline: none; 
-            font-family: 'Rajdhani', sans-serif; 
-            font-size: 14px;
+        .header-btn {
+            background: transparent;
+            border: 1px solid var(--border);
+            color: var(--text-light);
+            padding: 8px 16px;
+            border-radius: 6px;
+            font-size: 13px;
             font-weight: 600;
-            transition: all 0.3s ease;
-        }
-        .form-input:focus, .form-select:focus { 
-            border-color: var(--yellow); 
-            background: rgba(20, 20, 20, 0.9);
-            box-shadow: 0 0 15px rgba(255, 215, 0, 0.2);
+            cursor: pointer;
+            transition: all 0.2s ease;
         }
         
-        .login-screen { 
-            position: fixed; 
-            inset: 0; 
-            background: linear-gradient(135deg, #0a0a0a, #1a1a1a); 
-            z-index: 800; 
-            display: flex; 
-            align-items: center; 
-            justify-content: center; 
-            padding: 20px;
+        .header-btn:hover {
+            border-color: var(--primary);
+            color: var(--primary);
+            background: var(--primary-light);
         }
-        .login-box { 
-            background: linear-gradient(135deg, rgba(30, 30, 30, 0.95), rgba(20, 20, 20, 0.95)); 
-            border: 3px solid var(--yellow); 
+        
+        /* Main Container */
+        .main-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 24px;
+        }
+        
+        /* Stats */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 16px;
+        }
+        
+        .stat-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
             border-radius: 12px;
-            padding: 50px 40px; 
-            width: 100%; 
-            max-width: 380px; 
-            text-align: center;
-            box-shadow: 0 20px 60px rgba(255, 215, 0, 0.3);
-            animation: modalSlideIn 0.5s ease-out;
-        }
-        
-        .alert { 
-            background: rgba(255,68,68,0.1); 
-            border-left: 4px solid var(--red); 
-            padding: 14px; 
-            border-radius: 6px; 
-            margin-bottom: 14px; 
-            font-size: 13px;
-            font-weight: 600;
-        }
-        .alert.success { background: rgba(0,255,136,0.1); border-left-color: var(--green); }
-        
-        .btn-group { display: flex; gap: 10px; }
-        .btn-group .btn-main { flex: 1; }
-        
-        .stat-row { 
-            display: flex; 
-            justify-content: space-between; 
-            padding: 14px 0; 
-            border-bottom: 1px solid var(--border); 
-            font-size: 13px;
-            font-weight: 600;
-        }
-        .stat-row:last-child { border-bottom: none; }
-        
-        .empty-state { 
-            text-align: center; 
-            padding: 50px 20px; 
-            color: var(--text-dim); 
-            font-size: 13px;
-            font-weight: 600;
-        }
-
-        .scan-result {
             padding: 20px;
-            background: rgba(40, 40, 40, 0.8);
-            border: 2px solid var(--yellow);
-            border-radius: 10px;
-            margin-bottom: 20px;
-            animation: fadeInUp 0.4s ease-out;
-        }
-        .scan-result-title {
-            font-family: 'Orbitron', monospace;
-            font-size: 12px;
-            color: var(--yellow);
-            margin-bottom: 15px;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            font-weight: 700;
-        }
-        .scan-result-item {
-            display: flex;
-            justify-content: space-between;
-            padding: 10px 0;
-            border-bottom: 1px solid var(--border);
-            font-size: 14px;
-        }
-        .scan-result-item:last-child {
-            border-bottom: none;
-        }
-        .scan-result-label {
-            color: var(--text-dim);
-            font-weight: 600;
-        }
-        .scan-result-value {
-            color: var(--text);
-            font-weight: 700;
-            font-family: 'Orbitron', monospace;
-        }
-
-        .dashboard-item {
-            background: linear-gradient(135deg, rgba(30, 30, 30, 0.6), rgba(20, 20, 20, 0.6)); 
-            border: 1px solid var(--border); 
-            border-radius: 10px; 
-            padding: 16px; 
-            margin-bottom: 10px; 
-            cursor: pointer; 
+            border-left: 4px solid var(--primary);
             transition: all 0.3s ease;
-            animation: fadeInUp 0.4s ease-out both;
         }
         
-        .dashboard-item:hover {
-            transform: translateX(8px) scale(1.02); 
-            background: linear-gradient(135deg, rgba(40, 40, 40, 0.8), rgba(30, 30, 30, 0.8));
-            border-color: var(--yellow);
-            box-shadow: 0 4px 20px rgba(255, 215, 0, 0.2);
+        .stat-card:hover {
+            box-shadow: var(--shadow-lg);
+            transform: translateY(-2px);
         }
-
-        .dashboard-type {
-            font-family: 'Orbitron', monospace;
-            font-size: 13px;
-            font-weight: 900;
-            color: var(--yellow);
+        
+        .stat-label {
+            font-size: 12px;
+            color: var(--text-lighter);
+            text-transform: uppercase;
+            font-weight: 700;
+            letter-spacing: 1px;
             margin-bottom: 8px;
         }
-
-        .dashboard-color {
-            font-size: 13px;
-            color: var(--text-dim);
-            margin-bottom: 10px;
+        
+        .stat-value {
+            font-family: 'Space Mono', monospace;
+            font-size: 32px;
+            font-weight: 700;
+            color: var(--primary);
         }
-
-        .dashboard-count {
+        
+        /* Content Area */
+        .content-wrapper {
+            background: var(--bg);
+            border-radius: 12px;
+        }
+        
+        /* Tabs */
+        .tabs {
+            display: flex;
+            border-bottom: 2px solid var(--border);
+            gap: 0;
+            padding: 0 20px;
+        }
+        
+        .tab {
+            padding: 16px 24px;
+            border-bottom: 3px solid transparent;
+            background: transparent;
+            border: none;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            color: var(--text-light);
+            transition: all 0.2s ease;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .tab:hover {
+            color: var(--text);
+            border-bottom-color: var(--primary-light);
+        }
+        
+        .tab.active {
+            color: var(--primary);
+            border-bottom-color: var(--primary);
+        }
+        
+        /* Search */
+        .search-container {
+            padding: 20px;
+            border-bottom: 1px solid var(--border);
+        }
+        
+        .search-input {
+            width: 100%;
+            padding: 12px 16px;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            font-size: 14px;
+            font-family: 'Inter', sans-serif;
+            outline: none;
+            transition: all 0.2s ease;
+        }
+        
+        .search-input:focus {
+            border-color: var(--primary);
+            background: var(--primary-light);
+            box-shadow: 0 0 0 3px rgba(255, 215, 0, 0.1);
+        }
+        
+        /* Inventory */
+        .inventory-container {
+            padding: 20px;
+        }
+        
+        .inventory-group {
+            margin-bottom: 24px;
+        }
+        
+        .group-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 0;
+            border-bottom: 2px solid var(--border);
+            margin-bottom: 12px;
+            cursor: pointer;
+            user-select: none;
+        }
+        
+        .group-title {
+            font-weight: 700;
+            color: var(--primary);
+            font-size: 14px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        
+        .group-count {
+            background: var(--primary-light);
+            color: var(--primary);
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 700;
+        }
+        
+        .group-items {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 16px;
+        }
+        
+        .item-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 16px;
+            transition: all 0.3s ease;
+            position: relative;
+        }
+        
+        .item-card:hover {
+            border-color: var(--primary);
+            box-shadow: var(--shadow-lg);
+            transform: translateY(-4px);
+        }
+        
+        .item-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 12px;
+        }
+        
+        .item-id {
+            font-family: 'Space Mono', monospace;
+            font-size: 13px;
+            font-weight: 700;
+            background: var(--primary);
+            color: var(--bg);
+            padding: 4px 8px;
+            border-radius: 6px;
+            flex-shrink: 0;
+        }
+        
+        .item-badge {
+            font-size: 11px;
+            font-weight: 700;
+            padding: 4px 8px;
+            border-radius: 4px;
+            background: var(--primary-light);
+            color: var(--primary);
+        }
+        
+        .item-info {
+            margin-bottom: 12px;
+        }
+        
+        .item-brand {
+            font-weight: 700;
+            color: var(--text);
+            font-size: 15px;
+            margin-bottom: 4px;
+        }
+        
+        .item-meta {
+            font-size: 13px;
+            color: var(--text-light);
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+        
+        .meta-tag {
+            background: var(--surface-dark);
+            padding: 3px 8px;
+            border-radius: 4px;
+            font-size: 11px;
+        }
+        
+        .stock-section {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding-top: 12px;
+            border-top: 1px solid var(--border);
+        }
+        
+        .stock-label {
+            font-size: 12px;
+            color: var(--text-lighter);
+            text-transform: uppercase;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+        }
+        
+        .stock-value {
+            font-family: 'Space Mono', monospace;
+            font-size: 18px;
+            font-weight: 700;
+            color: var(--primary);
+        }
+        
+        .stock-value.low {
+            color: var(--red);
+        }
+        
+        .stock-value.mid {
+            color: #FF9800;
+        }
+        
+        /* Empty State */
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: var(--text-lighter);
+        }
+        
+        .empty-icon {
+            font-size: 48px;
+            margin-bottom: 16px;
+        }
+        
+        .empty-text {
+            font-size: 14px;
+            color: var(--text-light);
+        }
+        
+        /* Sidebar */
+        .sidebar {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            z-index: 50;
+        }
+        
+        .action-btn {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            border: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: var(--shadow-lg);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .action-btn::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: radial-gradient(circle, rgba(255,255,255,0.3) 0%, transparent 70%);
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+        
+        .action-btn:hover::before {
+            opacity: 1;
+        }
+        
+        .action-btn:active {
+            transform: scale(0.9);
+        }
+        
+        .btn-scan {
+            background: var(--primary);
+            color: var(--bg);
+            font-weight: 800;
+            font-size: 28px;
+        }
+        
+        .btn-scan:hover {
+            background: var(--primary-dark);
+            box-shadow: 0 8px 20px rgba(255, 215, 0, 0.3);
+            transform: scale(1.1);
+        }
+        
+        .btn-edit {
+            background: var(--blue);
+            color: white;
+            width: 52px;
+            height: 52px;
             font-size: 20px;
-            font-weight: 900;
-            color: var(--green);
-            font-family: 'Orbitron', monospace;
+        }
+        
+        .btn-edit:hover {
+            background: #1565C0;
+            box-shadow: 0 8px 20px rgba(25, 118, 210, 0.3);
+            transform: scale(1.08);
+        }
+        
+        .btn-delete {
+            background: var(--red);
+            color: white;
+            width: 52px;
+            height: 52px;
+            font-size: 20px;
+        }
+        
+        .btn-delete:hover {
+            background: #C62828;
+            box-shadow: 0 8px 20px rgba(229, 57, 53, 0.3);
+            transform: scale(1.08);
+        }
+        
+        .btn-manual {
+            background: #9C27B0;
+            color: white;
+            width: 52px;
+            height: 52px;
+            font-size: 20px;
+        }
+        
+        .btn-manual:hover {
+            background: #7B1FA2;
+            box-shadow: 0 8px 20px rgba(156, 39, 176, 0.3);
+            transform: scale(1.08);
+        }
+        
+        .action-tooltip {
+            position: absolute;
+            right: 70px;
+            background: var(--text);
+            color: var(--bg);
+            padding: 8px 12px;
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: 600;
+            white-space: nowrap;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.2s ease;
+            box-shadow: var(--shadow-lg);
+        }
+        
+        .action-btn:hover .action-tooltip {
+            opacity: 1;
+        }
+        
+        /* Camera */
+        .camera {
+            position: fixed;
+            inset: 0;
+            background: #000;
+            z-index: 400;
+            display: none;
+            flex-direction: column;
+        }
+        
+        .camera.active {
+            display: flex;
+        }
+        
+        .camera-header {
+            padding: 16px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 10;
+        }
+        
+        .camera-label {
+            color: var(--primary);
+            font-weight: 700;
+            font-size: 14px;
+            font-family: 'Space Mono', monospace;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        
+        .camera-close {
+            background: transparent;
+            border: 1px solid var(--primary);
+            color: var(--primary);
+            width: 40px;
+            height: 40px;
+            border-radius: 8px;
+            font-size: 20px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        
+        .camera-close:hover {
+            background: var(--primary);
+            color: var(--bg);
+        }
+        
+        #video {
+            flex: 1;
+            object-fit: cover;
+        }
+        
+        .camera-footer {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            padding: 20px;
+            text-align: center;
+            background: linear-gradient(to top, rgba(0,0,0,0.8), transparent);
+            z-index: 10;
+        }
+        
+        .camera-instruction {
+            color: var(--primary);
+            font-family: 'Space Mono', monospace;
+            font-size: 12px;
+            margin-bottom: 16px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        
+        .shutter {
+            width: 72px;
+            height: 72px;
+            border: 4px solid var(--primary);
+            background: transparent;
+            border-radius: 50%;
+            cursor: pointer;
+            margin: 0 auto;
+            transition: all 0.2s ease;
+            box-shadow: 0 0 20px rgba(255, 215, 0, 0.4);
+        }
+        
+        .shutter:hover {
+            transform: scale(1.05);
+            box-shadow: 0 0 30px rgba(255, 215, 0, 0.6);
+        }
+        
+        .shutter:active {
+            transform: scale(0.95);
+        }
+        
+        .shutter.delete {
+            border-color: var(--red);
+            box-shadow: 0 0 20px rgba(229, 57, 53, 0.4);
+        }
+        
+        .shutter.edit {
+            border-color: var(--blue);
+            box-shadow: 0 0 20px rgba(25, 118, 210, 0.4);
+        }
+        
+        #canvas {
+            display: none;
+        }
+        
+        .processing {
+            position: absolute;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.9);
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 20;
+        }
+        
+        .processing.active {
+            display: flex;
+        }
+        
+        .spinner {
+            width: 50px;
+            height: 50px;
+            border: 4px solid rgba(255, 215, 0, 0.2);
+            border-top: 4px solid var(--primary);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-bottom: 20px;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        
+        .processing-text {
+            color: var(--primary);
+            font-family: 'Space Mono', monospace;
+            font-size: 16px;
+            font-weight: 700;
+            margin-bottom: 8px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        
+        .processing-log {
+            color: var(--text-lighter);
+            font-size: 12px;
+            font-family: 'Space Mono', monospace;
+        }
+        
+        /* Modal */
+        .modal {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 450;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            backdrop-filter: blur(4px);
+        }
+        
+        .modal.active {
+            display: flex;
+        }
+        
+        .modal-content {
+            background: var(--bg);
+            border: 2px solid var(--primary);
+            border-radius: 12px;
+            padding: 28px;
+            width: 100%;
+            max-width: 500px;
+            box-shadow: var(--shadow-lg);
+            max-height: 90vh;
+            overflow-y: auto;
+            animation: slideUp 0.3s ease;
+        }
+        
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 24px;
+            border-bottom: 2px solid var(--border);
+            padding-bottom: 16px;
+        }
+        
+        .modal-title {
+            font-size: 18px;
+            font-weight: 800;
+            color: var(--primary);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        
+        .modal-close {
+            background: transparent;
+            border: 1px solid var(--border);
+            color: var(--text-light);
+            width: 32px;
+            height: 32px;
+            border-radius: 6px;
+            font-size: 18px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        
+        .modal-close:hover {
+            border-color: var(--red);
+            color: var(--red);
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        .form-label {
+            display: block;
+            font-size: 12px;
+            font-weight: 700;
+            color: var(--text-lighter);
+            text-transform: uppercase;
+            margin-bottom: 8px;
+            letter-spacing: 1px;
+        }
+        
+        .form-input, .form-select {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            font-size: 14px;
+            font-family: 'Inter', sans-serif;
+            outline: none;
+            transition: all 0.2s ease;
+        }
+        
+        .form-input:focus, .form-select:focus {
+            border-color: var(--primary);
+            background: var(--primary-light);
+        }
+        
+        .form-input[readonly] {
+            background: var(--surface);
+            color: var(--primary);
+            font-family: 'Space Mono', monospace;
+            font-weight: 700;
+        }
+        
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+        }
+        
+        .btn-primary {
+            width: 100%;
+            padding: 14px;
+            background: var(--primary);
+            color: var(--bg);
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-top: 8px;
+        }
+        
+        .btn-primary:hover {
+            background: var(--primary-dark);
+            box-shadow: var(--shadow-lg);
+            transform: translateY(-2px);
+        }
+        
+        .btn-primary:active {
+            transform: translateY(0);
+        }
+        
+        /* Toast */
+        .toast {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: var(--primary);
+            color: var(--bg);
+            padding: 14px 24px;
+            border-radius: 8px;
+            font-family: 'Space Mono', monospace;
+            font-weight: 700;
+            font-size: 12px;
+            z-index: 600;
+            display: none;
+            box-shadow: var(--shadow-lg);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            animation: slideDown 0.3s ease;
+        }
+        
+        .toast.active {
+            display: block;
+        }
+        
+        .toast.error {
+            background: var(--red);
+        }
+        
+        .toast.success {
+            background: var(--green);
+        }
+        
+        @keyframes slideDown {
+            from {
+                opacity: 0;
+                transform: translateX(-50%) translateY(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(-50%) translateY(0);
+            }
+        }
+        
+        /* Login */
+        .login-screen {
+            position: fixed;
+            inset: 0;
+            background: linear-gradient(135deg, var(--surface) 0%, var(--bg) 100%);
+            z-index: 500;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        
+        .login-screen.hidden {
+            display: none;
+        }
+        
+        .login-box {
+            background: var(--bg);
+            border: 2px solid var(--border);
+            border-left: 4px solid var(--primary);
+            border-radius: 12px;
+            padding: 40px;
+            width: 100%;
+            max-width: 380px;
+            box-shadow: var(--shadow-lg);
+        }
+        
+        .login-logo {
+            font-size: 28px;
+            font-weight: 800;
+            color: var(--primary);
+            margin-bottom: 32px;
+            letter-spacing: 1px;
+        }
+        
+        /* Responsive */
+        @media (max-width: 768px) {
+            .header-content {
+                flex-wrap: wrap;
+                gap: 16px;
+            }
+            
+            .sidebar {
+                bottom: 20px;
+                right: 20px;
+            }
+            
+            .group-items {
+                grid-template-columns: 1fr;
+            }
+            
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
         }
     </style>
 </head>
 <body>
 
-    <!-- LOGIN SCREEN -->
+    <!-- Login Screen -->
     <div class="login-screen" id="login-screen">
         <div class="login-box">
-            <div style="font-family: 'Orbitron', monospace; font-size: 32px; color: var(--yellow); margin-bottom: 10px; font-weight: 900; text-shadow: 0 0 20px rgba(255, 215, 0, 0.5);">🧵 FILAMENT</div>
-            <div style="font-size: 13px; color: var(--text-dim); margin-bottom: 30px; font-weight: 600; letter-spacing: 2px;">INVENTORY SYSTEM</div>
-            <input type="text" class="form-input" id="member-id" placeholder="Enter Username" style="text-align: center; margin-bottom: 16px;">
-            <button class="btn-main btn-scan" onclick="login()" style="width: 100%; margin-bottom: 12px;">ACCESS SYSTEM</button>
-            <div style="font-size: 11px; color: var(--text-dim); font-weight: 600;">Enter any username to continue</div>
+            <div class="login-logo">🧵 Filament Pro</div>
+            <div class="form-group">
+                <label class="form-label">Operator ID</label>
+                <input type="text" class="form-input" id="member-id" placeholder="Enter your ID...">
+            </div>
+            <button class="btn-primary" onclick="login()">Login</button>
         </div>
     </div>
 
-    <!-- MAIN APP -->
-    <div class="container" id="main-app" style="display: none;">
+    <!-- Main App -->
+    <div id="main-app" style="display: none;">
+        <!-- Header -->
         <header>
-            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 14px;">
+            <div class="header-content">
                 <div class="logo">🧵 FILAMENT PRO</div>
-                <div style="display: flex; gap: 14px; align-items: center;">
-                    <span style="font-size:11px; color:var(--green); font-weight:bold;">●</span>
-                    <span style="font-size:11px; color:var(--red); font-weight:bold; cursor:pointer;" onclick="logout()">LOGOUT</span>
+                <div class="header-actions">
+                    <div class="user-info">
+                        <div class="status-indicator"></div>
+                        <span id="user-name">User</span>
+                    </div>
+                    <button class="header-btn" onclick="setApiKey()">API Key</button>
+                    <button class="header-btn" onclick="logout()">Logout</button>
                 </div>
-            </div>
-            <div class="header-info">
-                OP: <span id="user-name">-</span> | 
-                <span onclick="setGroqKey()">🔑 KEY</span> |
-                <span onclick="showStats()">📊 STATS</span> |
-                <span onclick="exportData()">⬇️ EXPORT</span>
             </div>
         </header>
 
-        <div class="stats">
-            <div class="stat-card">
-                <div class="stat-label">Total Items</div>
-                <div class="stat-value" id="total-items">0</div>
+        <!-- Main Container -->
+        <div class="main-container">
+            <!-- Stats -->
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-label">Total Items</div>
+                    <div class="stat-value" id="total">0</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Low Stock</div>
+                    <div class="stat-value" id="low-stock">0</div>
+                </div>
             </div>
-            <div class="stat-card">
-                <div class="stat-label">Variants</div>
-                <div class="stat-value" id="total-variants">0</div>
-            </div>
-            <div class="stat-card low">
-                <div class="stat-label">Low Stock</div>
-                <div class="stat-value" id="low-stock" style="color:var(--red);">0</div>
-            </div>
-        </div>
 
-        <div class="tabs">
-            <div class="tab active" id="tab-all" onclick="setTab('all')">ALL</div>
-            <div class="tab" id="tab-spools" onclick="setTab('spools')">SPOOLS</div>
-            <div class="tab" id="tab-boxes" onclick="setTab('boxes')">BOXES</div>
-            <div class="tab" id="tab-low" onclick="setTab('low')">⚠️ LOW</div>
-            <div class="tab" id="tab-recent" onclick="setTab('recent')">🆕 RECENT</div>
-        </div>
+            <!-- Content -->
+            <div class="content-wrapper">
+                <div class="tabs">
+                    <button class="tab active" id="tab-spools" onclick="setTab('storage')">SPOOLS (STORAGE)</button>
+                    <button class="tab" id="tab-boxes" onclick="setTab('inventory')">BOXES (INVENTORY)</button>
+                </div>
 
-        <div class="search-bar">
-            <input type="text" class="search-input" id="search" placeholder="🔍 Search material, brand, color..." onkeyup="renderInventory()">
+                <div class="search-container">
+                    <input type="text" class="search-input" id="search" placeholder="Search by material, color, brand..." onkeyup="renderInventory()">
+                </div>
+
+                <div class="inventory-container" id="inventory"></div>
+            </div>
         </div>
-        <div class="inventory" id="inventory"></div>
     </div>
 
-    <!-- ACTION BAR -->
-    <div class="actions" id="action-bar" style="display: none;">
-        <button class="btn-secondary btn-delete" onclick="openCamera('delete')">🗑️ DEL</button>
-        <button class="btn-main btn-scan" onclick="openCamera('scan')">🔍 SCAN</button>
-        <button class="btn-secondary btn-edit" onclick="openCamera('edit')">✎ EDT</button>
-        <button class="btn-secondary" onclick="manualEntry()" style="border-color: var(--purple); color: var(--purple);">✎ NEW</button>
+    <!-- Sidebar Actions -->
+    <div class="sidebar">
+        <button class="action-btn btn-scan" onclick="openCamera('scan')" title="Scan New">
+            🔍
+            <div class="action-tooltip">Scan New Item</div>
+        </button>
+        <button class="action-btn btn-edit" onclick="openCamera('edit')" title="Edit">
+            ✎
+            <div class="action-tooltip">Edit Item</div>
+        </button>
+        <button class="action-btn btn-delete" onclick="openCamera('delete')" title="Delete">
+            🗑️
+            <div class="action-tooltip">Delete Item</div>
+        </button>
+        <button class="action-btn btn-manual" onclick="openManualEntry()" title="Manual">
+            ➕
+            <div class="action-tooltip">Manual Entry</div>
+        </button>
     </div>
 
-    <!-- CAMERA -->
+    <!-- Camera -->
     <div class="camera" id="camera">
-        <video id="video" autoplay playsinline muted></video>
-        <canvas id="canvas" style="display:none;"></canvas>
-        <button class="shutter" id="shutter" onclick="capture()"></button>
-        <button onclick="closeCamera()" style="position:absolute; top:20px; right:20px; background:rgba(0,0,0,0.9); color:white; border:2px solid var(--yellow); padding:12px 18px; border-radius:8px; cursor:pointer; z-index: 402; font-weight: bold; font-family: 'Orbitron', monospace; font-size: 11px;">✕ CLOSE</button>
-        
-        <div style="position:absolute; bottom:140px; left:50%; transform:translateX(-50%); text-align:center; width:100%; z-index: 402;">
-            <div style="font-family:'Orbitron', monospace; font-size:13px; color:var(--yellow); background:rgba(0,0,0,0.9); padding:14px 24px; border-radius:8px; display:inline-block; border: 2px solid var(--yellow); font-weight: 800; letter-spacing: 1px;" id="scan-instructions">
-                > HOLD STEADY <
-            </div>
+        <div class="camera-header">
+            <div class="camera-label" id="cam-label">SCANNER ACTIVE</div>
+            <button class="camera-close" onclick="closeCamera()">✕</button>
         </div>
-
+        <video id="video" autoplay playsinline></video>
+        <canvas id="canvas"></canvas>
+        <div class="camera-footer">
+            <div class="camera-instruction" id="cam-instruction">Position barcode/serial in frame</div>
+            <button class="shutter" id="shutter" onclick="capture()"></button>
+        </div>
         <div class="processing" id="processing">
             <div class="spinner"></div>
-            <div style="color:var(--yellow); font-family:'Orbitron'; font-weight:900; font-size: 15px; letter-spacing: 2px;">SCANNING</div>
-            <div style="color:var(--text-dim); font-family:'Orbitron'; font-weight:700; font-size: 12px; margin-top: 10px;" id="processing-msg">Fast scan processing...</div>
+            <div class="processing-text" id="proc-text">SCANNING</div>
+            <div class="processing-log" id="proc-log">Analyzing image...</div>
         </div>
     </div>
 
-    <!-- SCAN RESULT MODAL -->
-    <div class="modal" id="scan-modal">
+    <!-- Modal -->
+    <div class="modal" id="modal">
         <div class="modal-content">
-            <div style="color:var(--yellow); font-weight:900; margin-bottom:20px; font-family:'Orbitron'; font-size: 16px; letter-spacing: 2px;">📡 SCAN RESULT</div>
-            
-            <div class="scan-result" id="scan-result-display"></div>
+            <div class="modal-header">
+                <div class="modal-title" id="modal-title">Asset Data</div>
+                <button class="modal-close" onclick="closeModal()">✕</button>
+            </div>
 
-            <div class="form-group" id="stock-selector" style="display: none;">
-                <label class="form-label">Stock Level</label>
-                <select id="scan-qty" class="form-select">
-                    <option value="100">🟢 100% - Full Spool</option>
-                    <option value="90">🟢 90%</option>
-                    <option value="80">🟢 80%</option>
-                    <option value="70">🟡 70%</option>
-                    <option value="60">🟡 60%</option>
-                    <option value="50">🟡 50% - Half Spool</option>
-                    <option value="40">🟡 40%</option>
-                    <option value="30">🟡 30%</option>
-                    <option value="25">🔴 25% - Low Stock</option>
-                    <option value="20">🔴 20%</option>
-                    <option value="10">🔴 10% - Almost Empty</option>
+            <div class="form-group">
+                <label class="form-label">Item Type</label>
+                <select id="f-status" class="form-select">
+                    <option value="storage">Storage (Opened Spool)</option>
+                    <option value="inventory">Inventory (Unopened Box)</option>
                 </select>
             </div>
 
-            <div class="btn-group">
-                <button class="btn-main btn-scan" onclick="confirmScan()">✓ CONFIRM</button>
-                <button class="btn-secondary" onclick="closeScanModal()">✕ CANCEL</button>
+            <div class="form-group">
+                <label class="form-label">Asset ID / Serial</label>
+                <input type="text" id="f-id" class="form-input" readonly>
             </div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label class="form-label">Brand</label>
+                    <input type="text" id="f-brand" class="form-input" placeholder="e.g., Prusament">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Material</label>
+                    <input type="text" id="f-material" class="form-input" placeholder="PLA, PETG, ABS...">
+                </div>
+            </div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label class="form-label">Color</label>
+                    <input type="text" id="f-color" class="form-input" placeholder="e.g., Black">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Stock Level</label>
+                    <select id="f-qty" class="form-select">
+                        <option value="100">100% - Full</option>
+                        <option value="90">90%</option>
+                        <option value="80">80%</option>
+                        <option value="70">70%</option>
+                        <option value="60">60%</option>
+                        <option value="50">50% - Half</option>
+                        <option value="40">40%</option>
+                        <option value="30">30%</option>
+                        <option value="20">20%</option>
+                        <option value="10">10%</option>
+                        <option value="0">0% - Empty</option>
+                    </select>
+                </div>
+            </div>
+
+            <button class="btn-primary" onclick="saveItem()">Save Item</button>
         </div>
     </div>
 
-    <!-- MANUAL ENTRY MODAL -->
-    <div class="modal" id="manual-modal">
-        <div class="modal-content">
-            <div style="color:var(--yellow); font-weight:900; margin-bottom:20px; font-family:'Orbitron'; font-size: 16px; letter-spacing: 2px;">✎ MANUAL ENTRY</div>
-
-            <div class="form-group">
-                <label class="form-label">Status</label>
-                <select id="m-status" class="form-select">
-                    <option value="storage">📦 Storage (Spool)</option>
-                    <option value="inventory">📫 Inventory (Box)</option>
-                </select>
-            </div>
-
-            <div class="form-group">
-                <label class="form-label">Asset ID</label>
-                <input type="text" id="m-id" class="form-input" placeholder="Enter ID manually">
-            </div>
-
-            <div class="form-group">
-                <label class="form-label">Brand</label>
-                <input type="text" id="m-brand" class="form-input" placeholder="e.g., Extrudr, MatterHackers...">
-            </div>
-
-            <div class="form-group">
-                <label class="form-label">Material Type</label>
-                <select id="m-material" class="form-select">
-                    <option value="">Select material...</option>
-                    <option value="PLA">PLA</option>
-                    <option value="ABS">ABS</option>
-                    <option value="PETG">PETG</option>
-                    <option value="TPU">TPU / Flexible</option>
-                    <option value="NYLON">Nylon</option>
-                    <option value="COMPOSITE">Composite / Carbon</option>
-                    <option value="RESIN">Resin</option>
-                    <option value="OTHER">Other</option>
-                </select>
-            </div>
-
-            <div class="form-group">
-                <label class="form-label">Color</label>
-                <input type="text" id="m-color" class="form-input" placeholder="e.g., Black, Red, Blue...">
-            </div>
-
-            <div class="form-group">
-                <label class="form-label">Stock Level</label>
-                <select id="m-qty" class="form-select">
-                    <option value="100">🟢 100% - Full Spool</option>
-                    <option value="75">🟡 75% - 3/4 Remaining</option>
-                    <option value="50">🟡 50% - Half Spool</option>
-                    <option value="25">🔴 25% - Low Stock</option>
-                    <option value="10">🔴 10% - Almost Empty</option>
-                    <option value="0">⚫ 0% - Empty/Used</option>
-                </select>
-            </div>
-
-            <div class="btn-group">
-                <button class="btn-main btn-scan" onclick="saveManualEntry()">SAVE</button>
-                <button class="btn-secondary" onclick="closeManualModal()">CANCEL</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- ITEM DETAILS MODAL -->
-    <div class="modal" id="item-details-modal">
-        <div class="modal-content">
-            <div style="color:var(--yellow); font-weight:900; margin-bottom:20px; font-family:'Orbitron'; font-size: 16px; letter-spacing: 2px;">📋 ITEM DETAILS</div>
-            
-            <div class="scan-result" id="item-details-display"></div>
-
-            <div class="form-group" id="edit-stock-selector" style="display: none;">
-                <label class="form-label">Update Stock Level</label>
-                <select id="edit-qty" class="form-select">
-                    <option value="100">🟢 100% - Full Spool</option>
-                    <option value="90">🟢 90%</option>
-                    <option value="80">🟢 80%</option>
-                    <option value="70">🟡 70%</option>
-                    <option value="60">🟡 60%</option>
-                    <option value="50">🟡 50% - Half Spool</option>
-                    <option value="40">🟡 40%</option>
-                    <option value="30">🟡 30%</option>
-                    <option value="25">🔴 25% - Low Stock</option>
-                    <option value="20">🔴 20%</option>
-                    <option value="10">🔴 10% - Almost Empty</option>
-                    <option value="0">⚫ 0% - Empty</option>
-                </select>
-            </div>
-
-            <div class="btn-group">
-                <button class="btn-main btn-scan" id="edit-btn" onclick="saveItemEdit()" style="display:none;">✓ UPDATE</button>
-                <button class="btn-secondary" onclick="closeItemDetails()" style="flex: 1;">CLOSE</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- STATS MODAL -->
-    <div class="modal" id="stats-modal">
-        <div class="modal-content" style="max-height: 80vh; overflow-y: auto;">
-            <div style="color:var(--yellow); font-weight:900; margin-bottom:20px; font-family:'Orbitron'; font-size: 16px; letter-spacing: 2px;">📊 ANALYTICS</div>
-            
-            <div style="margin-bottom: 20px;">
-                <div class="stat-row">
-                    <span>Total Items</span>
-                    <span style="color: var(--yellow); font-weight: 800;" id="stat-total">0</span>
-                </div>
-                <div class="stat-row">
-                    <span>Total Variants</span>
-                    <span id="stat-variants">0</span>
-                </div>
-                <div class="stat-row">
-                    <span>Low Stock Items</span>
-                    <span style="color: var(--red);" id="stat-low">0</span>
-                </div>
-                <div class="stat-row">
-                    <span>Full Stock Items</span>
-                    <span style="color: var(--green);" id="stat-full">0</span>
-                </div>
-                <div class="stat-row">
-                    <span>Avg Stock Level</span>
-                    <span id="stat-avg">0%</span>
-                </div>
-            </div>
-
-            <div style="border-top: 1px solid var(--border); padding-top: 20px; margin-bottom: 20px;">
-                <div style="font-size: 12px; color: var(--text-dim); text-transform: uppercase; margin-bottom: 14px; font-weight: 700; letter-spacing: 2px;">Material Breakdown</div>
-                <div id="material-stats"></div>
-            </div>
-
-            <div style="border-top: 1px solid var(--border); padding-top: 20px;">
-                <div style="font-size: 12px; color: var(--text-dim); text-transform: uppercase; margin-bottom: 14px; font-weight: 700; letter-spacing: 2px;">Brand Breakdown</div>
-                <div id="brand-stats"></div>
-            </div>
-
-            <button class="btn-secondary" onclick="closeStatsModal()" style="width: 100%; margin-top: 20px;">CLOSE</button>
-        </div>
-    </div>
+    <!-- Toast -->
+    <div class="toast" id="toast"></div>
 
     <script>
-        // ===== FIREBASE CONFIG =====
-        const firebaseConfig = {
-            apiKey: "AIzaSyCLlCKwujLGtQw9DEvHl-ZYW1Z0cK8Xw-E",
-            authDomain: "inventory-86d26.firebaseapp.com",
-            projectId: "inventory-86d26",
-            storageBucket: "inventory-86d26.firebasestorage.app",
-            messagingSenderId: "833068204777",
-            appId: "1:333068204777:web:09b2c6cedde4cfb199a678",
-            databaseURL: "https://inventory-86d26-default-rtdb.europe-west1.firebasedatabase.app"
-        };
-        
-        firebase.initializeApp(firebaseConfig);
-        const db = firebase.database();
-        const inventoryRef = db.ref('inventory');
-
-        // ===== GLOBAL STATE =====
-        let inventoryArr = [];
-        let aggregatedData = {};
+        // ===== STATE MANAGEMENT =====
+        let inventory = JSON.parse(localStorage.getItem('filamentDB')) || [];
         let activeUser = localStorage.getItem('activeUser');
-        let currentTab = 'all';
+        let currentTab = 'storage';
         let currentScanMode = 'scan';
+        let currentScanData = null;
+        let editingItemId = null;
         let stream = null;
-        let scannedData = null;
-        let editingVariantKey = null;
 
-        if(activeUser) { loginSuccess(activeUser); }
+        if (activeUser) {
+            initApp();
+        }
 
         // ===== AUTHENTICATION =====
         function login() {
-            const name = document.getElementById('member-id').value.trim();
-            if (!name) {
-                alert("Please enter a name");
-                return;
-            }
-            activeUser = name.charAt(0).toUpperCase() + name.slice(1);
-            localStorage.setItem('activeUser', activeUser);
-            loginSuccess(activeUser);
+            const id = document.getElementById('member-id').value.trim();
+            if (!id) return showToast('ID is required', 'error');
+            activeUser = id;
+            localStorage.setItem('activeUser', id);
+            initApp();
         }
 
-        function loginSuccess(user) {
-            document.getElementById('login-screen').style.display = 'none';
+        function initApp() {
+            document.getElementById('login-screen').classList.add('hidden');
             document.getElementById('main-app').style.display = 'block';
-            document.getElementById('action-bar').style.display = 'grid';
-            document.getElementById('user-name').textContent = user;
-            syncData();
+            document.getElementById('user-name').textContent = activeUser;
+            renderInventory();
+            updateStats();
         }
 
         function logout() {
@@ -960,615 +1094,410 @@
             location.reload();
         }
 
-        // ===== GROQ API KEY =====
-        function setGroqKey() {
-            const k = prompt("Enter Groq API Key:\n\nGet it from: https://console.groq.com/keys", localStorage.getItem('groqKey') || "");
-            if(k) {
-                localStorage.setItem('groqKey', k);
-                alert("✅ API Key saved!");
+        // ===== API KEY =====
+        function setApiKey() {
+            const key = prompt('Enter Gemini API Key (get from console.cloud.google.com):');
+            if (key) {
+                localStorage.setItem('geminiApiKey', key);
+                showToast('API Key saved successfully', 'success');
             }
         }
 
-        // ===== FIREBASE SYNC =====
-        function syncData() {
-            inventoryRef.on('value', (snapshot) => {
-                const data = snapshot.val();
-                inventoryArr = data ? Object.values(data) : [];
-                inventoryArr.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
-                aggregateData();
-                renderInventory();
-                updateStats();
-            });
-        }
-
-        // ===== AGGREGATE DATA BY TYPE + COLOR =====
-        function aggregateData() {
-            aggregatedData = {};
-            inventoryArr.forEach(item => {
-                const key = (item.type || 'UNKNOWN') + '|' + (item.color || 'UNKNOWN');
-                if (!aggregatedData[key]) {
-                    aggregatedData[key] = {
-                        type: item.type || 'UNKNOWN',
-                        color: item.color || 'UNKNOWN',
-                        brand: item.brand || 'UNKNOWN',
-                        status: item.status,
-                        count: 0,
-                        items: [],
-                        totalQty: 0,
-                        avgQty: 0
-                    };
-                }
-                aggregatedData[key].count++;
-                aggregatedData[key].items.push(item);
-                aggregatedData[key].totalQty += (item.qty || 0);
-            });
-
-            // Calculate average qty for each variant
-            Object.keys(aggregatedData).forEach(key => {
-                const variant = aggregatedData[key];
-                variant.avgQty = Math.round(variant.totalQty / variant.count);
-            });
-        }
-
-        // ===== UPDATE STATS =====
-        function updateStats() {
-            const totalItems = inventoryArr.length;
-            const variants = Object.keys(aggregatedData).length;
-            const low = inventoryArr.filter(i => i.qty <= 25).length;
-
-            document.getElementById('total-items').textContent = totalItems;
-            document.getElementById('total-variants').textContent = variants;
-            document.getElementById('low-stock').textContent = low;
-        }
-
-        // ===== RENDER INVENTORY (AGGREGATED) =====
+        // ===== RENDER INVENTORY =====
         function renderInventory() {
             const container = document.getElementById('inventory');
             const search = document.getElementById('search').value.toLowerCase();
-            container.innerHTML = '';
+            let filtered = inventory.filter(item => item.status === currentTab);
 
-            let dataToRender = Object.values(aggregatedData);
-
-            // Filter by tab
-            if (currentTab === 'spools') {
-                dataToRender = dataToRender.filter(v => v.status === 'storage');
-            } else if (currentTab === 'boxes') {
-                dataToRender = dataToRender.filter(v => v.status === 'inventory');
-            } else if (currentTab === 'low') {
-                dataToRender = dataToRender.filter(v => v.avgQty <= 25);
-            } else if (currentTab === 'recent') {
-                // Show only items added in last 24hrs for each variant
-                const oneDayAgo = Date.now() - (24 * 60 * 60 * 1000);
-                dataToRender = dataToRender.filter(v => v.items.some(i => (i.timestamp || 0) > oneDayAgo));
-            }
-
-            // Search filter
             if (search) {
-                dataToRender = dataToRender.filter(v =>
-                    String(v.type).toLowerCase().includes(search) ||
-                    String(v.brand).toLowerCase().includes(search) ||
-                    String(v.color).toLowerCase().includes(search)
+                filtered = filtered.filter(item =>
+                    (item.material || '').toLowerCase().includes(search) ||
+                    (item.color || '').toLowerCase().includes(search) ||
+                    (item.brand || '').toLowerCase().includes(search) ||
+                    item.id.toLowerCase().includes(search)
                 );
             }
 
-            if (dataToRender.length === 0) {
-                container.innerHTML = '<div class="empty-state">No items found</div>';
+            if (filtered.length === 0) {
+                container.innerHTML = '<div class="empty-state"><div class="empty-icon">📦</div><div class="empty-text">No items found</div></div>';
                 return;
             }
 
-            dataToRender.forEach((variant, idx) => {
-                const div = document.createElement('div');
-                div.className = 'dashboard-item';
-                div.style.animationDelay = (idx * 0.05) + 's';
-                
-                const icon = variant.status === 'inventory' ? '📫' : '📦';
-                const qtyColor = variant.avgQty <= 10 ? 'var(--red)' : variant.avgQty <= 50 ? '#FFAA00' : 'var(--green)';
+            const grouped = groupByMaterialColor(filtered);
+            container.innerHTML = '';
 
-                div.innerHTML = `
-                    <div class="dashboard-type">${icon} ${variant.type}</div>
-                    <div class="dashboard-color">${variant.color}</div>
-                    <div style="display: flex; justify-content: space-between; align-items: center;">
-                        <div class="dashboard-count" style="color: ${qtyColor};">${variant.count}x</div>
-                        <div style="font-size: 11px; color: var(--text-dim); text-align: right;">
-                            <div>Avg: ${variant.avgQty}%</div>
-                            <div style="margin-top: 4px; color: var(--yellow);">${variant.brand}</div>
-                        </div>
-                    </div>
+            Object.entries(grouped).forEach(([key, items]) => {
+                const [material, color] = key.split('|');
+                const groupDiv = document.createElement('div');
+                groupDiv.className = 'inventory-group';
+
+                const header = document.createElement('div');
+                header.className = 'group-header';
+                header.innerHTML = `
+                    <span class="group-title">${material} - ${color}</span>
+                    <span class="group-count">${items.length}</span>
                 `;
 
-                div.onclick = () => showVariantDetails(variant);
-                container.appendChild(div);
+                const itemsDiv = document.createElement('div');
+                itemsDiv.className = 'group-items';
+
+                items.forEach(item => {
+                    const card = createItemCard(item);
+                    itemsDiv.appendChild(card);
+                });
+
+                groupDiv.appendChild(header);
+                groupDiv.appendChild(itemsDiv);
+                container.appendChild(groupDiv);
             });
         }
 
-        function setTab(t) {
-            currentTab = t;
+        function groupByMaterialColor(items) {
+            const groups = {};
+            items.forEach(item => {
+                const key = `${item.material || 'Unknown'}|${item.color || 'Unknown'}`;
+                if (!groups[key]) groups[key] = [];
+                groups[key].push(item);
+            });
+            return groups;
+        }
+
+        function createItemCard(item) {
+            const card = document.createElement('div');
+            card.className = 'item-card';
+
+            const stockClass = item.qty <= 10 ? 'low' : item.qty <= 50 ? 'mid' : '';
+
+            card.innerHTML = `
+                <div class="item-header">
+                    <div class="item-id">${item.id}</div>
+                    <div class="item-badge">${item.status === 'storage' ? 'SPOOL' : 'BOX'}</div>
+                </div>
+                <div class="item-info">
+                    <div class="item-brand">${item.brand || 'N/A'}</div>
+                    <div class="item-meta">
+                        <span class="meta-tag">${item.material}</span>
+                        <span class="meta-tag">${item.color}</span>
+                    </div>
+                </div>
+                <div class="stock-section">
+                    <span class="stock-label">Stock Level</span>
+                    <span class="stock-value ${stockClass}">${item.qty}%</span>
+                </div>
+            `;
+
+            card.onclick = () => editItem(item.id);
+            return card;
+        }
+
+        function updateStats() {
+            const total = inventory.length;
+            const lowStock = inventory.filter(item => item.qty <= 25).length;
+
+            document.getElementById('total').textContent = total;
+            document.getElementById('low-stock').textContent = lowStock;
+        }
+
+        function setTab(tab) {
+            currentTab = tab;
             document.querySelectorAll('.tab').forEach(el => el.classList.remove('active'));
-            document.getElementById('tab-' + t).classList.add('active');
+            document.getElementById('tab-' + (tab === 'storage' ? 'spools' : 'boxes')).classList.add('active');
             renderInventory();
         }
 
-        // ===== SHOW VARIANT DETAILS =====
-        function showVariantDetails(variant) {
-            const display = document.getElementById('item-details-display');
-            let itemsHtml = '<div style="margin-bottom: 16px; padding-bottom: 16px; border-bottom: 1px solid var(--border);">';
-            itemsHtml += '<div style="font-size: 11px; color: var(--text-dim); margin-bottom: 10px; font-weight: 700;">INDIVIDUAL ITEMS:</div>';
-            
-            variant.items.forEach(item => {
-                itemsHtml += `<div style="font-size: 12px; padding: 8px; background: rgba(0,0,0,0.3); border-radius: 6px; margin-bottom: 6px; display: flex; justify-content: space-between;">
-                    <span>${item.id}</span>
-                    <span style="color: var(--yellow); font-weight: bold;">${item.qty}%</span>
-                </div>`;
-            });
-            itemsHtml += '</div>';
-
-            display.innerHTML = `
-                <div class="scan-result-title">VARIANT INFORMATION</div>
-                <div class="scan-result-item">
-                    <span class="scan-result-label">Material:</span>
-                    <span class="scan-result-value">${variant.type}</span>
-                </div>
-                <div class="scan-result-item">
-                    <span class="scan-result-label">Color:</span>
-                    <span class="scan-result-value">${variant.color}</span>
-                </div>
-                <div class="scan-result-item">
-                    <span class="scan-result-label">Brand:</span>
-                    <span class="scan-result-value">${variant.brand}</span>
-                </div>
-                <div class="scan-result-item">
-                    <span class="scan-result-label">Type:</span>
-                    <span class="scan-result-value">${variant.status === 'inventory' ? '📫 BOX' : '📦 SPOOL'}</span>
-                </div>
-                <div class="scan-result-item">
-                    <span class="scan-result-label">Total Count:</span>
-                    <span class="scan-result-value">${variant.count}</span>
-                </div>
-                <div class="scan-result-item">
-                    <span class="scan-result-label">Avg Stock:</span>
-                    <span class="scan-result-value" style="color: ${variant.avgQty <= 25 ? 'var(--red)' : 'var(--green)'}">${variant.avgQty}%</span>
-                </div>
-                ${itemsHtml}
-            `;
-
-            document.getElementById('item-details-modal').style.display = 'flex';
-        }
-
-        function closeItemDetails() {
-            document.getElementById('item-details-modal').style.display = 'none';
-            editingVariantKey = null;
-        }
-
-        function manualEntry() {
-            document.getElementById('m-status').value = 'storage';
-            document.getElementById('m-id').value = '';
-            document.getElementById('m-brand').value = '';
-            document.getElementById('m-material').value = '';
-            document.getElementById('m-color').value = '';
-            document.getElementById('m-qty').value = 100;
-            document.getElementById('manual-modal').style.display = 'flex';
-        }
-
-        function closeManualModal() {
-            document.getElementById('manual-modal').style.display = 'none';
-        }
-
-        function saveManualEntry() {
-            const id = String(document.getElementById('m-id').value).trim().toUpperCase();
-            if (!id) return alert('Please enter an ID');
-
-            // Check if already exists
-            if (inventoryArr.find(i => String(i.id).toUpperCase() === id)) {
-                return alert('❌ This ID already exists! Please use a different ID.');
-            }
-
-            db.ref('inventory/' + id).set({
-                id: id,
-                brand: document.getElementById('m-brand').value,
-                type: document.getElementById('m-material').value.toUpperCase(),
-                color: document.getElementById('m-color').value,
-                qty: parseInt(document.getElementById('m-qty').value) || 100,
-                status: document.getElementById('m-status').value,
-                user: activeUser,
-                timestamp: Date.now()
-            });
-            closeManualModal();
-            alert('✅ Item added successfully!');
-        }
-
-        function closeStatsModal() {
-            document.getElementById('stats-modal').style.display = 'none';
-        }
-
-        // ===== SHOW SCAN RESULT =====
-        function showScanResult(data) {
-            const display = document.getElementById('scan-result-display');
-            const stockSelector = document.getElementById('stock-selector');
-            
-            if (data.status === 'inventory') {
-                stockSelector.style.display = 'none';
-                data.qty = 100;
-            } else {
-                stockSelector.style.display = 'block';
-                document.getElementById('scan-qty').value = data.qty || 100;
-            }
-            
-            display.innerHTML = `
-                <div class="scan-result-title">DETECTED INFORMATION</div>
-                <div class="scan-result-item">
-                    <span class="scan-result-label">ID:</span>
-                    <span class="scan-result-value">${data.id || 'N/A'}</span>
-                </div>
-                <div class="scan-result-item">
-                    <span class="scan-result-label">Type:</span>
-                    <span class="scan-result-value">${data.status === 'inventory' ? '📫 BOX' : '📦 SPOOL'}</span>
-                </div>
-                <div class="scan-result-item">
-                    <span class="scan-result-label">Brand:</span>
-                    <span class="scan-result-value">${data.brand || 'Unknown'}</span>
-                </div>
-                <div class="scan-result-item">
-                    <span class="scan-result-label">Material:</span>
-                    <span class="scan-result-value">${data.type || 'Unknown'}</span>
-                </div>
-                <div class="scan-result-item">
-                    <span class="scan-result-label">Color:</span>
-                    <span class="scan-result-value">${data.color || 'Unknown'}</span>
-                </div>
-                ${data.status === 'inventory' ? `<div class="scan-result-item">
-                    <span class="scan-result-label">Stock:</span>
-                    <span class="scan-result-value" style="color: var(--green)">100% (Box)</span>
-                </div>` : ''}
-            `;
-            document.getElementById('scan-modal').style.display = 'flex';
-        }
-
-        function closeScanModal() {
-            document.getElementById('scan-modal').style.display = 'none';
-            scannedData = null;
-        }
-
-        function confirmScan() {
-            if (scannedData && scannedData.id) {
-                if (scannedData.status === 'storage') {
-                    scannedData.qty = parseInt(document.getElementById('scan-qty').value);
-                } else {
-                    scannedData.qty = 100;
-                }
-                
-                db.ref('inventory/' + scannedData.id).set({
-                    ...scannedData,
-                    user: activeUser,
-                    timestamp: Date.now()
-                });
-            }
-            closeScanModal();
-            alert('✅ Item added successfully!');
-        }
-
-        // ===== CAMERA FUNCTIONS =====
+        // ===== CAMERA & SCANNING =====
         async function openCamera(mode) {
             currentScanMode = mode;
+            editingItemId = null;
+            currentScanData = null;
+
+            const label = document.getElementById('cam-label');
+            const instruction = document.getElementById('cam-instruction');
             const shutter = document.getElementById('shutter');
-            const instructions = document.getElementById('scan-instructions');
-            shutter.disabled = false;
+
+            shutter.className = 'shutter';
 
             if (mode === 'delete') {
-                shutter.className = 'shutter delete';
-                instructions.textContent = "> SCAN TO DELETE <";
-                instructions.style.color = "var(--red)";
-                instructions.style.borderColor = "var(--red)";
+                label.textContent = 'DELETE MODE';
+                instruction.textContent = 'Scan item to delete';
+                shutter.classList.add('delete');
             } else if (mode === 'edit') {
-                shutter.className = 'shutter edit';
-                instructions.textContent = "> SCAN TO EDIT <";
-                instructions.style.color = "var(--blue)";
-                instructions.style.borderColor = "var(--blue)";
+                label.textContent = 'EDIT MODE';
+                instruction.textContent = 'Scan item to edit';
+                shutter.classList.add('edit');
             } else {
-                shutter.className = 'shutter';
-                instructions.textContent = "> HOLD STEADY <";
-                instructions.style.color = "var(--yellow)";
-                instructions.style.borderColor = "var(--yellow)";
+                label.textContent = 'SCANNER ACTIVE';
+                instruction.textContent = 'Position barcode/serial in frame';
             }
 
-            document.getElementById('camera').style.display = 'block';
+            document.getElementById('camera').classList.add('active');
+
             try {
-                stream = await navigator.mediaDevices.getUserMedia({ 
-                    video: { 
-                        facingMode: 'environment', 
-                        width: { ideal: 1280 },
-                        height: { ideal: 720 }
-                    } 
+                stream = await navigator.mediaDevices.getUserMedia({
+                    video: { facingMode: 'environment', width: { ideal: 1280 }, height: { ideal: 720 } }
                 });
                 document.getElementById('video').srcObject = stream;
-            } catch(e) {
-                alert("Camera Error. Please allow permissions.");
+            } catch (err) {
+                showToast('Camera permission denied', 'error');
             }
         }
 
         function closeCamera() {
-            document.getElementById('camera').style.display = 'none';
-            if(stream) stream.getTracks().forEach(t => t.stop());
-            document.getElementById('processing').style.display = 'none';
+            document.getElementById('camera').classList.remove('active');
+            document.getElementById('processing').classList.remove('active');
+            if (stream) {
+                stream.getTracks().forEach(track => track.stop());
+                stream = null;
+            }
         }
 
-        // ===== OPTIMIZED CAPTURE & FAST GROQ AI =====
+        // ===== ACCURATE GEMINI SCANNING =====
         async function capture() {
-            const GROQ_KEY = localStorage.getItem('groqKey');
-            if(!GROQ_KEY) return alert("Please set your Groq API key first!");
+            const apiKey = localStorage.getItem('geminiApiKey');
+            if (!apiKey) return showToast('Please set API key first', 'error');
 
-            const shutterBtn = document.getElementById('shutter');
-            if (shutterBtn.disabled) return;
-            shutterBtn.disabled = true;
+            const shutter = document.getElementById('shutter');
+            shutter.disabled = true;
 
-            document.getElementById('processing').style.display = 'flex';
-            const vid = document.getElementById('video');
-            const canvas = document.getElementById('canvas');
-
-            // Optimized canvas settings for faster processing
-            canvas.width = 1024;
-            canvas.height = 768;
-            canvas.getContext('2d').drawImage(vid, 0, 0, 1024, 768);
-            let base64 = canvas.toDataURL('image/jpeg', 0.85);
+            document.getElementById('processing').classList.add('active');
+            document.getElementById('proc-text').textContent = 'SCANNING';
+            document.getElementById('proc-log').textContent = 'Processing image...';
 
             try {
-                let aiPrompt = "";
+                const canvas = document.getElementById('canvas');
+                const video = document.getElementById('video');
+                canvas.width = video.videoWidth;
+                canvas.height = video.videoHeight;
+                canvas.getContext('2d').drawImage(video, 0, 0);
 
+                const imageData = canvas.toDataURL('image/jpeg').split(',')[1];
+
+                let prompt = '';
                 if (currentScanMode === 'scan') {
-                    aiPrompt = `FAST BARCODE/SERIAL READING - Return ONLY valid JSON, no explanations.
+                    prompt = `Analyze this 3D printer filament product image carefully.
 
-For 3D printer filament:
-- 0=SLANTED LINE through middle (diagonal)
-- 8=TWO STACKED CIRCLES  
-- 9=CIRCLE on top + vertical line
-- 6=CIRCLE on bottom + curved top
+SPOOL (Opened): Look for a white/colored plastic reel with a unique serial number or QR code printed on the spool rim.
+- Read the UNIQUE SERIAL NUMBER only (ignore any barcode on the spool body)
+- Identify the material type (PLA, PETG, ABS, TPU, NYLON, etc.)
+- Identify the filament color
+- Identify the brand/manufacturer name
 
-BOX=Cardboard with barcode | SPOOL=Plastic reel with dot-matrix numbers
+BOX (Unopened): Look for a cardboard box packaging.
+- Read the BARCODE on the box
+- Identify the material type from the box label
+- Identify the filament color from the box
+- Identify the brand name on the box
 
-EXTRACT EXACTLY:
-1. ID: Serial number as shown (char by char)
-2. Type: BOX or SPOOL
-3. Brand: Manufacturer name
-4. Material: PLA/PETG/ABS/TPU/NYLON/OTHER
-5. Color: Filament color
-
-Return ONLY: {"asset_id":"ID","item_type":"box_or_spool","brand":"BRAND","type":"MATERIAL","color":"COLOR"}`;
+Return response ONLY as JSON (no other text):
+{
+  "id": "unique_id_read",
+  "type": "box_or_spool",
+  "brand": "brand_name",
+  "material": "material_type",
+  "color": "color_name"
+}`;
                 } else if (currentScanMode === 'edit') {
-                    aiPrompt = `READ SERIAL NUMBER ONLY. Return: {"asset_id":"EXACT_ID","item_type":"unknown","brand":"","type":"","color":""}`;
+                    prompt = `Read the UNIQUE ID/SERIAL NUMBER from this filament product. Return only JSON: {"id": "exact_id_read"}`;
                 } else {
-                    aiPrompt = `READ ID/BARCODE for deletion. {"asset_id":"ID","item_type":"unknown","brand":"","type":"","color":""}`;
+                    prompt = `Read the ID/BARCODE to delete. Return only JSON: {"id": "id_to_delete"}`;
                 }
 
-                document.getElementById('processing-msg').textContent = 'Reading barcode...';
+                document.getElementById('proc-log').textContent = 'Sending to Gemini...';
 
-                const controller = new AbortController();
-                const timeoutId = setTimeout(() => controller.abort(), 15000);
-
-                const res = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+                const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent?key=${apiKey}`, {
                     method: 'POST',
-                    signal: controller.signal,
-                    headers: {
-                        'Authorization': `Bearer ${GROQ_KEY}`,
-                        'Content-Type': 'application/json'
-                    },
+                    headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
-                        model: "meta-llama/llama-4-scout-17b-16e-instruct",
-                        messages: [{
-                            role: "user",
-                            content: [
-                                { type: "text", text: aiPrompt },
-                                { type: "image_url", image_url: { url: base64 } }
+                        contents: [{
+                            parts: [
+                                { text: prompt },
+                                {
+                                    inline_data: {
+                                        mime_type: 'image/jpeg',
+                                        data: imageData
+                                    }
+                                }
                             ]
                         }],
-                        temperature: 0.02,
-                        max_tokens: 300,
-                        top_p: 0.9
+                        generationConfig: {
+                            temperature: 0.1,
+                            topK: 10,
+                            topP: 0.8
+                        }
                     })
                 });
 
-                clearTimeout(timeoutId);
-
-                if (!res.ok) {
-                    const err = await res.json();
-                    throw new Error(`API Error: ${err.error?.message || res.status}`);
+                if (!response.ok) {
+                    const error = await response.json();
+                    throw new Error(error.error?.message || 'API Error');
                 }
 
-                document.getElementById('processing-msg').textContent = 'Parsing...';
+                document.getElementById('proc-log').textContent = 'Parsing results...';
 
-                const data = await res.json();
-                let result;
-                const content = data.choices[0].message.content;
+                const result = await response.json();
+                const text = result.candidates[0].content.parts[0].text;
 
+                let data;
                 try {
-                    result = JSON.parse(content);
+                    data = JSON.parse(text);
                 } catch {
-                    const jsonMatch = content.match(/\{[\s\S]*\}/);
-                    if (jsonMatch) {
-                        result = JSON.parse(jsonMatch[0]);
-                    } else {
-                        throw new Error('No JSON found in response');
-                    }
+                    const jsonMatch = text.match(/\{[\s\S]*\}/);
+                    if (!jsonMatch) throw new Error('Invalid response format');
+                    data = JSON.parse(jsonMatch[0]);
                 }
-
-                let finalId = result.asset_id ? String(result.asset_id).toUpperCase().replace(/[\s\-\.]/g, '') : null;
-                let detectedType = result.item_type ? String(result.item_type).toLowerCase() : 'storage';
-
-                if (!finalId) {
-                    alert('Could not read ID. Adjust lighting and hold camera steady.');
-                    shutterBtn.disabled = false;
-                    document.getElementById('processing').style.display = 'none';
-                    return;
-                }
-
-                // EDIT MODE
-                if (currentScanMode === 'edit') {
-                    const existing = inventoryArr.find(i => String(i.id).toUpperCase() === finalId);
-                    if (!existing) {
-                        alert('❌ ID NOT FOUND');
-                        closeCamera();
-                        shutterBtn.disabled = false;
-                        return;
-                    }
-                    closeCamera();
-                    showEditModal(existing);
-                    return;
-                }
-
-                // DELETE MODE
-                if (currentScanMode === 'delete') {
-                    const existing = inventoryArr.find(i => String(i.id).toUpperCase() === finalId);
-                    if (existing) {
-                        if (confirm(`Delete ${existing.id}?\n${existing.type} - ${existing.color}`)) {
-                            await db.ref('inventory/' + finalId).remove();
-                            alert("✅ DELETED");
-                        }
-                    } else {
-                        alert("❌ NOT FOUND");
-                    }
-                    closeCamera();
-                    return;
-                }
-
-                // SCAN MODE - Add new
-                const existing = inventoryArr.find(i => String(i.id).toUpperCase() === finalId);
-                if (existing) {
-                    closeCamera();
-                    alert(`⚠️ ALREADY EXISTS!\n\nID: ${existing.id}\nMaterial: ${existing.type}\nColor: ${existing.color}\n\nPlease scan a different item.`);
-                    shutterBtn.disabled = false;
-                    return;
-                }
-
-                let assignedStatus = 'storage';
-                let stockLevel = 100;
-
-                if (detectedType.includes('box')) {
-                    assignedStatus = 'inventory';
-                    stockLevel = 100;
-                }
-
-                scannedData = {
-                    id: finalId,
-                    brand: result.brand || "",
-                    type: result.type || "",
-                    color: result.color || "",
-                    qty: stockLevel,
-                    status: assignedStatus
-                };
 
                 closeCamera();
-                showScanResult(scannedData);
 
-            } catch (e) {
-                console.error(e);
-                if (e.name === 'AbortError') {
-                    alert('⏱️ Request timeout. Please try again.');
-                } else {
-                    alert(`Error: ${e.message}`);
+                if (!data.id) {
+                    showToast('Could not read ID. Try better lighting.', 'error');
+                    shutter.disabled = false;
+                    return;
                 }
-                shutterBtn.disabled = false;
-                document.getElementById('processing').style.display = 'none';
+
+                if (currentScanMode === 'delete') {
+                    const item = inventory.find(i => i.id.toUpperCase() === data.id.toUpperCase());
+                    if (item && confirm(`Delete ${item.id}?`)) {
+                        inventory = inventory.filter(i => i.id !== item.id);
+                        saveInventory();
+                        showToast('Item deleted', 'success');
+                        renderInventory();
+                        updateStats();
+                    }
+                    shutter.disabled = false;
+                    return;
+                }
+
+                if (currentScanMode === 'edit') {
+                    const item = inventory.find(i => i.id.toUpperCase() === data.id.toUpperCase());
+                    if (!item) {
+                        showToast('Item not found', 'error');
+                        shutter.disabled = false;
+                        return;
+                    }
+                    editingItemId = item.id;
+                    showEditModal(item);
+                    shutter.disabled = false;
+                    return;
+                }
+
+                const existing = inventory.find(i => i.id.toUpperCase() === data.id.toUpperCase());
+                if (existing) {
+                    showToast('Item already exists', 'error');
+                    shutter.disabled = false;
+                    return;
+                }
+
+                currentScanData = {
+                    id: data.id,
+                    brand: data.brand || '',
+                    material: data.material || '',
+                    color: data.color || '',
+                    status: data.type === 'box' ? 'inventory' : 'storage',
+                    qty: data.type === 'box' ? 100 : 100
+                };
+
+                showScanModal(currentScanData);
+                shutter.disabled = false;
+
+            } catch (error) {
+                showToast(`Error: ${error.message}`, 'error');
+                closeCamera();
+                shutter.disabled = false;
             }
         }
 
-        // ===== EDIT MODE =====
+        // ===== MODAL FUNCTIONS =====
+        function showScanModal(data) {
+            document.getElementById('modal-title').textContent = 'NEW ITEM';
+            document.getElementById('f-status').value = data.status;
+            document.getElementById('f-id').value = data.id;
+            document.getElementById('f-brand').value = data.brand;
+            document.getElementById('f-material').value = data.material;
+            document.getElementById('f-color').value = data.color;
+            document.getElementById('f-qty').value = data.qty;
+            document.getElementById('modal').classList.add('active');
+        }
+
         function showEditModal(item) {
-            const display = document.getElementById('item-details-display');
-            document.getElementById('edit-qty').value = item.qty || 100;
-
-            display.innerHTML = `
-                <div class="scan-result-title">EDITING ITEM</div>
-                <div class="scan-result-item">
-                    <span class="scan-result-label">ID:</span>
-                    <span class="scan-result-value">${item.id}</span>
-                </div>
-                <div class="scan-result-item">
-                    <span class="scan-result-label">Material:</span>
-                    <span class="scan-result-value">${item.type || 'Unknown'}</span>
-                </div>
-                <div class="scan-result-item">
-                    <span class="scan-result-label">Color:</span>
-                    <span class="scan-result-value">${item.color || 'Unknown'}</span>
-                </div>
-                <div class="scan-result-item">
-                    <span class="scan-result-label">Brand:</span>
-                    <span class="scan-result-value">${item.brand || 'Unknown'}</span>
-                </div>
-                <div class="scan-result-item">
-                    <span class="scan-result-label">Current Stock:</span>
-                    <span class="scan-result-value" style="color: var(--green);">${item.qty}%</span>
-                </div>
-            `;
-
-            document.getElementById('edit-stock-selector').style.display = 'block';
-            document.getElementById('edit-btn').style.display = 'block';
-            editingVariantKey = item.id;
-            document.getElementById('item-details-modal').style.display = 'flex';
+            document.getElementById('modal-title').textContent = 'EDIT ITEM';
+            document.getElementById('f-status').value = item.status;
+            document.getElementById('f-id').value = item.id;
+            document.getElementById('f-brand').value = item.brand;
+            document.getElementById('f-material').value = item.material;
+            document.getElementById('f-color').value = item.color;
+            document.getElementById('f-qty').value = item.qty;
+            document.getElementById('modal').classList.add('active');
         }
 
-        function saveItemEdit() {
-            if (!editingVariantKey) return;
-            const newQty = parseInt(document.getElementById('edit-qty').value);
-            
-            db.ref('inventory/' + editingVariantKey).update({
-                qty: newQty,
-                timestamp: Date.now()
-            });
-
-            alert('✅ Updated successfully!');
-            closeItemDetails();
+        function openManualEntry() {
+            currentScanData = null;
+            editingItemId = null;
+            document.getElementById('modal-title').textContent = 'MANUAL ENTRY';
+            document.getElementById('f-status').value = 'storage';
+            document.getElementById('f-id').value = '';
+            document.getElementById('f-brand').value = '';
+            document.getElementById('f-material').value = '';
+            document.getElementById('f-color').value = '';
+            document.getElementById('f-qty').value = '100';
+            document.getElementById('modal').classList.add('active');
         }
 
-        // ===== STATS =====
-        function showStats() {
-            const material = {};
-            const brands = {};
-
-            inventoryArr.forEach(item => {
-                if (item.type) material[item.type] = (material[item.type] || 0) + 1;
-                if (item.brand) brands[item.brand] = (brands[item.brand] || 0) + 1;
-            });
-
-            const avg = inventoryArr.length > 0 ? Math.round(inventoryArr.reduce((a, b) => a + (b.qty || 0), 0) / inventoryArr.length) : 0;
-
-            document.getElementById('stat-total').textContent = inventoryArr.length;
-            document.getElementById('stat-variants').textContent = Object.keys(aggregatedData).length;
-            document.getElementById('stat-low').textContent = inventoryArr.filter(i => i.qty <= 25).length;
-            document.getElementById('stat-full').textContent = inventoryArr.filter(i => i.qty >= 100).length;
-            document.getElementById('stat-avg').textContent = avg + '%';
-
-            let materialHtml = '';
-            Object.keys(material).sort((a, b) => material[b] - material[a]).forEach(m => {
-                materialHtml += `<div class="stat-row"><span>${m}</span><span>${material[m]}</span></div>`;
-            });
-            document.getElementById('material-stats').innerHTML = materialHtml || '<div style="font-size: 11px; color: var(--text-dim);">No data</div>';
-
-            let brandHtml = '';
-            Object.keys(brands).sort((a, b) => brands[b] - brands[a]).slice(0, 10).forEach(b => {
-                brandHtml += `<div class="stat-row"><span>${b}</span><span>${brands[b]}</span></div>`;
-            });
-            document.getElementById('brand-stats').innerHTML = brandHtml || '<div style="font-size: 11px; color: var(--text-dim);">No data</div>';
-
-            document.getElementById('stats-modal').style.display = 'flex';
+        function closeModal() {
+            document.getElementById('modal').classList.remove('active');
+            currentScanData = null;
+            editingItemId = null;
         }
 
-        // ===== EXPORT =====
-        function exportData() {
-            if (inventoryArr.length === 0) {
-                alert('No data to export');
-                return;
+        function saveItem() {
+            const id = document.getElementById('f-id').value.trim().toUpperCase();
+            const status = document.getElementById('f-status').value;
+            const brand = document.getElementById('f-brand').value.trim();
+            const material = document.getElementById('f-material').value.trim();
+            const color = document.getElementById('f-color').value.trim();
+            const qty = parseInt(document.getElementById('f-qty').value);
+
+            if (!id) return showToast('ID is required', 'error');
+            if (!material) return showToast('Material is required', 'error');
+            if (!color) return showToast('Color is required', 'error');
+
+            if (editingItemId) {
+                const index = inventory.findIndex(i => i.id === editingItemId);
+                if (index !== -1) {
+                    inventory[index] = { id, status, brand, material, color, qty, timestamp: Date.now() };
+                    showToast('Item updated', 'success');
+                }
+            } else {
+                if (inventory.find(i => i.id === id)) {
+                    return showToast('ID already exists', 'error');
+                }
+                inventory.push({ id, status, brand, material, color, qty, timestamp: Date.now() });
+                showToast('Item added', 'success');
             }
 
-            let csv = 'ID,Brand,Type,Color,Stock%,Status,User,Date\n';
-            inventoryArr.forEach(item => {
-                csv += `"${item.id}","${item.brand || ''}","${item.type || ''}","${item.color || ''}",${item.qty || 0},"${item.status || ''}","${item.user || ''}","${new Date(item.timestamp).toLocaleDateString()}"\n`;
-            });
+            saveInventory();
+            closeModal();
+            renderInventory();
+            updateStats();
+        }
 
-            const blob = new Blob([csv], { type: 'text/csv' });
-            const url = window.URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = `filament-inventory-${Date.now()}.csv`;
-            a.click();
-            alert('✅ Exported as CSV');
+        function editItem(id) {
+            const item = inventory.find(i => i.id === id);
+            if (item) {
+                editingItemId = id;
+                showEditModal(item);
+            }
+        }
+
+        function saveInventory() {
+            localStorage.setItem('filamentDB', JSON.stringify(inventory));
+        }
+
+        // ===== TOAST =====
+        function showToast(message, type = 'success') {
+            const toast = document.getElementById('toast');
+            toast.textContent = message;
+            toast.className = `toast active ${type}`;
+            setTimeout(() => toast.classList.remove('active'), 3000);
         }
     </script>
 </body>
