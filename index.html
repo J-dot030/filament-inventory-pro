@@ -8,6 +8,10 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&family=JetBrains+Mono:wght@500;800&display=swap" rel="stylesheet">
+    
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
+
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         :root {
@@ -31,8 +35,7 @@
         .search { padding: 0 20px; margin-bottom: 24px; }
         .search-input { width: 100%; background: var(--surface); border: 1px solid var(--border); border-radius: 6px; padding: 14px 16px; color: var(--text); outline: none; font-family: 'JetBrains Mono', monospace; }
         .inventory { padding: 0 20px; }
-        .item { background: var(--surface); border: 1px solid var(--border); border-radius: 6px; padding: 16px; display: flex; align-items: center; gap: 12px; margin-bottom: 8px; cursor: pointer; border-left: 3px solid transparent; }
-        .item.low-stock { border-left-color: var(--red); }
+        .item { background: var(--surface); border: 1px solid var(--border); border-radius: 6px; padding: 16px; display: flex; align-items: center; gap: 12px; margin-bottom: 8px; cursor: pointer; }
         .item-id { font-family: 'JetBrains Mono', monospace; font-size: 11px; font-weight: 800; color: var(--bg); background: var(--yellow); padding: 4px 6px; border-radius: 4px; }
         .item-info { flex: 1; }
         .qty-val { font-family: 'JetBrains Mono', monospace; color: var(--yellow); font-weight: 800; }
@@ -47,7 +50,7 @@
         @keyframes spin { to { transform: rotate(360deg); } }
         .modal { position: fixed; inset: 0; background: rgba(0,0,0,0.95); z-index: 600; display: none; align-items: center; justify-content: center; padding: 20px; }
         .modal-content { background: var(--surface); border: 2px solid var(--yellow); border-radius: 8px; padding: 24px; width: 100%; max-width: 400px; }
-        .form-input { width: 100%; background: var(--bg); border: 1px solid var(--border); border-radius: 4px; padding: 12px; color: var(--text); margin-bottom: 12px; outline: none; font-family: inherit; }
+        .form-input { width: 100%; background: var(--bg); border: 1px solid var(--border); border-radius: 4px; padding: 12px; color: var(--text); margin-bottom: 12px; outline: none; }
         .toast { position: fixed; top: 20px; left: 50%; transform: translateX(-50%); background: var(--yellow); color: var(--bg); padding: 12px 24px; border-radius: 4px; font-weight: 800; font-size: 12px; z-index: 1000; display: none; }
         .login-screen { position: fixed; inset: 0; background: var(--bg); z-index: 800; display: flex; align-items: center; justify-content: center; padding: 20px; }
         .login-box { background: var(--surface); border: 2px solid var(--border); border-left: 4px solid var(--yellow); padding: 32px; width: 100%; max-width: 360px; text-align: center; }
@@ -58,7 +61,7 @@
     <div class="login-screen" id="login-screen">
         <div class="login-box">
             <div style="font-family: 'JetBrains Mono', monospace; font-size: 22px; color: var(--yellow); margin-bottom: 20px; font-weight: 900;">🧵 FILAMENT INVENTORY</div>
-            <input type="text" class="form-input" id="member-id" placeholder="Enter Name..." style="text-align: center;">
+            <input type="text" class="form-input" id="member-id" placeholder="Name (Benjamin/Christian/Rahul)" style="text-align: center;">
             <button class="btn-main" onclick="login()" style="width: 100%;">ACCESS_SYSTEM</button>
         </div>
     </div>
@@ -72,14 +75,8 @@
         </header>
 
         <div class="stats">
-            <div class="stat-card">
-                <div class="stat-value" id="total">0</div>
-                <div style="font-size:10px; color:var(--text-dim);">TOTAL ASSETS</div>
-            </div>
-            <div class="stat-card" style="border-left-color: var(--red);">
-                <div class="stat-value" id="low-stock" style="color:var(--red);">0</div>
-                <div style="font-size:10px; color:var(--text-dim);">EMPTY SPOOLS</div>
-            </div>
+            <div class="stat-card"><div class="stat-value" id="total">0</div><div style="font-size:10px; color:var(--text-dim);">TOTAL ASSETS</div></div>
+            <div class="stat-card" style="border-left-color: var(--red);"><div class="stat-value" id="low-stock" style="color:var(--red);">0</div><div style="font-size:10px; color:var(--text-dim);">EMPTY SPOOLS</div></div>
         </div>
 
         <div class="tabs">
@@ -101,38 +98,18 @@
         <canvas id="canvas" style="display:none;"></canvas>
         <button class="shutter" onclick="capture()"></button>
         <button onclick="closeCamera()" style="position:absolute; top:20px; right:20px; background:rgba(0,0,0,0.5); color:white; border:none; padding:10px; border-radius:4px; cursor:pointer; z-index: 402;">✕</button>
-        <div class="processing" id="processing">
-            <div class="spinner"></div>
-            <div style="color:var(--yellow); font-family:'JetBrains Mono'; font-weight:800;" id="proc-text">ANALYZING...</div>
-        </div>
+        <div class="processing" id="processing"><div class="spinner"></div><div style="color:var(--yellow); font-family:'JetBrains Mono'; font-weight:800;">ANALYZING...</div></div>
     </div>
 
     <div class="modal" id="modal">
         <div class="modal-content">
             <div style="color:var(--yellow); font-weight:800; margin-bottom:15px; font-family:'JetBrains Mono';">ASSET_DATA</div>
-            <label style="font-size:10px; color:var(--text-dim);">SERIAL NUMBER</label>
             <input type="text" id="f-id" class="form-input" readonly>
-            <input type="text" id="f-brand" class="form-input" placeholder="Brand (e.g. Extrudr)">
-            <input type="text" id="f-material" class="form-input" placeholder="Material (e.g. PLA)">
+            <input type="text" id="f-brand" class="form-input" placeholder="Brand">
+            <input type="text" id="f-material" class="form-input" placeholder="Material">
             <input type="text" id="f-color" class="form-input" placeholder="Color">
-            <div style="display:flex; gap:10px;">
-                <div style="flex:1;">
-                    <label style="font-size:10px; color:var(--text-dim);">QUANTITY</label>
-                    <select id="f-qty" class="form-input">
-                        <option value="100">100% Full</option>
-                        <option value="50">50% Half</option>
-                        <option value="10">10% Low</option>
-                        <option value="0">Empty</option>
-                    </select>
-                </div>
-                <div style="flex:1;">
-                    <label style="font-size:10px; color:var(--text-dim);">STATE</label>
-                    <select id="f-status" class="form-input">
-                        <option value="storage">Spool</option>
-                        <option value="inventory">Box</option>
-                    </select>
-                </div>
-            </div>
+            <select id="f-qty" class="form-input"><option value="100">100% Full</option><option value="50">50% Half</option><option value="10">10% Low</option><option value="0">Empty</option></select>
+            <select id="f-status" class="form-input"><option value="storage">Spool</option><option value="inventory">Box</option></select>
             <button class="btn-main" style="width:100%;" onclick="saveItem()">COMMIT_TO_CLOUD</button>
             <button class="btn-secondary" onclick="document.getElementById('modal').style.display='none'" style="width:100%; margin-top:10px; border-color:#555; color:#888;">CANCEL</button>
         </div>
@@ -140,10 +117,8 @@
 
     <div class="toast" id="toast"></div>
 
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-        import { getDatabase, ref, set, onValue, remove } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
-
+    <script>
+        // --- Firebase Config ---
         const firebaseConfig = {
             apiKey: "AIzaSyCLlCKwujLGtQw9DEvHl-ZYW1Z0cK8Xw-E",
             authDomain: "inventory-86d26.firebaseapp.com",
@@ -154,9 +129,9 @@
             databaseURL: "https://inventory-86d26-default-rtdb.europe-west1.firebasedatabase.app"
         };
 
-        const app = initializeApp(firebaseConfig);
-        const db = getDatabase(app);
-        const inventoryRef = ref(db, 'inventory');
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.database();
+        const inventoryRef = db.ref('inventory');
         const GEMINI_API_KEY = "AIzaSyDmLS6kfioDv548O6Qg-2sBA1YQQ_IMAlw";
 
         let inventoryArr = [];
@@ -166,15 +141,15 @@
 
         if(activeUser) { loginSuccess(activeUser); }
 
-        window.login = function() {
-            const nameInput = document.getElementById('member-id').value.trim().toLowerCase();
+        function login() {
+            const name = document.getElementById('member-id').value.trim().toLowerCase();
             const allowed = ["benjamin", "christian", "rahul"];
-            if (allowed.includes(nameInput)) {
-                activeUser = nameInput.charAt(0).toUpperCase() + nameInput.slice(1);
+            if (allowed.includes(name)) {
+                activeUser = name.charAt(0).toUpperCase() + name.slice(1);
                 localStorage.setItem('activeUser', activeUser);
                 loginSuccess(activeUser);
-            } else { showToast("ACCESS_DENIED", "error"); }
-        };
+            } else { alert("ACCESS DENIED"); }
+        }
 
         function loginSuccess(user) {
             document.getElementById('login-screen').style.display = 'none';
@@ -184,57 +159,44 @@
             syncData();
         }
 
-        window.logout = function() {
-            localStorage.removeItem('activeUser');
-            location.reload();
-        };
+        function logout() { localStorage.removeItem('activeUser'); location.reload(); }
 
         function syncData() {
-            onValue(inventoryRef, (snapshot) => {
+            inventoryRef.on('value', (snapshot) => {
                 const data = snapshot.val();
                 inventoryArr = data ? Object.values(data) : [];
                 renderInventory();
             });
         }
 
-        window.renderInventory = function() {
+        function renderInventory() {
             const container = document.getElementById('inventory');
             const search = document.getElementById('search').value.toLowerCase();
             container.innerHTML = '';
-            
             const filtered = inventoryArr.filter(item => {
-                const searchStr = (String(item.id) + String(item.brand) + String(item.color)).toLowerCase();
-                return searchStr.includes(search) && item.status === currentTab;
+                const matches = (String(item.id) + String(item.brand) + String(item.color)).toLowerCase().includes(search);
+                return matches && item.status === currentTab;
             });
-
             filtered.forEach(item => {
                 const div = document.createElement('div');
-                div.className = `item ${item.qty <= 0 ? 'low-stock' : ''}`;
-                div.onclick = () => editExistingItem(item);
-                div.innerHTML = `
-                    <div class="item-id">${item.id}</div>
-                    <div class="item-info">
-                        <div style="font-weight:700;">${item.brand} ${item.type}</div>
-                        <div style="font-size:11px; color:#888;">${item.color} • OP: ${item.user}</div>
-                    </div>
-                    <div class="qty-val">${item.qty}%</div>
-                `;
+                div.className = 'item';
+                div.onclick = () => editItem(item);
+                div.innerHTML = `<div class="item-id">${item.id}</div><div class="item-info"><div style="font-weight:700;">${item.brand} ${item.type}</div><div style="font-size:11px; color:#888;">${item.color} • OP: ${item.user}</div></div><div class="qty-val">${item.qty}%</div>`;
                 container.appendChild(div);
             });
             document.getElementById('total').textContent = inventoryArr.length;
             document.getElementById('low-stock').textContent = inventoryArr.filter(i => i.qty <= 0).length;
-        };
+        }
 
-        window.setTab = function(t) {
+        function setTab(t) {
             currentTab = t;
             document.querySelectorAll('.tab').forEach(el => el.classList.remove('active'));
             document.getElementById('tab-' + t).classList.add('active');
             renderInventory();
-        };
+        }
 
-        window.saveItem = function() {
+        function saveItem() {
             const id = document.getElementById('f-id').value;
-            if(!id || id === "UNKNOWN") return showToast("INVALID_ID", "error");
             const item = {
                 id,
                 brand: document.getElementById('f-brand').value,
@@ -245,12 +207,11 @@
                 user: activeUser,
                 timestamp: Date.now()
             };
-            set(ref(db, 'inventory/' + id), item);
+            db.ref('inventory/' + id).set(item);
             document.getElementById('modal').style.display = 'none';
-            showToast("SYNC_COMPLETE");
-        };
+        }
 
-        function editExistingItem(item) {
+        function editItem(item) {
             document.getElementById('f-id').value = item.id;
             document.getElementById('f-brand').value = item.brand;
             document.getElementById('f-material').value = item.type;
@@ -261,34 +222,29 @@
         }
 
         let stream;
-        window.openCamera = async function(mode) {
+        async function openCamera(mode) {
             currentScanMode = mode;
             document.getElementById('camera').style.display = 'block';
             try {
-                stream = await navigator.mediaDevices.getUserMedia({ 
-                    video: { facingMode: 'environment', width: { ideal: 1280 } } 
-                });
+                stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment', width: { ideal: 1280 } } });
                 document.getElementById('video').srcObject = stream;
-            } catch(e) { showToast("CAMERA_ERROR", "error"); }
-        };
+            } catch(e) { alert("Camera Error"); }
+        }
 
-        window.closeCamera = function() {
+        function closeCamera() {
             document.getElementById('camera').style.display = 'none';
             if(stream) stream.getTracks().forEach(t => t.stop());
-        };
+        }
 
-        window.capture = async function() {
+        async function capture() {
             document.getElementById('processing').style.display = 'flex';
             const vid = document.getElementById('video');
             const canvas = document.getElementById('canvas');
-            
-            // Scaled capture to prevent upload failure
             const scale = Math.min(1, 1024 / vid.videoWidth);
             canvas.width = vid.videoWidth * scale;
             canvas.height = vid.videoHeight * scale;
             canvas.getContext('2d').drawImage(vid, 0, 0, canvas.width, canvas.height);
-            
-            const base64 = canvas.toDataURL('image/jpeg', 0.85).split(',')[1];
+            const base64 = canvas.toDataURL('image/jpeg', 0.8).split(',')[1];
 
             try {
                 const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`, {
@@ -300,8 +256,6 @@
                 });
                 
                 const data = await res.json();
-                if (!data.candidates) throw new Error("API_REJECTED");
-                
                 let raw = data.candidates[0].content.parts[0].text.replace(/```json|```/g, '').trim();
                 const result = JSON.parse(raw);
 
@@ -313,10 +267,7 @@
                 }
 
                 if(currentScanMode === 'delete') {
-                    if(result.asset_id) {
-                        await remove(ref(db, 'inventory/' + result.asset_id));
-                        showToast("PURGED");
-                    } else { showToast("ID_NOT_FOUND", "error"); }
+                    if(result.asset_id) await db.ref('inventory/' + result.asset_id).remove();
                     closeCamera();
                 } else {
                     document.getElementById('f-id').value = result.asset_id || "UNKNOWN";
@@ -327,20 +278,9 @@
                     document.getElementById('modal').style.display = 'flex';
                     closeCamera();
                 }
-            } catch (e) { 
-                console.error(e);
-                alert("SCAN_FAILED: Hold steady, ensure good lighting and retry."); 
-            }
+            } catch (e) { alert("Scan Failed. Hold Steady and Retry."); }
             document.getElementById('processing').style.display = 'none';
-        };
-
-        window.showToast = (m, type) => {
-            const t = document.getElementById('toast');
-            t.textContent = m;
-            t.style.background = type === 'error' ? 'var(--red)' : 'var(--yellow)';
-            t.style.display = 'block';
-            setTimeout(() => t.style.display = 'none', 3000);
-        };
+        }
     </script>
 </body>
 </html>
