@@ -538,7 +538,6 @@
 
                 log.textContent = `Processing via ${modelToUse}...`;
 
-                // --- NEW DUAL-MODE PROMPT (BOX vs SPOOL) ---
                 const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${modelToUse}:generateContent?key=${key}`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -570,12 +569,10 @@
                 closeCamera();
                 proc.style.display = 'none';
 
-                // --- NEW SMART PARSING LOGIC ---
                 let finalId = null;
                 let parsedStatus = (result.status && result.status.toLowerCase().includes('inventory')) ? 'inventory' : 'storage';
                 let isBox = (parsedStatus === 'inventory');
 
-                // 1. IF SPOOL: Force the strict Extrudr formatting
                 if (!isBox) {
                     if (result.raw_text_lines && Array.isArray(result.raw_text_lines)) {
                         for (let line of result.raw_text_lines) {
@@ -591,7 +588,7 @@
                     }
                     if (finalId) {
                         if (finalId.match(/^[0-9]{12,14}$/) && !finalId.includes('M')) {
-                            finalId = null; // Block pure barcodes on spools
+                            finalId = null; 
                         } else if (finalId.includes('M') || (result.brand && result.brand.toLowerCase().includes('extrudr'))) {
                             finalId = finalId.replace(/[OQD]/g, '0');
                             if (finalId.startsWith('888M')) finalId = '000M' + finalId.substring(4);
@@ -606,12 +603,10 @@
                         }
                     }
                 } 
-                // 2. IF BOX: Accept barcodes
                 else {
                     if (result.asset_id && String(result.asset_id).toLowerCase() !== 'null') {
                         finalId = String(result.asset_id).toUpperCase().replace(/[\s\-\.]/g, '');
                     }
-                    // Fallback for Box: Hunt for standard barcode numbers if AI missed it
                     if (!finalId && result.raw_text_lines && Array.isArray(result.raw_text_lines)) {
                         for (let line of result.raw_text_lines) {
                             let cleanLine = line.toUpperCase().replace(/[\s\-\.]/g, '');
@@ -625,7 +620,6 @@
 
                 result.asset_id = finalId;
 
-                // Handle Output
                 if (currentScanMode === 'delete') {
                     if (result.asset_id) {
                         const exists = inventory.find(i => i.id === result.asset_id);
@@ -644,6 +638,17 @@
                     return;
                 }
 
+                // ==========================================
+                // THE NEW DUPLICATE PREVENTION RULE
+                // ==========================================
+                const existingItem = inventory.find(i => i.id === result.asset_id);
+                if (existingItem) {
+                    alert(`⚠️ DUPLICATE DETECTED\n\nAsset ID: ${result.asset_id} is already in the database!\n\nOpening the existing record so you can update the quantity.`);
+                    editItem(result.asset_id); // Opens the existing one to be edited
+                    return; // Stops the function from making a new entry
+                }
+
+                // If it passes the duplicate check, open as a new item:
                 document.getElementById('f-id').value = result.asset_id;
                 document.getElementById('f-brand').value = result.brand || 'Unknown';
                 document.getElementById('f-material').value = (result.type || 'PLA').toUpperCase();
