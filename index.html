@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Filament Inventory</title>
+    <link rel="manifest" href="manifest.json">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -152,6 +153,9 @@
         const db = getDatabase(app);
         const inventoryRef = ref(db, 'inventory');
 
+        // FIXED GEMINI API KEY
+        const GEMINI_API_KEY = "AIzaSyDmLS6kfioDv548O6Qg-2sBA1YQQ_IMAlw";
+
         let inventoryArr = [];
         let activeUser = localStorage.getItem('activeUser');
         let currentTab = 'storage';
@@ -275,11 +279,8 @@
             canvas.getContext('2d').drawImage(vid, 0, 0);
             const base64 = canvas.toDataURL('image/jpeg', 0.95).split(',')[1];
             
-            const key = prompt("Enter Gemini API Key:") || localStorage.getItem('gemApiKey');
-            if(key) localStorage.setItem('gemApiKey', key);
-
             try {
-                const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${key}`, {
+                const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
