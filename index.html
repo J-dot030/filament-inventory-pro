@@ -23,7 +23,6 @@
         .stats { padding: 20px; display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; }
         .stat-card { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 12px; border-left: 3px solid var(--yellow); }
         .stat-card.low { border-left-color: var(--red); }
-        .stat-card.success { border-left-color: var(--green); }
         .stat-value { font-family: 'JetBrains Mono', monospace; font-size: 24px; font-weight: 800; }
         .stat-label { font-size: 9px; color: var(--text-dim); text-transform: uppercase; margin-bottom: 4px; }
         .tabs { display: flex; padding: 0 20px; gap: 6px; margin-bottom: 16px; overflow-x: auto; }
@@ -45,15 +44,13 @@
         .actions { position: fixed; bottom: 0; left: 50%; transform: translateX(-50%); width: 100%; max-width: 600px; background: var(--bg); border-top: 2px solid var(--yellow); padding: 12px; display: flex; gap: 8px; z-index: 50; }
         .btn-main { flex: 1; padding: 14px 8px; border-radius: 6px; border: none; font-weight: 800; font-size: 11px; cursor: pointer; text-transform: uppercase; font-family: 'JetBrains Mono', monospace; color: var(--bg); transition: all 0.2s; }
         .btn-main:active { transform: scale(0.95); }
-        .btn-spool { background: var(--yellow); }
-        .btn-box { background: var(--green); }
+        .btn-scan { background: var(--yellow); }
         .btn-secondary { flex: 0.5; padding: 14px 8px; border-radius: 6px; border: 1px solid var(--text-dim); background: transparent; color: var(--text-dim); font-weight: 700; font-size: 10px; cursor: pointer; text-transform: uppercase; font-family: 'JetBrains Mono', monospace; }
         .btn-delete { border-color: var(--red); color: var(--red); }
         .camera { position: fixed; inset: 0; background: #000; z-index: 400; display: none; }
         #video { width: 100%; height: 100%; object-fit: cover; }
         .shutter { width: 72px; height: 72px; border: 4px solid var(--yellow); background: var(--yellow-dim); border-radius: 50%; position: absolute; bottom: 40px; left: 50%; transform: translateX(-50%); z-index: 401; cursor: pointer; transition: all 0.1s; }
         .shutter:active { transform: translateX(-50%) scale(0.9); }
-        .shutter.box-mode { border-color: var(--green); background: rgba(0,255,136,0.2); }
         .shutter.delete { border-color: var(--red); background: rgba(255,68,68,0.2); }
         .processing { position: absolute; inset: 0; background: rgba(0,0,0,0.95); display: none; flex-direction: column; align-items: center; justify-content: center; z-index: 500; }
         .spinner { width: 50px; height: 50px; border: 4px solid #333; border-top: 4px solid var(--yellow); border-radius: 50%; animation: spin 1s linear infinite; margin-bottom: 16px; }
@@ -72,7 +69,6 @@
         .btn-group .btn-main { flex: 1; }
         .stat-row { display: flex; justify-content: space-between; padding: 12px 0; border-bottom: 1px solid var(--border); font-size: 12px; }
         .stat-row:last-child { border-bottom: none; }
-        .export-btn { background: var(--blue); color: var(--bg); padding: 10px 16px; border-radius: 4px; font-weight: 700; font-size: 11px; cursor: pointer; border: none; margin: 8px 0; }
         .empty-state { text-align: center; padding: 40px 20px; color: var(--text-dim); font-size: 12px; }
     </style>
 </head>
@@ -84,7 +80,7 @@
             <div style="font-family: 'JetBrains Mono', monospace; font-size: 28px; color: var(--yellow); margin-bottom: 8px; font-weight: 900;">🧵 PRO</div>
             <div style="font-size: 12px; color: var(--text-dim); margin-bottom: 24px;">Filament Inventory Management</div>
             <input type="text" class="form-input" id="member-id" placeholder="Name" style="text-align: center; margin-bottom: 12px;">
-            <button class="btn-main btn-spool" onclick="login()" style="width: 100%; margin-bottom: 8px;">ACCESS</button>
+            <button class="btn-main btn-scan" onclick="login()" style="width: 100%; margin-bottom: 8px;">ACCESS</button>
             <div style="font-size: 10px; color: var(--text-dim);">Demo: Enter any username</div>
         </div>
     </div>
@@ -139,8 +135,7 @@
     <!-- ACTION BAR -->
     <div class="actions" id="action-bar" style="display: none;">
         <button class="btn-secondary btn-delete" onclick="openCamera('delete')">🗑️</button>
-        <button class="btn-main btn-box" onclick="openCamera('box')">SCAN BOX</button>
-        <button class="btn-main btn-spool" onclick="openCamera('spool')">SCAN SPOOL</button>
+        <button class="btn-main btn-scan" onclick="openCamera('scan')">🔍 SCAN</button>
         <button class="btn-secondary" onclick="manualEntry()" style="border-color: var(--purple); color: var(--purple);">✎</button>
     </div>
 
@@ -153,14 +148,14 @@
         
         <div style="position:absolute; bottom:130px; left:50%; transform:translateX(-50%); text-align:center; width:100%; z-index: 402;">
             <div style="font-family:'JetBrains Mono', monospace; font-size:12px; color:var(--yellow); background:rgba(0,0,0,0.8); padding:12px 20px; border-radius:4px; display:inline-block;" id="scan-instructions">
-                > HOLD CLOSE TO BARCODE <
+                > HOLD STEADY <
             </div>
         </div>
 
         <div class="processing" id="processing">
             <div class="spinner"></div>
-            <div style="color:var(--yellow); font-family:'JetBrains Mono'; font-weight:800; font-size: 13px;">GROQ_PROCESSING</div>
-            <div style="color:var(--text-dim); font-family:'JetBrains Mono'; font-weight:600; font-size: 11px; margin-top: 8px;" id="processing-msg">Reading image...</div>
+            <div style="color:var(--yellow); font-family:'JetBrains Mono'; font-weight:800; font-size: 13px;">ANALYZING</div>
+            <div style="color:var(--text-dim); font-family:'JetBrains Mono'; font-weight:600; font-size: 11px; margin-top: 8px;" id="processing-msg">Reading barcode...</div>
         </div>
     </div>
 
@@ -237,7 +232,7 @@
             </div>
 
             <div class="btn-group">
-                <button class="btn-main btn-spool" onclick="saveItem()">COMMIT</button>
+                <button class="btn-main btn-scan" onclick="saveItem()">COMMIT</button>
                 <button class="btn-secondary" onclick="closeModal()" style="flex: 0.5;">CANCEL</button>
             </div>
         </div>
@@ -309,7 +304,7 @@
         let inventoryArr = [];
         let activeUser = localStorage.getItem('activeUser');
         let currentTab = 'all';
-        let currentScanMode = 'spool';
+        let currentScanMode = 'scan';
         let stream = null;
 
         if(activeUser) { loginSuccess(activeUser); }
@@ -491,18 +486,14 @@
             const instructions = document.getElementById('scan-instructions');
             shutter.disabled = false;
 
-            if (mode === 'box') {
-                shutter.className = 'shutter box-mode';
-                instructions.textContent = "> HOLD CLOSE TO BOX BARCODE <";
-                instructions.style.color = "var(--green)";
-            } else if (mode === 'spool') {
-                shutter.className = 'shutter';
-                instructions.textContent = "> CENTER SERIAL NUMBER IN VIEW <";
-                instructions.style.color = "var(--yellow)";
-            } else {
+            if (mode === 'delete') {
                 shutter.className = 'shutter delete';
-                instructions.textContent = "> SCAN ASSET TO PURGE <";
+                instructions.textContent = "> SCAN TO DELETE <";
                 instructions.style.color = "var(--red)";
+            } else {
+                shutter.className = 'shutter';
+                instructions.textContent = "> HOLD STEADY <";
+                instructions.style.color = "var(--yellow)";
             }
 
             document.getElementById('camera').style.display = 'block';
@@ -520,7 +511,7 @@
             document.getElementById('processing').style.display = 'none';
         }
 
-        // ===== CAPTURE & GROQ AI =====
+        // ===== CAPTURE & GROQ AI (FIXED MODEL) =====
         async function capture() {
             const GROQ_KEY = localStorage.getItem('groqKey');
             if(!GROQ_KEY) return alert("Please set your Groq API key first!");
@@ -540,14 +531,24 @@
 
             try {
                 let aiPrompt = "";
-                let assignedStatus = "";
 
-                if (currentScanMode === 'box') {
-                    aiPrompt = "Extract the 1D barcode number from this box. Return ONLY this JSON: {\"asset_id\":\"number\",\"brand\":\"name\",\"type\":\"type\",\"color\":\"color\",\"raw_text_lines\":[]}";
-                    assignedStatus = "inventory";
+                if (currentScanMode === 'scan') {
+                    aiPrompt = `Analyze this image. Determine if it's a BOX BARCODE or SPOOL LABEL, then extract the ID.
+                    
+For BOX: Extract 1D barcode number. Brand, type, color from visible text.
+For SPOOL: Find 13-char serial (000M123456789). Brand, type, color from label.
+
+RESPOND WITH ONLY THIS JSON (no markdown):
+{
+  "asset_id": "extracted_id",
+  "item_type": "box_or_spool",
+  "brand": "brand_name",
+  "type": "material_type",
+  "color": "color_name",
+  "raw_text_lines": ["line1", "line2"]
+}`;
                 } else {
-                    aiPrompt = "Find the 13-char serial (000M123456789) on this filament spool. Return ONLY this JSON: {\"asset_id\":\"000M123456789\",\"brand\":\"name\",\"color\":\"color\",\"type\":\"type\",\"raw_text_lines\":[]}";
-                    assignedStatus = "storage";
+                    aiPrompt = "Find the ID in this image and return JSON: {\"asset_id\":\"id\",\"item_type\":\"unknown\",\"brand\":\"\",\"type\":\"\",\"color\":\"\",\"raw_text_lines\":[]}";
                 }
 
                 document.getElementById('processing-msg').textContent = 'Sending to Groq...';
@@ -559,7 +560,7 @@
                         'Content-Type': 'application/json'
                     },
                     body: JSON.stringify({
-                        model: "llama-3.2-90b-vision-preview",
+                        model: "gpt-4o-mini",
                         messages: [{
                             role: "user",
                             content: [
@@ -595,25 +596,7 @@
                 }
 
                 let finalId = result.asset_id ? String(result.asset_id).toUpperCase().replace(/[\s\-\.]/g, '') : null;
-
-                if (currentScanMode !== 'box' && result.raw_text_lines) {
-                    for (let line of result.raw_text_lines) {
-                        let clean = line.toUpperCase().replace(/[\s\-\.]/g, '');
-                        if (clean.includes('M') && clean.length >= 12 && clean.length <= 14) {
-                            let m = clean.indexOf('M');
-                            if (m >= 2 && m <= 4) {
-                                finalId = clean;
-                                break;
-                            }
-                        }
-                    }
-
-                    if (finalId) {
-                        finalId = finalId.replace(/[OQD]/g, '0').replace(/[IL]/g, '1');
-                        if (finalId.startsWith('888M')) finalId = '000M' + finalId.substring(4);
-                        if (finalId.startsWith('846M')) finalId = '046M' + finalId.substring(4);
-                    }
-                }
+                let detectedType = result.item_type ? String(result.item_type).toLowerCase() : 'storage';
 
                 if (!finalId) {
                     alert('Could not read code. Try better lighting and hold steady.');
@@ -638,6 +621,11 @@
                     editItem(existing);
                     closeCamera();
                     return;
+                }
+
+                let assignedStatus = 'storage';
+                if (detectedType.includes('box')) {
+                    assignedStatus = 'inventory';
                 }
 
                 document.getElementById('f-id').value = finalId;
