@@ -139,8 +139,8 @@
         <div class="login-box">
             <div class="login-logo">FILAMENT_OS</div>
             <div class="form-group">
-                <label class="form-label">System Access ID</label>
-                <input type="text" class="form-input" id="member-id" placeholder="Enter Approved Name..." style="font-family: 'JetBrains Mono', monospace;">
+                <label class="form-label">Approved Operator Name</label>
+                <input type="text" class="form-input" id="member-id" placeholder="Enter Name..." style="font-family: 'JetBrains Mono', monospace; text-align: center;">
             </div>
             <button class="btn-main" onclick="login()" style="width:100%; margin-top:8px;">Initialize</button>
         </div>
@@ -173,4 +173,526 @@
         </div>
 
         <div class="tabs">
-            <div class="tab
+            <div class="tab active" id="tab-storage" onclick="setTab('storage')">Storage (Open)</div>
+            <div class="tab" id="tab-inventory" onclick="setTab('inventory')">Inventory (Box)</div>
+        </div>
+
+        <div class="search">
+            <input type="text" class="search-input" id="search" placeholder="> Search asset database..." onkeyup="renderInventory()">
+        </div>
+
+        <div class="inventory" id="inventory"></div>
+    </div>
+
+    <div class="actions" id="action-bar" style="display: none;">
+        <button class="btn-secondary" onclick="openCamera('delete')">RM_ASSET</button>
+        <button class="btn-main" onclick="openCamera('scan')">SCAN_NEW_ASSET</button>
+    </div>
+
+    <div class="camera" id="camera">
+        <div class="camera-header">
+            <div class="camera-badge" id="cam-status">SCANNER_ACTIVE</div>
+            <button class="camera-close" onclick="closeCamera()">✕</button>
+        </div>
+        <video id="video" autoplay playsinline></video>
+        <canvas id="canvas"></canvas>
+        <div class="camera-controls">
+            <div style="font-family: 'JetBrains Mono', monospace; font-size:11px; color:var(--yellow); background:rgba(0,0,0,0.8); padding:8px 16px; border-radius:4px; margin-bottom:20px; display:inline-block; border:1px solid var(--yellow);">
+                > ALLOW AUTO-FOCUS BEFORE TAP <
+            </div><br>
+            <button class="shutter" id="shutter" onclick="capture()"></button>
+        </div>
+        <div class="processing" id="processing">
+            <div class="spinner"></div>
+            <div class="process-text" id="proc-text">ANALYZING...</div>
+            <div class="process-log" id="proc-log">Establishing uplink...</div>
+        </div>
+    </div>
+
+    <div class="modal" id="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div class="modal-title">ASSET_DATA</div>
+                <button class="camera-close" onclick="closeModal()">✕</button>
+            </div>
+            
+            <div class="form-group">
+                <label class="form-label">Physical State</label>
+                <select id="f-status" class="form-input">
+                    <option value="storage">Storage (Opened Spool)</option>
+                    <option value="inventory">Inventory (Unopened Box)</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Asset Tag (QR / Serial)</label>
+                <input type="text" id="f-id" class="form-input" readonly>
+            </div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label class="form-label">Manufacturer</label>
+                    <input type="text" id="f-brand" class="form-input">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Material</label>
+                    <input type="text" id="f-material" list="mat-list" class="form-input" placeholder="Select/Type">
+                    <datalist id="mat-list">
+                        <option value="PLA"></option><option value="PETG"></option><option value="ASA"></option>
+                        <option value="ABS"></option><option value="TPU"></option><option value="PCTG"></option>
+                        <option value="XPETG"></option>
+                    </datalist>
+                </div>
+            </div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label class="form-label">Color Profile</label>
+                    <input type="text" id="f-color" class="form-input">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Volume Left</label>
+                    <select id="f-qty" class="form-input">
+                        <option value="100">100%</option><option value="90">90%</option>
+                        <option value="80">80%</option><option value="70">70%</option>
+                        <option value="60">60%</option><option value="50">50%</option>
+                        <option value="40">40%</option><option value="30">30%</option>
+                        <option value="20">20%</option><option value="10">10%</option>
+                        <option value="0">0% (Empty)</option>
+                    </select>
+                </div>
+            </div>
+
+            <button class="btn-main" style="width:100%; margin-top:16px;" onclick="saveItem()">WRITE_TO_DB</button>
+        </div>
+    </div>
+
+    <div class="toast" id="toast"></div>
+
+    <script>
+        // Database Init
+        let inventory = JSON.parse(localStorage.getItem('filamentFarmDB')) || [];
+        let activeUser = localStorage.getItem('activeUser');
+        let aiStream = null;
+        let currentTab = 'storage';
+        let currentScanMode = 'scan'; 
+        window.cooldownTimer = null;
+
+        // Auto-login check
+        if(activeUser) {
+            document.getElementById('login-screen').classList.add('hidden');
+            document.getElementById('main-app').style.display = 'block';
+            document.getElementById('action-bar').style.display = 'flex';
+            document.getElementById('user-name').textContent = activeUser;
+            renderInventory();
+        }
+
+        // --- THE BOUNCER / SECURITY REGISTRY ---
+        function login() {
+            let inputId = document.getElementById('member-id').value.trim();
+            if(!inputId) return showToast('ERROR: NAME REQUIRED', 'error');
+
+            // The Allowed Users Array (Case-insensitive check)
+            const allowedUsers = ["benjamin", "christian", "rahul"];
+            
+            if (!allowedUsers.includes(inputId.toLowerCase())) {
+                return showToast('ERROR: ACCESS DENIED', 'error');
+            }
+
+            // Standardize format (capitalize first letter)
+            activeUser = inputId.charAt(0).toUpperCase() + inputId.slice(1).toLowerCase();
+            
+            localStorage.setItem('activeUser', activeUser);
+            document.getElementById('login-screen').classList.add('hidden');
+            document.getElementById('main-app').style.display = 'block';
+            document.getElementById('action-bar').style.display = 'flex';
+            document.getElementById('user-name').textContent = activeUser;
+            renderInventory();
+        }
+
+        function logout() {
+            localStorage.removeItem('activeUser');
+            document.getElementById('member-id').value = '';
+            document.getElementById('login-screen').classList.remove('hidden');
+            document.getElementById('main-app').style.display = 'none';
+            document.getElementById('action-bar').style.display = 'none';
+            showToast('LOGGED OUT SUCCESSFULLY', 'success');
+        }
+
+        function getApiKey() {
+            let key = localStorage.getItem('geminiApiKey');
+            if (!key) {
+                key = prompt('SYSTEM UPLINK: Enter Gemini API Key');
+                if (key) localStorage.setItem('geminiApiKey', key);
+            }
+            return key;
+        }
+
+        function setApiKey() {
+            const key = prompt('Update Gemini API Key:', localStorage.getItem('geminiApiKey') || '');
+            if (key) {
+                localStorage.setItem('geminiApiKey', key);
+                localStorage.removeItem('workingModel'); 
+                showToast('API_KEY_UPDATED');
+            }
+        }
+
+        function setTab(tab) {
+            currentTab = tab;
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            document.getElementById('tab-' + tab).classList.add('active');
+            renderInventory();
+        }
+
+        function renderInventory() {
+            const container = document.getElementById('inventory');
+            const search = document.getElementById('search').value.toLowerCase();
+            container.innerHTML = '';
+
+            const matCount = {};
+            inventory.forEach(item => {
+                const mat = (item.type || 'UNKNOWN').toUpperCase();
+                matCount[mat] = (matCount[mat] || 0) + 1;
+            });
+
+            const filtered = inventory.filter(item => {
+                const matches = ((item.id||'') + (item.brand||'') + (item.type||'') + (item.color||'')).toLowerCase().includes(search);
+                const tab = (item.status || 'storage') === currentTab;
+                return matches && tab;
+            });
+
+            const groups = {};
+            filtered.forEach(item => {
+                const mat = (item.type || 'UNKNOWN').toUpperCase();
+                if (!groups[mat]) groups[mat] = [];
+                groups[mat].push(item);
+            });
+
+            Object.keys(groups).sort().forEach(mat => {
+                const items = groups[mat];
+                const id = 'g-' + mat.replace(/\s+/g, '');
+
+                const div = document.createElement('div');
+                div.className = 'group';
+                div.innerHTML = `
+                    <div class="group-header" onclick="document.getElementById('${id}').classList.toggle('open')">
+                        <span>> ${mat}</span>
+                        <span>[${items.length}]</span>
+                    </div>
+                    <div class="group-items open" id="${id}">
+                        ${items.map(item => `
+                            <div class="item ${item.status === 'inventory' ? 'box' : ''}" onclick="editItem('${item.id}')">
+                                <div class="item-id">${item.id}</div>
+                                <div class="item-info">
+                                    <div class="item-brand">${item.brand || 'Unknown'}</div>
+                                    <div class="item-meta">${item.color || 'N/A'} • LOG: ${item.user}</div>
+                                </div>
+                                <div class="qty" onclick="event.stopPropagation()">
+                                    <button class="qty-btn" onclick="updateQty('${item.id}', -10)">-</button>
+                                    <div class="qty-val">${item.qty}%</div>
+                                    <button class="qty-btn" onclick="updateQty('${item.id}', 10)">+</button>
+                                </div>
+                            </div>
+                        `).join('')}
+                    </div>
+                `;
+                container.appendChild(div);
+            });
+
+            document.getElementById('total').textContent = inventory.length;
+            document.getElementById('low-stock').textContent = inventory.filter(i => parseInt(i.qty) <= 0).length;
+        }
+
+        function updateQty(id, change) {
+            const item = inventory.find(i => i.id === id);
+            if (item) {
+                item.qty = Math.min(100, Math.max(0, parseInt(item.qty) + change));
+                localStorage.setItem('filamentFarmDB', JSON.stringify(inventory));
+                renderInventory();
+            }
+        }
+
+        function editItem(id) {
+            const item = inventory.find(i => i.id === id);
+            if (!item) return;
+
+            document.getElementById('f-id').value = item.id;
+            document.getElementById('f-brand').value = item.brand || '';
+            document.getElementById('f-material').value = item.type || '';
+            document.getElementById('f-color').value = item.color || '';
+            
+            let qtyVal = Math.round((item.qty || 100) / 10) * 10;
+            document.getElementById('f-qty').value = qtyVal;
+            document.getElementById('f-status').value = item.status || 'storage';
+            document.getElementById('modal').classList.add('open');
+        }
+
+        function saveItem() {
+            const id = document.getElementById('f-id').value;
+            if (!id) return;
+
+            const item = {
+                id,
+                brand: document.getElementById('f-brand').value,
+                type: document.getElementById('f-material').value.toUpperCase(),
+                color: document.getElementById('f-color').value,
+                qty: document.getElementById('f-qty').value,
+                status: document.getElementById('f-status').value,
+                user: activeUser, // Will now pull the secure name (Benjamin, Christian, or Rahul)
+                time: new Date().toISOString()
+            };
+
+            const idx = inventory.findIndex(i => i.id === id);
+            if (idx >= 0) { inventory[idx] = item; } else { inventory.push(item); }
+
+            localStorage.setItem('filamentFarmDB', JSON.stringify(inventory));
+            closeModal();
+            renderInventory();
+            showToast('DB_WRITE_SUCCESS', 'success');
+        }
+
+        function closeModal() { document.getElementById('modal').classList.remove('open'); }
+
+        function showToast(msg, type = '') {
+            const toast = document.getElementById('toast');
+            toast.textContent = msg;
+            toast.className = 'toast ' + type;
+            toast.style.display = 'block';
+            setTimeout(() => toast.style.display = 'none', 3000);
+        }
+
+        async function openCamera(mode) {
+            const key = getApiKey();
+            if (!key) return;
+
+            currentScanMode = mode;
+            const shutter = document.getElementById('shutter');
+            
+            if (mode === 'delete') {
+                shutter.className = 'shutter delete';
+                document.getElementById('cam-status').textContent = 'SYS_DELETE_MODE';
+            } else {
+                shutter.className = 'shutter';
+                document.getElementById('cam-status').textContent = 'SYS_SCAN_MODE';
+            }
+            
+            document.getElementById('camera').style.display = 'flex';
+
+            try {
+                aiStream = await navigator.mediaDevices.getUserMedia({ 
+                    video: { 
+                        facingMode: 'environment',
+                        width: { ideal: 2560 }, 
+                        height: { ideal: 1440 }
+                    } 
+                });
+                document.getElementById('video').srcObject = aiStream;
+            } catch (e) {
+                showToast('ERR: CAM_DENIED', 'error');
+                closeCamera();
+            }
+        }
+
+        function closeCamera() {
+            document.getElementById('camera').style.display = 'none';
+            if (aiStream) { aiStream.getTracks().forEach(t => t.stop()); aiStream = null; }
+            
+            if (window.cooldownTimer) {
+                clearInterval(window.cooldownTimer);
+                window.cooldownTimer = null;
+            }
+            document.getElementById('processing').style.display = 'none';
+            const spinner = document.querySelector('.spinner');
+            const text = document.getElementById('proc-text');
+            spinner.style.animation = 'spin 1s linear infinite';
+            spinner.style.borderTopColor = 'var(--yellow)';
+            text.style.color = 'var(--yellow)';
+        }
+
+        window.capture = async function() {
+            const key = getApiKey();
+            if (!key) return;
+
+            const proc = document.getElementById('processing');
+            const log = document.getElementById('proc-log');
+            const text = document.getElementById('proc-text');
+            const spinner = document.querySelector('.spinner');
+
+            proc.style.display = 'flex';
+            text.textContent = 'ANALYZING...';
+            log.textContent = 'Extracting label data arrays...';
+
+            const canvas = document.getElementById('canvas');
+            const video = document.getElementById('video');
+            
+            canvas.width = video.videoWidth; 
+            canvas.height = video.videoHeight;
+            canvas.getContext('2d').drawImage(video, 0, 0, canvas.width, canvas.height);
+            
+            const base64 = canvas.toDataURL('image/jpeg', 0.95).split(',')[1];
+
+            try {
+                let modelToUse = localStorage.getItem('workingModel');
+                
+                if (!modelToUse) {
+                    log.textContent = 'Querying API for valid models...';
+                    const req = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${key}`);
+                    if (!req.ok) {
+                        if(req.status === 429) throw new Error("RATE_LIMIT");
+                        throw new Error('API Key Invalid or Restricted.');
+                    }
+                    const data = await req.json();
+                    const models = data.models.map(m => m.name.replace('models/', ''));
+                    if (models.includes('gemini-2.5-flash')) modelToUse = 'gemini-2.5-flash';
+                    else if (models.includes('gemini-2.0-flash')) modelToUse = 'gemini-2.0-flash';
+                    else if (models.includes('gemini-1.5-flash-latest')) modelToUse = 'gemini-1.5-flash-latest';
+                    else modelToUse = 'gemini-1.5-flash'; 
+                    localStorage.setItem('workingModel', modelToUse);
+                }
+
+                log.textContent = `Processing via ${modelToUse}...`;
+
+                const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${modelToUse}:generateContent?key=${key}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        contents: [{
+                            parts: [
+                                { text: "Analyze this 3D filament spool/box.\n\n1. ASSET ID (CRITICAL): Find the alphanumeric serial number. \n- EXTRUDR FORMAT: Exactly 13 characters (3 digits, 'M', 9 digits). E.g., '000M046933024' or '046M027230093'.\n- DOT-MATRIX FONT FIX: The font uses a SLASHED ZERO (Ø). Do NOT read slashed zeros as the number '8'. Do not read them as the letter 'O'. They are '0'. \n- 6 vs 9: A '6' is open top-right. A '9' is open bottom-left.\n2. BARCODES: STRICTLY IGNORE 1D barcodes and their numbers (e.g., '02151018A'). Never use these as the asset_id.\n3. PHYSICAL STATE: Return 'inventory' for unopened cardboard boxes. Return 'storage' for circular plastic/cardboard spools.\n4. RAW LINES: Read every line of text on the label from top to bottom into an array of strings called 'raw_text_lines'.\n\nReturn strictly valid JSON (no markdown): {\"brand\": \"string\", \"color\": \"string\", \"type\": \"string\", \"asset_id\": \"string or null\", \"percentage_left\": 100, \"status\": \"inventory or storage\", \"raw_text_lines\": [\"line 1\", \"line 2\", \"line 3...\"]}" },
+                                { inlineData: { mimeType: 'image/jpeg', data: base64 } }
+                            ]
+                        }]
+                    })
+                });
+
+                if (!res.ok) {
+                    if (res.status === 429) throw new Error("RATE_LIMIT");
+                    if (res.status === 404 || res.status === 403 || res.status === 400) {
+                        localStorage.removeItem('workingModel'); 
+                    }
+                    const errorData = await res.json();
+                    throw new Error(errorData.error?.message || `HTTP Error ${res.status}`);
+                }
+
+                const data = await res.json();
+                
+                let rawText = data.candidates[0].content.parts[0].text;
+                rawText = rawText.replace(/```json/gi, '').replace(/```/gi, '').trim();
+                const result = JSON.parse(rawText);
+
+                closeCamera();
+                proc.style.display = 'none';
+
+                let finalId = null;
+
+                // EXTRACT FROM RAW LINES 
+                if (result.raw_text_lines && Array.isArray(result.raw_text_lines)) {
+                    for (let line of result.raw_text_lines) {
+                        let cleanLine = line.toUpperCase().replace(/[\s\-\.]/g, ''); 
+                        if (cleanLine.includes('02151018A') || (cleanLine.match(/^[0-9]{12,14}$/) && !cleanLine.includes('M'))) {
+                            continue;
+                        }
+                        if (cleanLine.length >= 12 && cleanLine.length <= 14 && cleanLine.includes('M')) {
+                            let mIndex = cleanLine.indexOf('M');
+                            if (mIndex >= 2 && mIndex <= 4) {
+                                finalId = cleanLine;
+                                break;
+                            }
+                        }
+                    }
+                }
+
+                // FALLBACK
+                if (!finalId && result.asset_id && String(result.asset_id).toLowerCase() !== 'null') {
+                    finalId = String(result.asset_id).toUpperCase().replace(/[\s\-\.]/g, '');
+                }
+
+                // FINAL SANITIZATION
+                if (finalId) {
+                    if (finalId.includes('02151018A') || (finalId.match(/^[0-9]{12,14}$/) && !finalId.includes('M'))) {
+                        finalId = null;
+                    } 
+                    else if (finalId.includes('M') || (result.brand && result.brand.toLowerCase().includes('extrudr'))) {
+                        finalId = finalId.replace(/[OQD]/g, '0');
+                        if (finalId.startsWith('888M')) finalId = '000M' + finalId.substring(4);
+                        if (finalId.startsWith('846M')) finalId = '046M' + finalId.substring(4);
+                        if (finalId.startsWith('800M')) finalId = '000M' + finalId.substring(4);
+
+                        let mIndex = finalId.indexOf('M');
+                        if (mIndex !== -1 && finalId.length > 13) {
+                            let start = Math.max(0, mIndex - 3);
+                            finalId = finalId.substring(start, start + 13);
+                        }
+                    }
+                }
+
+                result.asset_id = finalId;
+
+                // Delete Mode
+                if (currentScanMode === 'delete') {
+                    if (result.asset_id) {
+                        const exists = inventory.find(i => i.id === result.asset_id);
+                        if (exists) {
+                            inventory = inventory.filter(i => i.id !== result.asset_id);
+                            localStorage.setItem('filamentFarmDB', JSON.stringify(inventory));
+                            renderInventory();
+                            showToast(`ASSET_${result.asset_id}_PURGED`, 'success');
+                        } else { showToast('ERR: ID_NOT_FOUND', 'error'); }
+                    } else { showToast('ERR: NO_ID_DETECTED', 'error'); }
+                    return;
+                }
+
+                // Strict Bouncer 
+                if (!result.asset_id) {
+                    alert('⚠️ SCAN REJECTED\n\nNo serial or QR code detected. System prohibits logging unidentified assets.\n\nPlease apply a QR sticker.');
+                    return;
+                }
+
+                document.getElementById('f-id').value = result.asset_id;
+                document.getElementById('f-brand').value = result.brand || 'Unknown';
+                document.getElementById('f-material').value = (result.type || 'PLA').toUpperCase();
+                document.getElementById('f-color').value = result.color || 'Unknown';
+                
+                let qtyVal = result.percentage_left || 100;
+                qtyVal = Math.round(qtyVal / 10) * 10;
+                document.getElementById('f-qty').value = qtyVal;
+                
+                let parsedStatus = (result.status && result.status.toLowerCase().includes('inventory')) ? 'inventory' : 'storage';
+                document.getElementById('f-status').value = parsedStatus;
+                
+                document.getElementById('modal').classList.add('open');
+
+            } catch (e) {
+                if (e.message === "RATE_LIMIT" || e.message.toLowerCase().includes("quota") || e.message.includes("429")) {
+                    let timeLeft = 60;
+                    spinner.style.animation = 'none';
+                    spinner.style.borderTopColor = 'var(--red)';
+                    text.style.color = 'var(--red)';
+                    text.textContent = `SYS OVERLOAD: ${timeLeft}s`;
+                    log.textContent = "Google API speed limit reached. Cooling down...";
+                    
+                    window.cooldownTimer = setInterval(() => {
+                        timeLeft--;
+                        text.textContent = `SYS OVERLOAD: ${timeLeft}s`;
+                        if(timeLeft <= 0) {
+                            clearInterval(window.cooldownTimer);
+                            spinner.style.animation = 'spin 1s linear infinite';
+                            spinner.style.borderTopColor = 'var(--yellow)';
+                            text.style.color = 'var(--yellow)';
+                            text.textContent = "RETRYING UPLINK...";
+                            log.textContent = "Executing automatic scan...";
+                            window.capture(); 
+                        }
+                    }, 1000);
+                } else {
+                    closeCamera();
+                    proc.style.display = 'none';
+                    alert(`SYSTEM ERROR:\n${e.message}\n\nTroubleshooting: Verify your API key in the menu.`); 
+                }
+            }
+        };
+
+        if (!localStorage.getItem('geminiApiKey')) { setTimeout(getApiKey, 1000); }
+    </script>
+</body>
+</html>
