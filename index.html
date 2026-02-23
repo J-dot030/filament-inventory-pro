@@ -292,7 +292,7 @@
             projectId: "inventory-86d26",
             storageBucket: "inventory-86d26.firebasestorage.app",
             messagingSenderId: "833068204777",
-            appId: "1:833068204777:web:09b2c6cedde4cfb199a678",
+            appId: "1:333068204777:web:09b2c6cedde4cfb199a678",
             databaseURL: "https://inventory-86d26-default-rtdb.europe-west1.firebasedatabase.app"
         };
         
@@ -511,7 +511,7 @@
             document.getElementById('processing').style.display = 'none';
         }
 
-        // ===== CAPTURE & GROQ AI (FIXED MODEL) =====
+        // ===== CAPTURE & GROQ AI (USING ACTUAL GROQ VISION MODEL) =====
         async function capture() {
             const GROQ_KEY = localStorage.getItem('groqKey');
             if(!GROQ_KEY) return alert("Please set your Groq API key first!");
@@ -533,22 +533,17 @@
                 let aiPrompt = "";
 
                 if (currentScanMode === 'scan') {
-                    aiPrompt = `Analyze this image. Determine if it's a BOX BARCODE or SPOOL LABEL, then extract the ID.
-                    
-For BOX: Extract 1D barcode number. Brand, type, color from visible text.
-For SPOOL: Find 13-char serial (000M123456789). Brand, type, color from label.
+                    aiPrompt = `Look at this image. Tell me:
+1. What type is it? (BOX with barcode, or SPOOL with serial number)
+2. What is the ID/barcode/serial number?
+3. What brand/manufacturer is visible?
+4. What material type (PLA, PETG, ABS, etc)?
+5. What color?
 
-RESPOND WITH ONLY THIS JSON (no markdown):
-{
-  "asset_id": "extracted_id",
-  "item_type": "box_or_spool",
-  "brand": "brand_name",
-  "type": "material_type",
-  "color": "color_name",
-  "raw_text_lines": ["line1", "line2"]
-}`;
+Return ONLY valid JSON:
+{"asset_id":"ID_HERE","item_type":"box_or_spool","brand":"name","type":"material","color":"color"}`;
                 } else {
-                    aiPrompt = "Find the ID in this image and return JSON: {\"asset_id\":\"id\",\"item_type\":\"unknown\",\"brand\":\"\",\"type\":\"\",\"color\":\"\",\"raw_text_lines\":[]}";
+                    aiPrompt = "Extract any ID, barcode, or serial number from this image. Return JSON: {\"asset_id\":\"ID\",\"item_type\":\"unknown\",\"brand\":\"\",\"type\":\"\",\"color\":\"\"}";
                 }
 
                 document.getElementById('processing-msg').textContent = 'Sending to Groq...';
@@ -560,7 +555,7 @@ RESPOND WITH ONLY THIS JSON (no markdown):
                         'Content-Type': 'application/json'
                     },
                     body: JSON.stringify({
-                        model: "gpt-4o-mini",
+                        model: "llama-2-11b-vision",
                         messages: [{
                             role: "user",
                             content: [
@@ -639,7 +634,7 @@ RESPOND WITH ONLY THIS JSON (no markdown):
 
             } catch (e) {
                 console.error(e);
-                alert(`Error: ${e.message}`);
+                alert(`Error: ${e.message}\n\nTip: Make sure you're using a valid Groq API key from console.groq.com`);
                 shutterBtn.disabled = false;
                 document.getElementById('processing').style.display = 'none';
             }
