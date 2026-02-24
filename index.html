@@ -24,6 +24,7 @@
             --red: #FF4444;
             --green: #00FF88;
             --blue: #4A9EFF;
+            --purple: #9D4EDD;
         }
         
         body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
@@ -122,6 +123,19 @@
         @keyframes scan { 0%, 100% { top: 0; } 50% { top: calc(100% - 2px); } }
         .barcode-hint { font-family: 'JetBrains Mono', monospace; font-size: 13px; color: var(--yellow); text-align: center; margin-bottom: 16px; }
         .barcode-result { font-family: 'JetBrains Mono', monospace; font-size: 16px; color: var(--green); font-weight: 800; margin-top: 16px; }
+        
+        .qr-prompt { position: absolute; inset: 0; background: rgba(0, 0, 0, 0.95); display: none; flex-direction: column; align-items: center; justify-content: center; z-index: 30; padding: 40px; }
+        .qr-prompt.active { display: flex; }
+        .qr-icon { width: 80px; height: 80px; border: 3px solid var(--purple); border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 48px; margin-bottom: 24px; background: rgba(157, 78, 221, 0.1); animation: pulse-qr 2s infinite; }
+        @keyframes pulse-qr { 0%, 100% { box-shadow: 0 0 20px rgba(157, 78, 221, 0.4); } 50% { box-shadow: 0 0 40px rgba(157, 78, 221, 0.8); } }
+        .qr-title { font-family: 'JetBrains Mono', monospace; font-size: 18px; font-weight: 800; color: var(--purple); margin-bottom: 12px; text-align: center; }
+        .qr-message { font-size: 14px; color: var(--text-dim); text-align: center; margin-bottom: 32px; max-width: 400px; line-height: 1.6; }
+        .qr-buttons { display: flex; gap: 12px; }
+        .qr-btn { padding: 14px 24px; border-radius: 6px; font-family: 'JetBrains Mono', monospace; font-weight: 800; font-size: 12px; cursor: pointer; text-transform: uppercase; transition: 0.2s; }
+        .qr-btn-primary { background: var(--purple); color: white; border: none; }
+        .qr-btn-primary:hover { background: #8B3FC9; }
+        .qr-btn-secondary { background: transparent; color: var(--text-dim); border: 1px solid var(--border); }
+        .qr-btn-secondary:hover { border-color: var(--purple); color: var(--purple); }
         
         .modal { position: fixed; inset: 0; background: rgba(0, 0, 0, 0.85); z-index: 450; display: none; align-items: center; justify-content: center; padding: 20px; }
         .modal.open { display: flex; }
@@ -288,8 +302,19 @@
         <div class="spinner"></div>
         <div class="process-text" id="process-text">ANALYZING IMAGE...</div>
     </div>
+    <div class="qr-prompt" id="qr-prompt">
+        <div class="qr-icon">📱</div>
+        <div class="qr-title">QR CODE STICKER REQUIRED</div>
+        <div class="qr-message">
+            This spool doesn't have a unique serial number. Please attach a QR code sticker to track this spool, then scan the QR code to continue.
+        </div>
+        <div class="qr-buttons">
+            <button class="qr-btn qr-btn-primary" onclick="scanQRCode()">SCAN QR CODE</button>
+            <button class="qr-btn qr-btn-secondary" onclick="closeCamera()">CANCEL</button>
+        </div>
+    </div>
     <div class="barcode-scanner" id="barcode-scanner">
-        <div class="barcode-hint">SCANNING FOR BARCODE...</div>
+        <div class="barcode-hint" id="scanner-hint">SCANNING FOR BARCODE...</div>
         <div class="barcode-frame">
             <div class="barcode-line"></div>
         </div>
@@ -689,7 +714,6 @@
         }
 
         filtered.forEach(item => {
-            const isBox = item.status === 'inventory';
             list.innerHTML += `
                 <div class="delete-item" onclick="confirmDelete('${item.id}')">
                     <div class="delete-item-info">
@@ -784,7 +808,6 @@
             });
             document.getElementById('video').srcObject = stream;
             
-            // Initialize barcode reader
             if (!barcodeReader) {
                 barcodeReader = new ZXing.BrowserMultiFormatReader();
             }
@@ -798,6 +821,7 @@
         if(stream) stream.getTracks().forEach(t => t.stop());
         document.getElementById('processing').classList.remove('active');
         document.getElementById('barcode-scanner').classList.remove('active');
+        document.getElementById('qr-prompt').classList.remove('active');
         if (barcodeScanInterval) {
             clearInterval(barcodeScanInterval);
             barcodeScanInterval = null;
@@ -805,10 +829,71 @@
         detectedItemData = null;
     }
 
+    function hasUniqueSerial(text) {
+        // Pattern for unique serial numbers (e.g., 000M123456789, etc.)
+        // These typically have longer alphanumeric sequences with specific patterns
+        const serialPatterns = [
+            /\d{3}[A-Z]\d{9,}/,  // e.g., 000M123456789
+            /[A-Z]{2,}\d{8,}/,   // e.g., AB12345678
+            /\d{10,}/            // Long numeric sequences
+        ];
+        
+        return serialPatterns.some(pattern => pattern.test(text));
+    }
+
+    function isBarcodeOnly(text) {
+        // Pattern for barcode-only labels (e.g., 02151018A)
+        // These are shorter codes like the one in the image
+        const barcodePattern = /^[0-9]{8}[A-Z]$/;  // e.g., 02151018A
+        return barcodePattern.test(text);
+    }
+
+    function scanQRCode() {
+        document.getElementById('qr-prompt').classList.remove('active');
+        document.getElementById('barcode-scanner').classList.add('active');
+        document.getElementById('scanner-hint').textContent = 'SCANNING FOR QR CODE...';
+        
+        const video = document.getElementById('video');
+        
+        barcodeScanInterval = setInterval(async () => {
+            try {
+                const result = await barcodeReader.decodeFromVideoElement(video);
+                if (result) {
+                    clearInterval(barcodeScanInterval);
+                    barcodeScanInterval = null;
+                    
+                    const qrData = result.text;
+                    document.getElementById('barcode-result').textContent = `QR CODE: ${qrData}`;
+                    
+                    // Parse QR code data (expecting JSON format)
+                    try {
+                        const parsed = JSON.parse(qrData);
+                        setTimeout(() => {
+                            proceedWithData(parsed.id || qrData, {
+                                material: parsed.material || detectedItemData.material,
+                                color: parsed.color || detectedItemData.color,
+                                brand: parsed.brand || detectedItemData.brand,
+                                status: 'storage'
+                            });
+                        }, 1000);
+                    } catch (e) {
+                        // If not JSON, use as plain ID
+                        setTimeout(() => {
+                            proceedWithData(qrData, detectedItemData);
+                        }, 1000);
+                    }
+                }
+            } catch (err) {
+                // Continue scanning
+            }
+        }, 300);
+    }
+
     async function startBarcodeScanning(itemData) {
         detectedItemData = itemData;
         document.getElementById('processing').classList.remove('active');
         document.getElementById('barcode-scanner').classList.add('active');
+        document.getElementById('scanner-hint').textContent = 'SCANNING FOR BARCODE...';
         document.getElementById('process-text').textContent = 'SCANNING BARCODE...';
         
         const video = document.getElementById('video');
@@ -873,18 +958,30 @@
             if (currentScanMode === 'empty') {
                 prompt = `Find the spool ID/serial number visible in this image. Look for alphanumeric codes on the spool label. Return ONLY valid JSON: {"id":"THE_SERIAL_NUMBER"}`;
             } else {
-                prompt = `Analyze this image and determine if this is an OPENED SPOOL or an UNOPENED BOX:
-- SPOOL: Visible filament wound on a spool, exposed filament, or partially used roll
-- BOX: Sealed packaging, unopened cardboard box, or factory-sealed packaging
+                prompt = `Analyze this filament spool/box image carefully:
 
-Then extract:
-- Material type (PLA/ABS/PETG/TPU/NYLON/ASA/etc)
-- Color name
-- Brand name
-- For SPOOL only: Serial number (format like 000M123456789 or similar alphanumeric code)
+1. Determine type: SPOOL (opened, visible filament) or BOX (unopened, sealed packaging)
+
+2. Check for unique serial number:
+   - LOOK FOR: Long alphanumeric codes like "000M123456789", "AB12345678", or 10+ digit numbers
+   - IGNORE: Short barcode numbers like "02151018A" (8 digits + 1 letter) - these are NOT unique serials
+
+3. Extract information:
+   - Material type (PLA/PETG/ABS/ASA/TPU/NYLON)
+   - Color name
+   - Brand name
 
 Return ONLY valid JSON:
-{"type":"spool" or "box", "id":"SERIAL_NUMBER_IF_SPOOL_OTHERWISE_EMPTY", "material":"TYPE", "color":"COLOR", "brand":"BRAND"}`;
+{
+  "type": "spool" or "box",
+  "has_unique_serial": true or false,
+  "id": "SERIAL_IF_FOUND_OTHERWISE_EMPTY",
+  "material": "TYPE",
+  "color": "COLOR",
+  "brand": "BRAND"
+}
+
+CRITICAL: If you only see a short barcode like "02151018A", set has_unique_serial to false and id to empty string.`;
             }
 
             const res = await fetch("https://api.groq.com/openai/v1/chat/completions", {
@@ -935,39 +1032,45 @@ Return ONLY valid JSON:
                 return;
             }
 
-            // Determine if it's a box or spool
             const isBox = result.type === 'box';
             const status = isBox ? 'inventory' : 'storage';
 
+            const itemData = {
+                material: result.material || '',
+                color: result.color || '',
+                brand: result.brand || '',
+                status: status
+            };
+
             if (isBox) {
-                // For boxes, start barcode scanning
-                const itemData = {
-                    material: result.material || '',
-                    color: result.color || '',
-                    brand: result.brand || '',
-                    status: status
-                };
+                // Boxes always need barcode scanning
                 startBarcodeScanning(itemData);
             } else {
-                // For spools, use the detected ID
-                if (!result.id) throw new Error('SPOOL ID NOT FOUND');
-                
-                const exists = inventory.find(i => String(i.id).toUpperCase() === String(result.id).toUpperCase());
-                if (exists) {
-                    closeCamera();
-                    editItem(exists);
-                    return;
-                }
+                // It's a spool - check if it has a unique serial
+                if (result.has_unique_serial && result.id) {
+                    // Has unique serial, proceed normally
+                    const exists = inventory.find(i => String(i.id).toUpperCase() === String(result.id).toUpperCase());
+                    if (exists) {
+                        closeCamera();
+                        editItem(exists);
+                        return;
+                    }
 
-                document.getElementById('f-id').value = result.id;
-                document.getElementById('f-brand').value = result.brand || '';
-                document.getElementById('f-material').value = result.material || '';
-                document.getElementById('f-color').value = result.color || '';
-                document.getElementById('f-status').value = status;
-                document.getElementById('f-qty').value = '100';
-                updateStockOptions();
-                closeCamera();
-                document.getElementById('modal').classList.add('open');
+                    document.getElementById('f-id').value = result.id;
+                    document.getElementById('f-brand').value = itemData.brand;
+                    document.getElementById('f-material').value = itemData.material;
+                    document.getElementById('f-color').value = itemData.color;
+                    document.getElementById('f-status').value = status;
+                    document.getElementById('f-qty').value = '100';
+                    updateStockOptions();
+                    closeCamera();
+                    document.getElementById('modal').classList.add('open');
+                } else {
+                    // No unique serial - prompt for QR code
+                    detectedItemData = itemData;
+                    document.getElementById('processing').classList.remove('active');
+                    document.getElementById('qr-prompt').classList.add('active');
+                }
             }
 
         } catch (e) {
