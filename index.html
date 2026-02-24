@@ -1069,12 +1069,16 @@ function normalizeSpoolId(idRaw) {
                 let assignedStatus = "";
 
                 if (currentScanMode === 'box') {
-                    aiPrompt = "Extract the standard 1D barcode number from this cardboard box. Ignore everything else. Return strictly JSON: {\"asset_id\": \"barcode_number\", \"brand\": \"brand_name\", \"type\": \"material_type\", \"color\": \"color_name\", \"raw_text_lines\": [\"line1\", \"line2\"]}";
-                    assignedStatus = "inventory";
-                } else {
-                    aiPrompt = "Analyze this 3D filament spool. Find the 13-character alphanumeric serial (3 digits, 'M', 9 digits). Slashed zero is '0'. Open top-right is '6'. Read every line of text on the label into the raw_text_lines array. Return strictly valid JSON: {\"brand\": \"string\", \"color\": \"string\", \"type\": \"string\", \"asset_id\": \"string\", \"raw_text_lines\": [\"line 1\", \"line 2\"]}";
-                    assignedStatus = "storage";
-                }
+    aiPrompt = "Extract the standard 1D barcode number from this cardboard box. Ignore everything else. Return strictly JSON: {\"asset_id\": \"barcode_number\", \"brand\": \"brand_name\", \"type\": \"material_type\", \"color\": \"color_name\", \"raw_text_lines\": [\"line1\", \"line2\"]}";
+    assignedStatus = "inventory";
+} else if (currentScanMode === 'spool') {
+    aiPrompt = "Analyze this 3D filament spool. Find the 13-character alphanumeric serial (3 digits, 'M', 9 digits). Slashed zero is '0'. Open top-right is '6'. Read every line of text on the label into the raw_text_lines array. Return strictly valid JSON: {\"brand\": \"string\", \"color\": \"string\", \"type\": \"string\", \"asset_id\": \"string\", \"raw_text_lines\": [\"line 1\", \"line 2\"]}";
+    assignedStatus = "storage";
+} else {
+    // delete mode — try to read whatever ID is visible (spool or box)
+    aiPrompt = "Read the most prominent ID number or serial on this item. It could be a barcode number or a serial like 000M123456789. Return strictly JSON: {\"asset_id\": \"the_id_you_see\", \"raw_text_lines\": [\"line1\", \"line2\"]}";
+    assignedStatus = "delete";
+}
 
                 document.getElementById('processing-msg').textContent = 'Connecting to Llama 3.2...';
 
