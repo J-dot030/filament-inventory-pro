@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Filament OS — Terminal</title>
+    <title>SpoolVault — Filament Inventory System</title>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -22,6 +22,7 @@
             --text-dim: #888888;
             --red: #FF4444;
             --green: #00FF88;
+            --blue: #4A9EFF;
         }
         
         body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
@@ -36,13 +37,18 @@
         
         header { background: var(--surface); border-bottom: 2px solid var(--yellow); padding: 16px 20px; position: sticky; top: 0; z-index: 100; box-shadow: 0 4px 20px rgba(255, 215, 0, 0.1); }
         .header-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
-        .logo { font-family: 'JetBrains Mono', monospace; font-size: 20px; font-weight: 800; color: var(--yellow); letter-spacing: 1px; }
+        .logo-container { display: flex; align-items: center; gap: 12px; }
+        .logo-icon { width: 36px; height: 36px; background: linear-gradient(135deg, var(--yellow) 0%, #FFA500 100%); border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 20px; box-shadow: 0 0 20px rgba(255, 215, 0, 0.3); }
+        .logo-text { font-family: 'JetBrains Mono', monospace; font-size: 18px; font-weight: 800; color: var(--yellow); letter-spacing: 0.5px; }
+        .logo-subtext { font-size: 9px; color: var(--text-dim); font-weight: 600; letter-spacing: 2px; margin-top: -2px; }
         .sync-status { display: flex; align-items: center; gap: 6px; font-size: 11px; color: var(--green); font-weight: 700; font-family: 'JetBrains Mono', monospace; }
         .sync-dot { width: 8px; height: 8px; background: var(--green); border-radius: 50%; animation: pulse 1.5s infinite; }
         @keyframes pulse { 0%, 100% { opacity: 1; transform: scale(1); box-shadow: 0 0 8px var(--green); } 50% { opacity: 0.5; transform: scale(0.8); } }
         
         .user-bar { display: flex; justify-content: space-between; align-items: center; }
-        .user-info { font-family: 'JetBrains Mono', monospace; font-size: 12px; color: var(--text-dim); }
+        .user-info { font-family: 'JetBrains Mono', monospace; font-size: 12px; color: var(--text-dim); display: flex; align-items: center; gap: 8px; cursor: pointer; padding: 6px 10px; border-radius: 4px; transition: 0.2s; }
+        .user-info:hover { background: var(--surface-hover); color: var(--yellow); }
+        .user-count { background: var(--yellow); color: var(--bg); padding: 2px 8px; border-radius: 10px; font-size: 10px; font-weight: 800; }
         .btn-group { display: flex; gap: 8px; }
         .header-btn { background: transparent; border: 1px solid var(--border); color: var(--text-dim); padding: 6px 12px; border-radius: 4px; font-size: 11px; font-weight: 700; cursor: pointer; transition: 0.2s; font-family: 'JetBrains Mono', monospace; text-transform: uppercase; }
         .header-btn:hover { border-color: var(--yellow); color: var(--yellow); }
@@ -87,6 +93,7 @@
         .camera-header { padding: 20px; display: flex; justify-content: space-between; position: absolute; width: 100%; z-index: 10; }
         .camera-badge { background: var(--yellow); color: var(--bg); padding: 6px 12px; border-radius: 4px; font-weight: 800; font-size: 11px; font-family: 'JetBrains Mono', monospace; }
         .camera-badge.delete { background: var(--red); }
+        .camera-badge.empty { background: var(--blue); }
         .camera-close { background: rgba(0,0,0,0.5); border: 1px solid var(--yellow); color: var(--yellow); width: 36px; height: 36px; border-radius: 4px; font-size: 18px; cursor: pointer; }
         #video { flex: 1; object-fit: cover; }
         
@@ -95,6 +102,8 @@
         .shutter:active { background: var(--yellow); transform: scale(0.95); }
         .shutter.delete { border-color: var(--red); background: rgba(255,68,68,0.2); box-shadow: 0 0 20px rgba(255,68,68,0.4); }
         .shutter.delete:active { background: var(--red); }
+        .shutter.empty { border-color: var(--blue); background: rgba(74,158,255,0.2); box-shadow: 0 0 20px rgba(74,158,255,0.4); }
+        .shutter.empty:active { background: var(--blue); }
         #canvas { display: none; }
         
         .processing { position: absolute; inset: 0; background: rgba(0, 0, 0, 0.9); display: none; flex-direction: column; align-items: center; justify-content: center; z-index: 20; }
@@ -105,7 +114,7 @@
         
         .modal { position: fixed; inset: 0; background: rgba(0, 0, 0, 0.85); z-index: 450; display: none; align-items: center; justify-content: center; padding: 20px; }
         .modal.open { display: flex; }
-        .modal-content { background: var(--surface); border: 2px solid var(--yellow); border-radius: 8px; padding: 24px; width: 100%; max-width: 400px; }
+        .modal-content { background: var(--surface); border: 2px solid var(--yellow); border-radius: 8px; padding: 24px; width: 100%; max-width: 400px; max-height: 90vh; overflow-y: auto; }
         .modal-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); padding-bottom: 16px; margin-bottom: 20px; }
         .modal-title { font-family: 'JetBrains Mono', monospace; font-weight: 800; color: var(--yellow); font-size: 16px; }
         
@@ -121,32 +130,64 @@
         .login-screen { position: fixed; inset: 0; background: var(--bg); z-index: 500; display: flex; align-items: center; justify-content: center; padding: 20px; }
         .login-screen.hidden { display: none; }
         .login-box { background: var(--surface); border: 2px solid var(--border); border-left: 4px solid var(--yellow); border-radius: 8px; padding: 32px; width: 100%; max-width: 360px; }
-        .login-logo { font-family: 'JetBrains Mono', monospace; font-size: 28px; font-weight: 900; color: var(--yellow); margin-bottom: 24px; letter-spacing: 1px; text-align: center; }
+        .login-logo-big { display: flex; flex-direction: column; align-items: center; margin-bottom: 32px; }
+        .login-logo-icon { width: 64px; height: 64px; background: linear-gradient(135deg, var(--yellow) 0%, #FFA500 100%); border-radius: 16px; display: flex; align-items: center; justify-content: center; font-size: 36px; box-shadow: 0 0 30px rgba(255, 215, 0, 0.4); margin-bottom: 16px; }
+        .login-logo-text { font-family: 'JetBrains Mono', monospace; font-size: 24px; font-weight: 900; color: var(--yellow); letter-spacing: 1px; }
+        .login-logo-sub { font-size: 11px; color: var(--text-dim); font-weight: 600; letter-spacing: 3px; margin-top: 4px; }
         
         .empty-state { text-align: center; padding: 40px 20px; color: var(--text-dim); }
+        
+        .user-list { max-height: 300px; overflow-y: auto; }
+        .user-item { background: var(--surface-hover); border: 1px solid var(--border); border-radius: 6px; padding: 12px 16px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; }
+        .user-item-info { display: flex; flex-direction: column; }
+        .user-item-name { font-weight: 700; font-size: 14px; color: var(--text); margin-bottom: 2px; }
+        .user-item-time { font-size: 11px; color: var(--text-dim); font-family: 'JetBrains Mono', monospace; }
+        .user-badge { background: var(--green); color: var(--bg); padding: 4px 8px; border-radius: 4px; font-size: 9px; font-weight: 800; font-family: 'JetBrains Mono', monospace; }
+        .user-badge.you { background: var(--yellow); }
+        
+        .delete-list { max-height: 400px; overflow-y: auto; }
+        .delete-item { background: var(--surface-hover); border: 1px solid var(--border); border-radius: 6px; padding: 12px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; cursor: pointer; transition: 0.2s; }
+        .delete-item:hover { border-color: var(--red); background: rgba(255, 68, 68, 0.05); }
+        .delete-item-info { display: flex; flex-direction: column; }
+        .delete-item-id { font-family: 'JetBrains Mono', monospace; font-weight: 800; font-size: 13px; color: var(--yellow); margin-bottom: 2px; }
+        .delete-item-desc { font-size: 11px; color: var(--text-dim); }
+        .delete-icon { color: var(--red); font-size: 18px; }
     </style>
 </head>
 <body>
 
 <div class="login-screen" id="login-screen">
     <div class="login-box">
-        <div class="login-logo">FILAMENT_OS</div>
-        <div class="form-group">
-            <label class="form-label">System Access ID</label>
-            <input type="text" class="form-input" id="member-id" placeholder="Enter Approved Name..." style="font-family: 'JetBrains Mono', monospace; text-align: center;">
+        <div class="login-logo-big">
+            <div class="login-logo-icon">🎯</div>
+            <div class="login-logo-text">SpoolVault</div>
+            <div class="login-logo-sub">INVENTORY SYSTEM</div>
         </div>
-        <button class="btn-main" onclick="login()" style="width:100%; margin-top:8px;">INITIALIZE</button>
+        <div class="form-group">
+            <label class="form-label">Access Name</label>
+            <input type="text" class="form-input" id="member-id" placeholder="Enter your name..." style="font-family: 'JetBrains Mono', monospace; text-align: center;">
+        </div>
+        <button class="btn-main" onclick="login()" style="width:100%; margin-top:8px;">SIGN IN</button>
     </div>
 </div>
 
 <div class="container" id="main-app" style="display: none;">
     <header>
         <div class="header-row">
-            <div class="logo">SYS_OS</div>
-            <div class="sync-status"><div class="sync-dot"></div><span>LOCAL</span></div>
+            <div class="logo-container">
+                <div class="logo-icon">🎯</div>
+                <div>
+                    <div class="logo-text">SpoolVault</div>
+                    <div class="logo-subtext">INVENTORY SYSTEM</div>
+                </div>
+            </div>
+            <div class="sync-status"><div class="sync-dot"></div><span>LIVE</span></div>
         </div>
         <div class="user-bar">
-            <div class="user-info">OP: <span id="user-name" style="color:var(--text); font-weight:700;">User</span></div>
+            <div class="user-info" onclick="showUsers()">
+                <span>USERS:</span>
+                <span class="user-count" id="user-count">0</span>
+            </div>
             <div class="btn-group">
                 <button class="header-btn" onclick="setApiKey()">API_KEY</button>
                 <button class="header-btn" onclick="logout()">LOGOUT</button>
@@ -166,64 +207,64 @@
     </div>
 
     <div class="tabs">
-        <div class="tab active" id="tab-storage" onclick="setTab('storage')">Storage (Spool)</div>
-        <div class="tab" id="tab-inventory" onclick="setTab('inventory')">Inventory (Box)</div>
+        <div class="tab active" id="tab-storage" onclick="setTab('storage')">Opened Spools</div>
+        <div class="tab" id="tab-inventory" onclick="setTab('inventory')">Unopened Boxes</div>
     </div>
 
     <div class="search">
-        <input type="text" class="search-input" id="search" placeholder="> search asset..." onkeyup="renderInventory()">
+        <input type="text" class="search-input" id="search" placeholder="> search by ID, brand, color..." onkeyup="renderInventory()">
     </div>
 
     <div class="inventory" id="inventory"></div>
 </div>
 
 <div class="actions" id="action-bar" style="display: none;">
-    <button class="btn-secondary btn-danger" onclick="openCamera('delete')">RM_ASSET</button>
-    <button class="btn-main" onclick="openCamera('scan')">SCAN_ASSET</button>
-    <button class="btn-secondary" onclick="emptySpoolDialog()">EMPTY</button>
+    <button class="btn-secondary btn-danger" onclick="openDeleteDialog()">DELETE</button>
+    <button class="btn-main" onclick="openCamera('scan')">SCAN</button>
+    <button class="btn-secondary" style="border-color: var(--blue); color: var(--blue);" onclick="openCamera('empty')">EMPTY SPOOL</button>
 </div>
 
 <div class="camera" id="camera">
     <div class="camera-header">
-        <div class="camera-badge" id="cam-badge">SCANNER_ACTIVE</div>
+        <div class="camera-badge" id="cam-badge">SCANNER ACTIVE</div>
         <button class="camera-close" onclick="closeCamera()">✕</button>
     </div>
     <video id="video" autoplay playsinline></video>
     <canvas id="canvas"></canvas>
     <div class="camera-controls">
         <div style="font-family: 'JetBrains Mono', monospace; font-size:11px; color:var(--yellow); background:rgba(0,0,0,0.8); padding:8px 16px; border-radius:4px; margin-bottom:20px; display:inline-block; border:1px solid var(--yellow);">
-            > ALLOW AUTO-FOCUS BEFORE TAP <
+            <span id="camera-hint">CENTER LABEL & TAP TO CAPTURE</span>
         </div><br>
         <button class="shutter" id="shutter" onclick="capture()"></button>
     </div>
     <div class="processing" id="processing">
         <div class="spinner"></div>
-        <div class="process-text">ANALYZING...</div>
+        <div class="process-text">ANALYZING IMAGE...</div>
     </div>
 </div>
 
 <div class="modal" id="modal">
     <div class="modal-content">
         <div class="modal-header">
-            <div class="modal-title">ASSET_DATA</div>
+            <div class="modal-title">ASSET DATA</div>
             <button class="camera-close" onclick="closeModal()">✕</button>
         </div>
         
         <div class="form-group">
             <label class="form-label">Physical State</label>
             <select id="f-status" class="form-input" onchange="updateStockOptions()">
-                <option value="storage">Storage (Opened Spool)</option>
-                <option value="inventory">Inventory (Unopened Box)</option>
+                <option value="storage">Opened Spool</option>
+                <option value="inventory">Unopened Box</option>
             </select>
         </div>
 
         <div class="form-group">
-            <label class="form-label">Asset Tag (Serial)</label>
+            <label class="form-label">Asset ID</label>
             <input type="text" id="f-id" class="form-input" readonly>
         </div>
 
         <div class="form-group">
-            <label class="form-label">Manufacturer</label>
+            <label class="form-label">Manufacturer / Brand</label>
             <input type="text" id="f-brand" class="form-input">
         </div>
 
@@ -241,12 +282,12 @@
         </div>
 
         <div class="form-group">
-            <label class="form-label">Color Profile</label>
+            <label class="form-label">Color</label>
             <input type="text" id="f-color" class="form-input">
         </div>
 
         <div class="form-group">
-            <label class="form-label">Volume Remaining</label>
+            <label class="form-label">Remaining %</label>
             <select id="f-qty" class="form-input">
                 <option value="100">100%</option>
                 <option value="90">90%</option>
@@ -262,23 +303,34 @@
             </select>
         </div>
 
-        <button class="btn-main" style="width:100%; margin-top:16px;" onclick="saveItem()">WRITE_TO_DB</button>
+        <button class="btn-main" style="width:100%; margin-top:16px;" onclick="saveItem()">SAVE TO DATABASE</button>
     </div>
 </div>
 
-<div class="modal" id="empty-modal">
+<div class="modal" id="users-modal">
     <div class="modal-content">
         <div class="modal-header">
-            <div class="modal-title">EMPTY_SPOOL</div>
-            <button class="camera-close" onclick="closeEmptyModal()">✕</button>
+            <div class="modal-title">ACTIVE USERS</div>
+            <button class="camera-close" onclick="closeUsersModal()">✕</button>
+        </div>
+        
+        <div class="user-list" id="user-list"></div>
+    </div>
+</div>
+
+<div class="modal" id="delete-modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <div class="modal-title">DELETE ASSET</div>
+            <button class="camera-close" onclick="closeDeleteModal()">✕</button>
         </div>
         
         <div class="form-group">
-            <label class="form-label">Enter Asset ID</label>
-            <input type="text" id="empty-id" class="form-input" placeholder="Asset ID to mark empty...">
+            <label class="form-label">Select asset to delete</label>
+            <input type="text" class="search-input" id="delete-search" placeholder="> search..." style="margin-bottom: 16px;" onkeyup="renderDeleteList()">
         </div>
 
-        <button class="btn-main" style="width:100%;" onclick="confirmEmpty()">MARK_EMPTY</button>
+        <div class="delete-list" id="delete-list"></div>
     </div>
 </div>
 
@@ -303,6 +355,7 @@
     let currentTab = 'storage';
     let currentScanMode = 'scan';
     let stream = null;
+    let userSessions = {};
 
     const allowedUsers = ["benjamin", "christian", "rahul"];
 
@@ -316,14 +369,34 @@
 
         activeUser = inputId.charAt(0).toUpperCase() + inputId.slice(1).toLowerCase();
         localStorage.setItem('activeUser', activeUser);
+        
+        // Log user session
+        db.ref('sessions/' + activeUser).set({
+            name: activeUser,
+            loginTime: Date.now(),
+            lastActive: Date.now()
+        });
+        
+        // Update last active every minute
+        setInterval(() => {
+            if (activeUser) {
+                db.ref('sessions/' + activeUser).update({
+                    lastActive: Date.now()
+                });
+            }
+        }, 60000);
+        
         document.getElementById('login-screen').classList.add('hidden');
         document.getElementById('main-app').style.display = 'block';
         document.getElementById('action-bar').style.display = 'flex';
-        document.getElementById('user-name').textContent = activeUser;
         syncData();
+        syncSessions();
     }
 
     function logout() {
+        if (activeUser) {
+            db.ref('sessions/' + activeUser).remove();
+        }
         localStorage.removeItem('activeUser');
         location.reload();
     }
@@ -332,7 +405,7 @@
         const k = prompt("Enter Groq API Key:", localStorage.getItem('groqKey') || "");
         if(k) {
             localStorage.setItem('groqKey', k);
-            showToast('API_KEY_SAVED', '');
+            showToast('API KEY SAVED', '');
         }
     }
 
@@ -345,9 +418,58 @@
         });
     }
 
+    function syncSessions() {
+        db.ref('sessions').on('value', (snapshot) => {
+            const data = snapshot.val();
+            userSessions = data || {};
+            updateUserCount();
+        });
+    }
+
+    function updateUserCount() {
+        const count = Object.keys(userSessions).length;
+        document.getElementById('user-count').textContent = count;
+    }
+
+    function showUsers() {
+        const list = document.getElementById('user-list');
+        list.innerHTML = '';
+        
+        const sortedUsers = Object.values(userSessions).sort((a, b) => (b.lastActive || 0) - (a.lastActive || 0));
+        
+        if (sortedUsers.length === 0) {
+            list.innerHTML = '<div class="empty-state">NO ACTIVE USERS</div>';
+        } else {
+            sortedUsers.forEach(user => {
+                const isYou = user.name === activeUser;
+                const timeDiff = Date.now() - (user.lastActive || 0);
+                const minutes = Math.floor(timeDiff / 60000);
+                const timeText = minutes < 1 ? 'Just now' : `${minutes}m ago`;
+                
+                list.innerHTML += `
+                    <div class="user-item">
+                        <div class="user-item-info">
+                            <div class="user-item-name">${user.name}</div>
+                            <div class="user-item-time">Last active: ${timeText}</div>
+                        </div>
+                        <div class="user-badge ${isYou ? 'you' : ''}">
+                            ${isYou ? 'YOU' : 'ACTIVE'}
+                        </div>
+                    </div>
+                `;
+            });
+        }
+        
+        document.getElementById('users-modal').classList.add('open');
+    }
+
+    function closeUsersModal() {
+        document.getElementById('users-modal').classList.remove('open');
+    }
+
     function updateStats() {
         const total = inventory.length;
-        const empty = inventory.filter(i => i.qty === 0 || i.qty === '0').length;
+        const empty = inventory.filter(i => (i.qty === 0 || i.qty === '0') && i.status === 'storage').length;
         document.getElementById('total').textContent = total;
         document.getElementById('low-stock').textContent = empty;
     }
@@ -370,7 +492,7 @@
         }
 
         if (!filtered.length) {
-            container.innerHTML = '<div class="empty-state">NO_ASSETS_FOUND</div>';
+            container.innerHTML = '<div class="empty-state">NO ASSETS FOUND</div>';
             return;
         }
 
@@ -397,7 +519,7 @@
     function setTab(tab) {
         currentTab = tab;
         document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-        event.target.classList.add('active');
+        document.getElementById('tab-' + tab).classList.add('active');
         renderInventory();
     }
 
@@ -413,8 +535,60 @@
     }
 
     function deleteItem(id) {
-        if (confirm(`DELETE_ASSET: ${id}?`)) {
+        if (confirm(`DELETE ASSET: ${id}?`)) {
             db.ref('inventory/' + id).remove();
+            showToast('ASSET DELETED', '');
+        }
+    }
+
+    function openDeleteDialog() {
+        renderDeleteList();
+        document.getElementById('delete-modal').classList.add('open');
+    }
+
+    function closeDeleteModal() {
+        document.getElementById('delete-modal').classList.remove('open');
+        document.getElementById('delete-search').value = '';
+    }
+
+    function renderDeleteList() {
+        const list = document.getElementById('delete-list');
+        const search = document.getElementById('delete-search').value.toLowerCase();
+        list.innerHTML = '';
+
+        let filtered = inventory;
+        if (search) {
+            filtered = filtered.filter(i =>
+                String(i.id).toLowerCase().includes(search) ||
+                String(i.brand).toLowerCase().includes(search) ||
+                String(i.color).toLowerCase().includes(search)
+            );
+        }
+
+        if (!filtered.length) {
+            list.innerHTML = '<div class="empty-state">NO ASSETS FOUND</div>';
+            return;
+        }
+
+        filtered.forEach(item => {
+            const isBox = item.status === 'inventory';
+            list.innerHTML += `
+                <div class="delete-item" onclick="confirmDelete('${item.id}')">
+                    <div class="delete-item-info">
+                        <div class="delete-item-id">${item.id}</div>
+                        <div class="delete-item-desc">${item.brand || 'UNKNOWN'} • ${item.type || ''} • ${item.color || 'N/A'} • ${item.qty}%</div>
+                    </div>
+                    <div class="delete-icon">🗑️</div>
+                </div>
+            `;
+        });
+    }
+
+    function confirmDelete(id) {
+        if (confirm(`DELETE ASSET: ${id}?`)) {
+            db.ref('inventory/' + id).remove();
+            showToast('ASSET DELETED', '');
+            closeDeleteModal();
         }
     }
 
@@ -425,12 +599,26 @@
         if (status === 'inventory') {
             qtySelect.innerHTML = '<option value="100">100%</option>';
             qtySelect.value = '100';
+        } else {
+            qtySelect.innerHTML = `
+                <option value="100">100%</option>
+                <option value="90">90%</option>
+                <option value="80">80%</option>
+                <option value="70">70%</option>
+                <option value="60">60%</option>
+                <option value="50">50%</option>
+                <option value="40">40%</option>
+                <option value="30">30%</option>
+                <option value="20">20%</option>
+                <option value="10">10%</option>
+                <option value="0">0% (Empty)</option>
+            `;
         }
     }
 
     function saveItem() {
         const id = document.getElementById('f-id').value.toUpperCase();
-        if (!id) return showToast('ERROR: INVALID_ID', 'error');
+        if (!id) return showToast('ERROR: INVALID ID', 'error');
 
         db.ref('inventory/' + id).set({
             id: id,
@@ -443,32 +631,11 @@
             timestamp: Date.now()
         });
         closeModal();
-        showToast('ASSET_SAVED', '');
+        showToast('ASSET SAVED', '');
     }
 
     function closeModal() {
         document.getElementById('modal').classList.remove('open');
-    }
-
-    function emptySpoolDialog() {
-        document.getElementById('empty-modal').classList.add('open');
-    }
-
-    function closeEmptyModal() {
-        document.getElementById('empty-modal').classList.remove('open');
-    }
-
-    function confirmEmpty() {
-        const id = document.getElementById('empty-id').value.trim().toUpperCase();
-        if (!id) return showToast('ERROR: ENTER_ID', 'error');
-        
-        const item = inventory.find(i => String(i.id).toUpperCase() === id);
-        if (!item) return showToast('ERROR: ASSET_NOT_FOUND', 'error');
-        
-        db.ref('inventory/' + item.id).update({ qty: 0 });
-        closeEmptyModal();
-        document.getElementById('empty-id').value = '';
-        showToast('MARKED_EMPTY', '');
     }
 
     async function openCamera(mode) {
@@ -477,24 +644,29 @@
         
         const badge = document.getElementById('cam-badge');
         const shutter = document.getElementById('shutter');
+        const hint = document.getElementById('camera-hint');
         
-        if (mode === 'delete') {
-            badge.textContent = 'DELETE_MODE';
-            badge.classList.add('delete');
-            shutter.classList.add('delete');
-        } else {
-            badge.textContent = 'SCANNER_ACTIVE';
+        if (mode === 'empty') {
+            badge.textContent = 'EMPTY SPOOL MODE';
+            badge.classList.add('empty');
             badge.classList.remove('delete');
+            shutter.classList.add('empty');
             shutter.classList.remove('delete');
+            hint.textContent = 'SCAN SPOOL TO MARK EMPTY';
+        } else {
+            badge.textContent = 'SCANNER ACTIVE';
+            badge.classList.remove('delete', 'empty');
+            shutter.classList.remove('delete', 'empty');
+            hint.textContent = 'CENTER LABEL & TAP TO CAPTURE';
         }
 
         try {
             stream = await navigator.mediaDevices.getUserMedia({ 
-                video: { facingMode: 'environment', width: { ideal: 1280 } } 
+                video: { facingMode: 'environment', width: { ideal: 1920 }, height: { ideal: 1080 } } 
             });
             document.getElementById('video').srcObject = stream;
         } catch(e) {
-            showToast('ERROR: CAMERA_ACCESS', 'error');
+            showToast('ERROR: CAMERA ACCESS', 'error');
         }
     }
 
@@ -506,22 +678,38 @@
 
     async function capture() {
         const GROQ_KEY = localStorage.getItem('groqKey');
-        if(!GROQ_KEY) return showToast('ERROR: SET_API_KEY', 'error');
+        if(!GROQ_KEY) return showToast('ERROR: SET API KEY FIRST', 'error');
 
         document.getElementById('processing').classList.add('active');
         const vid = document.getElementById('video');
         const canvas = document.getElementById('canvas');
 
-        const scale = Math.min(1, 800 / vid.videoWidth);
+        const scale = Math.min(1, 1200 / vid.videoWidth);
         canvas.width = vid.videoWidth * scale;
         canvas.height = vid.videoHeight * scale;
         canvas.getContext('2d').drawImage(vid, 0, 0, canvas.width, canvas.height);
-        let base64 = canvas.toDataURL('image/jpeg', 0.8);
+        let base64 = canvas.toDataURL('image/jpeg', 0.85);
 
         try {
-            const prompt = currentScanMode === 'delete' 
-                ? `Find the asset ID/serial visible. Return: {"id":"..."}`
-                : `Detect SPOOL or BOX. If SPOOL: extract serial (000M123456789), type, color. If BOX: extract barcode, type, color. Return: {"type":"spool"|"box", "id":"...", "type":"PLA|ABS|PETG|etc", "color":"...", "brand":"..."}`;
+            let prompt = '';
+            
+            if (currentScanMode === 'empty') {
+                prompt = `Find the spool ID/serial number visible in this image. Look for alphanumeric codes on the spool label. Return ONLY valid JSON: {"id":"THE_SERIAL_NUMBER"}`;
+            } else {
+                prompt = `Analyze this image and determine:
+1. Is this an OPENED SPOOL or an UNOPENED BOX?
+   - SPOOL: Look for visible filament wound on a spool, exposed filament, or a spool with a partially used roll
+   - BOX: Look for sealed packaging, unopened cardboard box with filament inside, or factory-sealed packaging
+
+2. Extract information based on type:
+   - For SPOOL: Find the serial number (often format like 000M123456789 or similar alphanumeric code on the label), material type (PLA/ABS/PETG/etc), color name, and brand name
+   - For BOX: Find and READ THE BARCODE NUMBER precisely (the number printed below/beside the barcode, NOT text from other parts of label), material type, color, and brand
+
+Return ONLY valid JSON in this exact format:
+{"type":"spool" or "box", "id":"SERIAL_OR_BARCODE", "material":"PLA|ABS|PETG|etc", "color":"color name", "brand":"brand name"}
+
+CRITICAL for boxes: The "id" must be the BARCODE NUMBER (the digits), not any other text. Focus on reading the barcode accurately.`;
+            }
 
             const res = await fetch("https://api.groq.com/openai/v1/chat/completions", {
                 method: 'POST',
@@ -538,11 +726,12 @@
                             { type: "image_url", image_url: { url: base64 } }
                         ]
                     }],
-                    temperature: 0.1
+                    temperature: 0.1,
+                    max_tokens: 500
                 })
             });
 
-            if (!res.ok) throw new Error('API Error');
+            if (!res.ok) throw new Error('API ERROR');
 
             const data = await res.json();
             const content = data.choices[0].message.content;
@@ -555,15 +744,15 @@
                 if (match) result = JSON.parse(match[0]);
             }
 
-            if (!result || !result.id) throw new Error('ID_NOT_FOUND');
+            if (!result || !result.id) throw new Error('ID NOT FOUND');
 
-            if (currentScanMode === 'delete') {
+            if (currentScanMode === 'empty') {
                 const item = inventory.find(i => String(i.id).toUpperCase() === String(result.id).toUpperCase());
                 if (item) {
-                    db.ref('inventory/' + item.id).remove();
-                    showToast('ASSET_DELETED', '');
+                    db.ref('inventory/' + item.id).update({ qty: 0 });
+                    showToast('SPOOL MARKED EMPTY', '');
                 } else {
-                    showToast('ASSET_NOT_IN_DB', 'error');
+                    showToast('ASSET NOT IN DATABASE', 'error');
                 }
                 closeCamera();
                 return;
@@ -576,12 +765,15 @@
                 return;
             }
 
+            // Determine status based on detected type
+            const status = result.type === 'box' ? 'inventory' : 'storage';
+
             document.getElementById('f-id').value = result.id;
             document.getElementById('f-brand').value = result.brand || '';
-            document.getElementById('f-material').value = result.type || '';
+            document.getElementById('f-material').value = result.material || result.type || '';
             document.getElementById('f-color').value = result.color || '';
-            document.getElementById('f-status').value = result.type === 'spool' ? 'storage' : 'inventory';
-            document.getElementById('f-qty').value = result.type === 'spool' ? '100' : '100';
+            document.getElementById('f-status').value = status;
+            document.getElementById('f-qty').value = '100';
             updateStockOptions();
             closeCamera();
             document.getElementById('modal').classList.add('open');
@@ -598,15 +790,30 @@
         toast.textContent = msg;
         toast.className = 'toast' + (type === 'error' ? ' error' : '');
         toast.style.display = 'block';
-        setTimeout(() => { toast.style.display = 'none'; }, 2000);
+        setTimeout(() => { toast.style.display = 'none'; }, 3000);
     }
 
     if(activeUser) {
+        // Re-login to update session
+        db.ref('sessions/' + activeUser).set({
+            name: activeUser,
+            loginTime: Date.now(),
+            lastActive: Date.now()
+        });
+        
+        setInterval(() => {
+            if (activeUser) {
+                db.ref('sessions/' + activeUser).update({
+                    lastActive: Date.now()
+                });
+            }
+        }, 60000);
+        
         document.getElementById('login-screen').classList.add('hidden');
         document.getElementById('main-app').style.display = 'block';
         document.getElementById('action-bar').style.display = 'flex';
-        document.getElementById('user-name').textContent = activeUser;
         syncData();
+        syncSessions();
     }
 </script>
 </body>
