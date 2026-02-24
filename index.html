@@ -347,7 +347,7 @@
             <label class="form-label">Asset ID</label>
             <input type="text" id="f-id" class="form-input" readonly>
         </div>
-
+        
         <div class="form-group" id="box-qty-group" style="display:none; background: #1f1f1f; padding: 10px; border-radius: 4px; border: 1px dashed #333;">
             <label class="form-label" style="color: #00FF88;">📦 Box Quantity</label>
             <div style="display:flex; gap:10px; align-items:center;">
@@ -755,13 +755,13 @@
         const boxQtyGroup = document.getElementById('box-qty-group');
         
         if (status === 'inventory') {
-            // BOX MODE: Show Quantity
+            // BOX MODE: Show Quantity field and hide 1-100% select
             qtySelect.innerHTML = '<option value="100">100%</option>';
             qtySelect.value = '100';
             qtySelect.disabled = true;
             if(boxQtyGroup) boxQtyGroup.style.display = 'block';
         } else {
-            // SPOOL MODE: Hide Quantity
+            // SPOOL MODE: Hide Quantity field and show 1-100% select
             qtySelect.disabled = false;
             if(boxQtyGroup) boxQtyGroup.style.display = 'none';
 
@@ -791,7 +791,7 @@
         const color = document.getElementById('f-color').value;
         const qty = parseInt(document.getElementById('f-qty').value);
         
-        // BATCH SAVE LOGIC
+        // BATCH SAVE LOGIC (For Boxes Only)
         if (status === 'inventory') {
             const boxCountInput = document.getElementById('f-box-count');
             const boxCount = boxCountInput ? (parseInt(boxCountInput.value) || 1) : 1;
@@ -868,9 +868,8 @@
             });
             document.getElementById('video').srcObject = stream;
             
-            if (!barcodeReader) {
-                barcodeReader = new ZXing.BrowserMultiFormatReader();
-            }
+            // Note: We don't init the reader here anymore to save resources. 
+            // We init it only when scanQRCode or startBarcodeScanning is called.
         } catch(e) {
             showToast('ERROR: CAMERA ACCESS', 'error');
         }
@@ -892,9 +891,10 @@
         detectedItemData = null;
     }
 
-    // --- NEW FIXED & SEPARATED SCANNER FUNCTIONS ---
+    // --- OPTIMIZED SCANNER FUNCTIONS ---
 
     function scanQRCode() {
+        // SPOOL MODE: Force the scanner to ONLY look for QR codes.
         document.getElementById('qr-prompt').classList.remove('active');
         document.getElementById('barcode-scanner').classList.add('active');
         document.getElementById('scanner-hint').textContent = 'SCANNING QR CODE (SPOOL)...';
@@ -906,21 +906,25 @@
         if (!barcodeReader) {
             barcodeReader = new ZXing.BrowserMultiFormatReader();
         }
+        
+        // This hint forces ZXing to ignore 1D barcodes, speeding up QR detection
+        const hints = new Map();
+        hints.set(ZXing.DecodeHintType.POSSIBLE_FORMATS, [
+            ZXing.BarcodeFormat.QR_CODE, 
+            ZXing.BarcodeFormat.DATA_MATRIX
+        ]);
 
-        // Only look for QR
+        barcodeReader.hints = hints;
+
         barcodeReader.decodeFromVideoDevice(null, 'video', (result, err) => {
             if (result && isScanning) {
-                // FILTER: Only allow QR (Format 11) or DataMatrix (5)
-                // Ignore 1D barcodes on spools
-                if (result.format !== 11 && result.format !== 5) return;
-
                 isScanning = false; 
                 barcodeReader.reset();
                 
                 const qrData = result.text;
                 document.getElementById('barcode-result').textContent = `QR: ${qrData}`;
                 
-                // SPOOL DUPLICATE CHECK (STRICT)
+                // SPOOL DUPLICATE CHECK (Strict: If ID exists, stop.)
                 const normalizedId = String(qrData).toUpperCase();
                 const exists = inventory.find(i => String(i.id).toUpperCase() === normalizedId);
                 
@@ -953,6 +957,8 @@
     }
 
     function startBarcodeScanning(itemData) {
+        // BOX MODE: Force the scanner to ONLY look for Barcodes (Stripes).
+        // This physically prevents it from seeing the QR code on the box.
         detectedItemData = itemData;
         isScanning = true;
         
@@ -965,19 +971,28 @@
             barcodeReader = new ZXing.BrowserMultiFormatReader();
         }
         
-        // Only look for Barcodes
+        // STRICT FILTER: Only accept linear barcodes (Code128, EAN, UPC)
+        const hints = new Map();
+        hints.set(ZXing.DecodeHintType.POSSIBLE_FORMATS, [
+            ZXing.BarcodeFormat.CODE_128,
+            ZXing.BarcodeFormat.EAN_13,
+            ZXing.BarcodeFormat.EAN_8,
+            ZXing.BarcodeFormat.UPC_A,
+            ZXing.BarcodeFormat.UPC_E,
+            ZXing.BarcodeFormat.CODE_39
+        ]);
+        
+        barcodeReader.hints = hints;
+        
         barcodeReader.decodeFromVideoDevice(null, 'video', (result, err) => {
             if (result && isScanning) {
-                // FILTER: Ignore QR codes on boxes
-                if (result.format === 11 || result.format === 5) return;
-
                 isScanning = false;
                 barcodeReader.reset();
                 
                 const barcode = result.text;
                 document.getElementById('barcode-result').textContent = `BARCODE: ${barcode}`;
                 
-                // BOX MODE: ALLOW DUPLICATES
+                // BOX MODE: Pass through to allow duplicates/batching
                 setTimeout(() => {
                     proceedWithData(barcode, itemData);
                 }, 200);
@@ -988,8 +1003,7 @@
     function proceedWithData(id, itemData) {
         const normalizedId = String(id).toUpperCase();
         
-        // CHECK DUPLICATES:
-        // Only block if it is a SPOOL (storage). Allow matches for BOXES (inventory).
+        // CHECK DUPLICATES: Only if it's a SPOOL.
         if (itemData.status === 'storage') {
             const exists = inventory.find(i => String(i.id).toUpperCase() === normalizedId);
             if (exists) {
@@ -1000,7 +1014,7 @@
             }
         }
 
-        // Fill Data
+        // Fill form
         document.getElementById('f-id').value = normalizedId;
         document.getElementById('f-brand').value = itemData.brand || '';
         document.getElementById('f-material').value = itemData.material || '';
@@ -1036,16 +1050,14 @@
             if (currentScanMode === 'empty') {
                 prompt = `Extract the spool serial number from this image. Return JSON: {"id":"SERIAL"}`;
             } else {
-                prompt = `Analyze this filament label image VERY CAREFULLY. 
-
-Determine:
-1. Type: "spool" (opened/partial roll) OR "box" (sealed/unopened package)
-2. Unique serial: Look for LONG codes (10+ chars). Ignore SHORT barcodes.
+                prompt = `Analyze this filament label image.
+1. Type: "spool" (opened) OR "box" (sealed)
+2. Unique serial: Look for LONG codes. Ignore 8-9 digit barcodes.
 3. Material: PLA/PETG/ABS/ASA/TPU/NYLON
-4. Color name
-5. Brand name
+4. Color
+5. Brand
 
-Return ONLY valid JSON:
+Return ONLY JSON:
 {"type":"spool/box","has_unique_serial":true/false,"id":"SERIAL","material":"TYPE","color":"COLOR","brand":"BRAND"}`;
             }
 
@@ -1114,10 +1126,10 @@ Return ONLY valid JSON:
             };
 
             if (isBox) {
-                // BOX -> Scan Barcode (Batch mode)
+                // BOX FOUND -> Scan Barcode Only
                 startBarcodeScanning(itemData);
             } else {
-                // SPOOL -> Scan QR (Strict mode)
+                // SPOOL FOUND -> Scan QR Only
                 if (result.has_unique_serial && result.id) {
                     const normalizedId = String(result.id).toUpperCase();
                     const exists = inventory.find(i => String(i.id).toUpperCase() === normalizedId);
