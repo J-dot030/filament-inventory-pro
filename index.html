@@ -38,7 +38,9 @@
         header { background: var(--surface); border-bottom: 2px solid var(--yellow); padding: 16px 20px; position: sticky; top: 0; z-index: 100; box-shadow: 0 4px 20px rgba(255, 215, 0, 0.1); }
         .header-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
         .logo-container { display: flex; align-items: center; gap: 12px; }
-        .logo-icon { width: 36px; height: 36px; background: linear-gradient(135deg, var(--yellow) 0%, #FFA500 100%); border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 20px; box-shadow: 0 0 20px rgba(255, 215, 0, 0.3); }
+        .logo-icon { width: 36px; height: 36px; background: linear-gradient(135deg, var(--yellow) 0%, #FFA500 100%); border-radius: 8px; display: flex; align-items: center; justify-content: center; box-shadow: 0 0 20px rgba(255, 215, 0, 0.3); position: relative; overflow: hidden; }
+        .logo-icon::before { content: ''; position: absolute; inset: 0; background: linear-gradient(45deg, transparent 30%, rgba(255,255,255,0.3) 50%, transparent 70%); }
+        .logo-icon svg { width: 22px; height: 22px; position: relative; z-index: 1; }
         .logo-text { font-family: 'JetBrains Mono', monospace; font-size: 18px; font-weight: 800; color: var(--yellow); letter-spacing: 0.5px; }
         .logo-subtext { font-size: 9px; color: var(--text-dim); font-weight: 600; letter-spacing: 2px; margin-top: -2px; }
         .sync-status { display: flex; align-items: center; gap: 6px; font-size: 11px; color: var(--green); font-weight: 700; font-family: 'JetBrains Mono', monospace; }
@@ -137,6 +139,21 @@
         
         .empty-state { text-align: center; padding: 40px 20px; color: var(--text-dim); }
         
+        .category-grid { padding: 0 20px; display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 12px; margin-bottom: 24px; }
+        .category-card { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 16px; cursor: pointer; transition: 0.2s; position: relative; overflow: hidden; }
+        .category-card:hover { border-color: var(--yellow); transform: translateY(-2px); box-shadow: 0 4px 12px rgba(255, 215, 0, 0.2); }
+        .category-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px; background: var(--yellow); }
+        .category-type { font-family: 'JetBrains Mono', monospace; font-size: 13px; font-weight: 800; color: var(--yellow); margin-bottom: 4px; }
+        .category-color { font-size: 12px; color: var(--text); font-weight: 600; margin-bottom: 8px; }
+        .category-count { font-family: 'JetBrains Mono', monospace; font-size: 20px; font-weight: 800; color: var(--text); }
+        .category-label { font-size: 9px; color: var(--text-dim); text-transform: uppercase; letter-spacing: 1px; }
+        
+        .back-btn { background: var(--surface); border: 1px solid var(--border); color: var(--text-dim); padding: 10px 16px; border-radius: 6px; font-size: 12px; font-weight: 700; cursor: pointer; margin: 0 20px 16px 20px; display: inline-flex; align-items: center; gap: 8px; font-family: 'JetBrains Mono', monospace; }
+        .back-btn:hover { border-color: var(--yellow); color: var(--yellow); }
+        
+        .inventory.detail-view .item { grid-template-columns: 100px 1fr auto; }
+        .inventory.detail-view .item-qty { display: none; }
+        
         .user-list { max-height: 300px; overflow-y: auto; }
         .user-item { background: var(--surface-hover); border: 1px solid var(--border); border-radius: 6px; padding: 12px 16px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; }
         .user-item-info { display: flex; flex-direction: column; }
@@ -159,7 +176,14 @@
 <div class="login-screen" id="login-screen">
     <div class="login-box">
         <div class="login-logo-big">
-            <div class="login-logo-icon">🎯</div>
+            <div class="login-logo-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="#0a0a0a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 38px; height: 38px;">
+                    <circle cx="12" cy="12" r="9"/>
+                    <path d="M12 3v18"/>
+                    <path d="M3 12h18"/>
+                    <circle cx="12" cy="12" r="3" fill="#0a0a0a"/>
+                </svg>
+            </div>
             <div class="login-logo-text">SpoolVault</div>
             <div class="login-logo-sub">INVENTORY SYSTEM</div>
         </div>
@@ -175,7 +199,14 @@
     <header>
         <div class="header-row">
             <div class="logo-container">
-                <div class="logo-icon">🎯</div>
+                <div class="logo-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="#0a0a0a" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="9"/>
+                        <path d="M12 3v18"/>
+                        <path d="M3 12h18"/>
+                        <circle cx="12" cy="12" r="3" fill="#0a0a0a"/>
+                    </svg>
+                </div>
                 <div>
                     <div class="logo-text">SpoolVault</div>
                     <div class="logo-subtext">INVENTORY SYSTEM</div>
@@ -208,14 +239,21 @@
 
     <div class="tabs">
         <div class="tab active" id="tab-storage" onclick="setTab('storage')">Opened Spools</div>
-        <div class="tab" id="tab-inventory" onclick="setTab('inventory')">Unopened Boxes</div>
+        <div class="tab" id="tab-inventory" onclick="setTab('inventory')">Inventory</div>
     </div>
 
     <div class="search">
         <input type="text" class="search-input" id="search" placeholder="> search by ID, brand, color..." onkeyup="renderInventory()">
     </div>
 
-    <div class="inventory" id="inventory"></div>
+    <div id="category-view">
+        <div class="category-grid" id="categories"></div>
+    </div>
+
+    <div id="detail-view" style="display: none;">
+        <button class="back-btn" onclick="showCategories()">← BACK TO CATEGORIES</button>
+        <div class="inventory detail-view" id="inventory"></div>
+    </div>
 </div>
 
 <div class="actions" id="action-bar" style="display: none;">
@@ -474,8 +512,18 @@
         document.getElementById('low-stock').textContent = empty;
     }
 
+    let currentCategory = null;
+
     function renderInventory() {
-        const container = document.getElementById('inventory');
+        if (currentCategory) {
+            renderDetailView();
+        } else {
+            renderCategories();
+        }
+    }
+
+    function renderCategories() {
+        const container = document.getElementById('categories');
         const search = document.getElementById('search').value.toLowerCase();
         container.innerHTML = '';
 
@@ -487,9 +535,70 @@
             filtered = filtered.filter(i =>
                 String(i.id).toLowerCase().includes(search) ||
                 String(i.brand).toLowerCase().includes(search) ||
-                String(i.color).toLowerCase().includes(search)
+                String(i.color).toLowerCase().includes(search) ||
+                String(i.type).toLowerCase().includes(search)
             );
         }
+
+        // Group by type and color
+        const groups = {};
+        filtered.forEach(item => {
+            const type = item.type || 'UNKNOWN';
+            const color = item.color || 'N/A';
+            const key = `${type}|${color}`;
+            if (!groups[key]) {
+                groups[key] = { type, color, items: [] };
+            }
+            groups[key].items.push(item);
+        });
+
+        if (Object.keys(groups).length === 0) {
+            container.innerHTML = '<div class="empty-state" style="grid-column: 1/-1;">NO ASSETS FOUND</div>';
+            return;
+        }
+
+        // Sort by type, then color
+        const sorted = Object.values(groups).sort((a, b) => {
+            if (a.type !== b.type) return a.type.localeCompare(b.type);
+            return a.color.localeCompare(b.color);
+        });
+
+        sorted.forEach(group => {
+            const html = `
+                <div class="category-card" onclick='showCategory("${group.type}", "${group.color}")'>
+                    <div class="category-type">${group.type}</div>
+                    <div class="category-color">${group.color}</div>
+                    <div class="category-count">${group.items.length}</div>
+                    <div class="category-label">ITEMS</div>
+                </div>
+            `;
+            container.innerHTML += html;
+        });
+    }
+
+    function showCategory(type, color) {
+        currentCategory = { type, color };
+        document.getElementById('category-view').style.display = 'none';
+        document.getElementById('detail-view').style.display = 'block';
+        renderDetailView();
+    }
+
+    function showCategories() {
+        currentCategory = null;
+        document.getElementById('category-view').style.display = 'block';
+        document.getElementById('detail-view').style.display = 'none';
+        renderCategories();
+    }
+
+    function renderDetailView() {
+        const container = document.getElementById('inventory');
+        container.innerHTML = '';
+
+        let filtered = inventory.filter(i => {
+            const matchTab = currentTab === 'storage' ? i.status === 'storage' : i.status === 'inventory';
+            const matchCategory = i.type === currentCategory.type && i.color === currentCategory.color;
+            return matchTab && matchCategory;
+        });
 
         if (!filtered.length) {
             container.innerHTML = '<div class="empty-state">NO ASSETS FOUND</div>';
@@ -503,12 +612,10 @@
                     <div class="item-id">${item.id}</div>
                     <div class="item-info">
                         <div class="item-brand">${item.brand || 'UNKNOWN'}</div>
-                        <div class="item-meta">${item.type || ''} • ${item.color || 'N/A'}</div>
+                        <div class="item-meta">${item.type || ''} • ${item.color || 'N/A'} • ${item.qty}%</div>
                     </div>
-                    <div class="item-qty">${item.qty}%</div>
                     <div class="item-actions">
                         <button class="action-btn" onclick='editItem(${JSON.stringify(item)})'>✏️</button>
-                        <button class="action-btn delete" onclick="deleteItem('${item.id}')">🗑️</button>
                     </div>
                 </div>
             `;
@@ -518,8 +625,11 @@
 
     function setTab(tab) {
         currentTab = tab;
+        currentCategory = null;
         document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
         document.getElementById('tab-' + tab).classList.add('active');
+        document.getElementById('category-view').style.display = 'block';
+        document.getElementById('detail-view').style.display = 'none';
         renderInventory();
     }
 
@@ -532,13 +642,6 @@
         document.getElementById('f-qty').value = item.qty || 100;
         updateStockOptions();
         document.getElementById('modal').classList.add('open');
-    }
-
-    function deleteItem(id) {
-        if (confirm(`DELETE ASSET: ${id}?`)) {
-            db.ref('inventory/' + id).remove();
-            showToast('ASSET DELETED', '');
-        }
     }
 
     function openDeleteDialog() {
@@ -749,8 +852,8 @@ CRITICAL for boxes: The "id" must be the BARCODE NUMBER (the digits), not any ot
             if (currentScanMode === 'empty') {
                 const item = inventory.find(i => String(i.id).toUpperCase() === String(result.id).toUpperCase());
                 if (item) {
-                    db.ref('inventory/' + item.id).update({ qty: 0 });
-                    showToast('SPOOL MARKED EMPTY', '');
+                    db.ref('inventory/' + item.id).remove();
+                    showToast('SPOOL EMPTIED & REMOVED', '');
                 } else {
                     showToast('ASSET NOT IN DATABASE', 'error');
                 }
