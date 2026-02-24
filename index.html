@@ -1105,10 +1105,6 @@ function normalizeSpoolId(idRaw) {
 
                 document.getElementById('processing-msg').textContent = 'Running safety checks...';
 
-                const data = await res.json();
-                let result;
-                const content = data.choices[0].message.content;
-
              const data = await res.json();
 
 if (!data.choices || !data.choices[0]?.message?.content) {
@@ -1116,12 +1112,7 @@ if (!data.choices || !data.choices[0]?.message?.content) {
 }
 
 // Groq returns an array of content parts; concatenate text segments
-let contentText = "";
-for (const part of data.choices[0].message.content) {
-  if (part.type === "text" && typeof part.text === "string") {
-    contentText += part.text;
-  }
-}
+const contentText = data.choices[0].message.content;
 
 // Try to parse as strict JSON first
 let result = null;
@@ -1151,8 +1142,10 @@ if (typeof result !== "object" || result === null) {
             // THE JAVASCRIPT SAFETY NET – Crucial for Spools
 if (assignedStatus === "storage") {
   // 1) If AI provided rawtextlines, search them for a valid serial
-  if (Array.isArray(result.rawtextlines)) {
-    for (let line of result.rawtextlines) {
+
+    if (Array.isArray(result.raw_text_lines)) {
+    for (let line of result.raw_text_lines) {
+
       if (!line) continue;
       let cleanLine = String(line).toUpperCase().replace(/[^A-Z0-9]/g, "");
       if (cleanLine.length >= 10 && cleanLine.length <= 20 && cleanLine.includes("M")) {
@@ -1177,8 +1170,6 @@ if (assignedStatus === "storage") {
 // FINAL ID after all normalizations
 const cleanExtractedId = finalId;
 
-
-                const cleanExtractedId = finalId;
 
                 if (!cleanExtractedId) {
   alert("SCAN REJECTED – could not read ID cleanly. Try better lighting and hold steady.");
