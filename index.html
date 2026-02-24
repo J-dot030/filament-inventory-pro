@@ -453,7 +453,7 @@
     let detectedItemData = null;
     let isScanning = false;
 
-    // --- YOUR API KEY IS HERE ---
+    // --- YOUR API KEY ---
     const GROQ_KEY = "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";
 
     const allowedUsers = ["benjamin", "christian", "rahul"];
@@ -852,7 +852,7 @@
         }
 
         try {
-            // HIGH RESOLUTION CAMERA REQUEST (4K)
+            // ULTRA HD (4K) REQUEST
             stream = await navigator.mediaDevices.getUserMedia({ 
                 video: { 
                     facingMode: 'environment', 
@@ -887,7 +887,6 @@
     // --- OPTIMIZED SCANNER FUNCTIONS ---
 
     function scanQRCode() {
-        // SPOOL MODE: Force the scanner to ONLY look for QR codes.
         document.getElementById('qr-prompt').classList.remove('active');
         document.getElementById('barcode-scanner').classList.add('active');
         document.getElementById('scanner-hint').textContent = 'SCANNING QR CODE (SPOOL)...';
@@ -900,7 +899,6 @@
             barcodeReader = new ZXing.BrowserMultiFormatReader();
         }
         
-        // This hint forces ZXing to ignore 1D barcodes, speeding up QR detection
         const hints = new Map();
         hints.set(ZXing.DecodeHintType.POSSIBLE_FORMATS, [
             ZXing.BarcodeFormat.QR_CODE, 
@@ -917,7 +915,6 @@
                 const qrData = result.text;
                 document.getElementById('barcode-result').textContent = `QR: ${qrData}`;
                 
-                // SPOOL DUPLICATE CHECK (Strict: If ID exists, stop.)
                 const normalizedId = String(qrData).toUpperCase();
                 const exists = inventory.find(i => String(i.id).toUpperCase() === normalizedId);
                 
@@ -950,8 +947,6 @@
     }
 
     function startBarcodeScanning(itemData) {
-        // BOX MODE: Force the scanner to ONLY look for Barcodes (Stripes).
-        // This physically prevents it from seeing the QR code on the box.
         detectedItemData = itemData;
         isScanning = true;
         
@@ -964,7 +959,6 @@
             barcodeReader = new ZXing.BrowserMultiFormatReader();
         }
         
-        // STRICT FILTER: Only accept linear barcodes (Code128, EAN, UPC)
         const hints = new Map();
         hints.set(ZXing.DecodeHintType.POSSIBLE_FORMATS, [
             ZXing.BarcodeFormat.CODE_128,
@@ -985,7 +979,6 @@
                 const barcode = result.text;
                 document.getElementById('barcode-result').textContent = `BARCODE: ${barcode}`;
                 
-                // BOX MODE: Pass through to allow duplicates/batching
                 setTimeout(() => {
                     proceedWithData(barcode, itemData);
                 }, 200);
@@ -996,7 +989,6 @@
     function proceedWithData(id, itemData) {
         const normalizedId = String(id).toUpperCase();
         
-        // CHECK DUPLICATES: Only if it's a SPOOL.
         if (itemData.status === 'storage') {
             const exists = inventory.find(i => String(i.id).toUpperCase() === normalizedId);
             if (exists) {
@@ -1007,14 +999,12 @@
             }
         }
 
-        // Fill form
         document.getElementById('f-id').value = normalizedId;
         document.getElementById('f-brand').value = itemData.brand || '';
         document.getElementById('f-material').value = itemData.material || '';
         document.getElementById('f-color').value = itemData.color || '';
         document.getElementById('f-status').value = itemData.status || 'storage';
         
-        // Reset box count
         const boxInput = document.getElementById('f-box-count');
         if(boxInput) boxInput.value = '1';
 
@@ -1031,10 +1021,11 @@
         const vid = document.getElementById('video');
         const canvas = document.getElementById('canvas');
 
+        // MAXIMUM RESOLUTION SNAPSHOT
         canvas.width = vid.videoWidth;
         canvas.height = vid.videoHeight;
         canvas.getContext('2d').drawImage(vid, 0, 0, canvas.width, canvas.height);
-        let base64 = canvas.toDataURL('image/jpeg', 0.95);
+        let base64 = canvas.toDataURL('image/jpeg', 1.0); // 100% Quality
 
         try {
             let prompt = '';
@@ -1042,19 +1033,19 @@
             if (currentScanMode === 'empty') {
                 prompt = `Extract the spool serial number from this image. Return JSON: {"id":"SERIAL"}`;
             } else {
-                // REVISED PROMPT: Strict rules to ignore Sunlu/Generic product codes
-                prompt = `Analyze this filament label image.
+                // STRICTEST PROMPT POSSIBLE: IGNORE SHORT CODES
+                prompt = `Analyze this filament label.
 
 1. Type: "spool" (opened) OR "box" (sealed)
 2. Unique serial: 
-   - MUST be a LONG alphanumeric code (12+ characters). 
-   - CRITICAL: Ignore short product codes like "02151018A", "PLA-BLK", or simple barcodes. These are NOT unique serials. 
-   - If you only see a short code (under 12 chars), set has_unique_serial=false.
+   - MUST BE LONG & COMPLEX (12+ characters).
+   - REJECT simple codes like "02151018A" or "1.75mm". These are NOT unique serials.
+   - If you see a short code, assume has_unique_serial=false.
 3. Material: PLA/PETG/ABS/ASA/TPU/NYLON
 4. Color
 5. Brand
 
-Return ONLY JSON:
+Return JSON:
 {"type":"spool/box","has_unique_serial":true/false,"id":"SERIAL","material":"TYPE","color":"COLOR","brand":"BRAND"}`;
             }
 
@@ -1073,7 +1064,7 @@ Return ONLY JSON:
                             { type: "image_url", image_url: { url: base64 } }
                         ]
                     }],
-                    temperature: 0.1,
+                    temperature: 0.0, // Zero temperature for max logic
                     max_tokens: 200
                 })
             });
@@ -1123,11 +1114,9 @@ Return ONLY JSON:
             };
 
             if (isBox) {
-                // BOX FOUND -> Scan Barcode Only
                 startBarcodeScanning(itemData);
             } else {
-                // SPOOL FOUND -> Check Logic
-                // If the ID is too short (likely a model number), fail it so we ask for QR.
+                // STRICT CHECK: IF ID IS SHORT, FORCE QR MODE
                 const idIsTooShort = result.id && result.id.length < 10;
 
                 if (result.has_unique_serial && result.id && !idIsTooShort) {
@@ -1151,7 +1140,7 @@ Return ONLY JSON:
                     closeCamera();
                     document.getElementById('modal').classList.add('open');
                 } else {
-                    // ID is missing OR too short (like 02151018A) -> Ask for QR Sticker
+                    // Fail safely to QR mode if ID is ambiguous
                     detectedItemData = itemData;
                     document.getElementById('processing').classList.remove('active');
                     document.getElementById('qr-prompt').classList.add('active');
