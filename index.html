@@ -833,6 +833,7 @@
         document.getElementById('qr-prompt').classList.remove('active');
         document.getElementById('barcode-scanner').classList.add('active');
         document.getElementById('scanner-hint').textContent = 'SCANNING FOR QR CODE...';
+        document.getElementById('barcode-result').textContent = '';
         
         const video = document.getElementById('video');
         
@@ -845,6 +846,19 @@
                     
                     const qrData = result.text;
                     document.getElementById('barcode-result').textContent = `QR: ${qrData}`;
+                    
+                    // Check for duplicate before proceeding
+                    const normalizedId = String(qrData).toUpperCase();
+                    const exists = inventory.find(i => String(i.id).toUpperCase() === normalizedId);
+                    
+                    if (exists) {
+                        showToast('DUPLICATE: ALREADY EXISTS', 'error');
+                        setTimeout(() => {
+                            closeCamera();
+                            editItem(exists);
+                        }, 1500);
+                        return;
+                    }
                     
                     try {
                         const parsed = JSON.parse(qrData);
@@ -873,6 +887,7 @@
         document.getElementById('processing').classList.remove('active');
         document.getElementById('barcode-scanner').classList.add('active');
         document.getElementById('scanner-hint').textContent = 'SCANNING FOR BARCODE...';
+        document.getElementById('barcode-result').textContent = '';
         
         const video = document.getElementById('video');
         
@@ -886,6 +901,19 @@
                     const barcode = result.text;
                     document.getElementById('barcode-result').textContent = `BARCODE: ${barcode}`;
                     
+                    // Check for duplicate before proceeding
+                    const normalizedId = String(barcode).toUpperCase();
+                    const exists = inventory.find(i => String(i.id).toUpperCase() === normalizedId);
+                    
+                    if (exists) {
+                        showToast('DUPLICATE: ALREADY EXISTS', 'error');
+                        setTimeout(() => {
+                            closeCamera();
+                            editItem(exists);
+                        }, 1500);
+                        return;
+                    }
+                    
                     setTimeout(() => {
                         proceedWithData(barcode, itemData);
                     }, 500);
@@ -897,14 +925,18 @@
     }
 
     function proceedWithData(id, itemData) {
-        const exists = inventory.find(i => String(i.id).toUpperCase() === String(id).toUpperCase());
+        // Final duplicate check with normalized ID
+        const normalizedId = String(id).toUpperCase();
+        const exists = inventory.find(i => String(i.id).toUpperCase() === normalizedId);
+        
         if (exists) {
+            showToast('DUPLICATE: ALREADY EXISTS', 'error');
             closeCamera();
             editItem(exists);
             return;
         }
 
-        document.getElementById('f-id').value = id;
+        document.getElementById('f-id').value = normalizedId;
         document.getElementById('f-brand').value = itemData.brand || '';
         document.getElementById('f-material').value = itemData.material || '';
         document.getElementById('f-color').value = itemData.color || '';
@@ -956,7 +988,7 @@ If only a short barcode exists, set has_unique_serial=false and id=""`;
                     'Content-Type': 'application/json'
                 },
                 body: JSON.stringify({
-                    model: "llama-3.2-90b-vision-preview",
+                    model: "meta-llama/llama-4-scout-17b-16e-instruct",
                     messages: [{
                         role: "user",
                         content: [
@@ -969,7 +1001,10 @@ If only a short barcode exists, set has_unique_serial=false and id=""`;
                 })
             });
 
-            if (!res.ok) throw new Error('API ERROR');
+            if (!res.ok) {
+                const errorData = await res.json();
+                throw new Error(errorData.error?.message || 'API ERROR');
+            }
 
             const data = await res.json();
             const content = data.choices[0].message.content;
@@ -986,7 +1021,8 @@ If only a short barcode exists, set has_unique_serial=false and id=""`;
 
             if (currentScanMode === 'empty') {
                 if (!result.id) throw new Error('ID NOT FOUND');
-                const item = inventory.find(i => String(i.id).toUpperCase() === String(result.id).toUpperCase());
+                const normalizedId = String(result.id).toUpperCase();
+                const item = inventory.find(i => String(i.id).toUpperCase() === normalizedId);
                 if (item) {
                     db.ref('inventory/' + item.id).remove();
                     showToast('SPOOL REMOVED', '');
@@ -1008,17 +1044,24 @@ If only a short barcode exists, set has_unique_serial=false and id=""`;
             };
 
             if (isBox) {
+                // Box detected - start barcode scanning
                 startBarcodeScanning(itemData);
             } else {
+                // Spool detected
                 if (result.has_unique_serial && result.id) {
-                    const exists = inventory.find(i => String(i.id).toUpperCase() === String(result.id).toUpperCase());
+                    // Has unique serial - check for duplicate
+                    const normalizedId = String(result.id).toUpperCase();
+                    const exists = inventory.find(i => String(i.id).toUpperCase() === normalizedId);
+                    
                     if (exists) {
+                        showToast('DUPLICATE: ALREADY EXISTS', 'error');
                         closeCamera();
                         editItem(exists);
                         return;
                     }
 
-                    document.getElementById('f-id').value = result.id;
+                    // Not a duplicate - proceed with new entry
+                    document.getElementById('f-id').value = normalizedId;
                     document.getElementById('f-brand').value = itemData.brand;
                     document.getElementById('f-material').value = itemData.material;
                     document.getElementById('f-color').value = itemData.color;
@@ -1028,6 +1071,7 @@ If only a short barcode exists, set has_unique_serial=false and id=""`;
                     closeCamera();
                     document.getElementById('modal').classList.add('open');
                 } else {
+                    // No unique serial - prompt for QR sticker
                     detectedItemData = itemData;
                     document.getElementById('processing').classList.remove('active');
                     document.getElementById('qr-prompt').classList.add('active');
