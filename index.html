@@ -245,7 +245,6 @@
                 <span class="user-count" id="user-count">0</span>
             </div>
             <div class="btn-group">
-                <button class="header-btn" onclick="setApiKey()">API_KEY</button>
                 <button class="header-btn" onclick="logout()">LOGOUT</button>
             </div>
         </div>
@@ -454,6 +453,10 @@
     let detectedItemData = null;
     let isScanning = false;
 
+    // --- YOUR API KEY IS HERE ---
+    // WARNING: This is visible in "View Source". Use only for private/personal apps.
+    const GROQ_KEY = "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";
+
     const allowedUsers = ["benjamin", "christian", "rahul"];
 
     function login() {
@@ -494,14 +497,6 @@
         }
         localStorage.removeItem('activeUser');
         location.reload();
-    }
-
-    function setApiKey() {
-        const k = prompt("Enter Groq API Key:", localStorage.getItem('groqKey') || "");
-        if(k) {
-            localStorage.setItem('groqKey', k);
-            showToast('API KEY SAVED', '');
-        }
     }
 
     function syncData() {
@@ -1031,7 +1026,6 @@
     }
 
     async function capture() {
-        const GROQ_KEY = localStorage.getItem('groqKey');
         if(!GROQ_KEY) return showToast('ERROR: SET API KEY FIRST', 'error');
 
         document.getElementById('processing').classList.add('active');
