@@ -6,7 +6,7 @@
     <title>SpoolVault — Filament Inventory System</title>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
-    <script src="https://unpkg.com/@zxing/library@0.20.0"></script>
+    <script src="https://unpkg.com/@zxing/library@latest"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700;800&display=swap" rel="stylesheet">
     <style>
@@ -245,6 +245,7 @@
                 <span class="user-count" id="user-count">0</span>
             </div>
             <div class="btn-group">
+                <button class="header-btn" onclick="setApiKey()">API_KEY</button>
                 <button class="header-btn" onclick="logout()">LOGOUT</button>
             </div>
         </div>
@@ -346,14 +347,6 @@
             <label class="form-label">Asset ID</label>
             <input type="text" id="f-id" class="form-input" readonly>
         </div>
-        
-        <div class="form-group" id="box-qty-group" style="display:none; background: #1f1f1f; padding: 10px; border-radius: 4px; border: 1px dashed #333;">
-            <label class="form-label" style="color: #00FF88;">📦 Box Quantity</label>
-            <div style="display:flex; gap:10px; align-items:center;">
-                <input type="number" id="f-box-count" class="form-input" value="1" min="1" style="font-weight:bold; color:#00FF88; text-align:center;">
-                <span style="font-size:11px; color:#888;">copies to add</span>
-            </div>
-        </div>
 
         <div class="form-group">
             <label class="form-label">Manufacturer / Brand</label>
@@ -453,9 +446,6 @@
     let detectedItemData = null;
     let isScanning = false;
 
-    // --- YOUR API KEY ---
-    const GROQ_KEY = "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";
-
     const allowedUsers = ["benjamin", "christian", "rahul"];
 
     function login() {
@@ -496,6 +486,14 @@
         }
         localStorage.removeItem('activeUser');
         location.reload();
+    }
+
+    function setApiKey() {
+        const k = prompt("Enter Groq API Key:", localStorage.getItem('groqKey') || "");
+        if(k) {
+            localStorage.setItem('groqKey', k);
+            showToast('API KEY SAVED', '');
+        }
     }
 
     function syncData() {
@@ -746,19 +744,11 @@
     function updateStockOptions() {
         const status = document.getElementById('f-status').value;
         const qtySelect = document.getElementById('f-qty');
-        const boxQtyGroup = document.getElementById('box-qty-group');
         
         if (status === 'inventory') {
-            // BOX MODE: Show Quantity field and hide 1-100% select
             qtySelect.innerHTML = '<option value="100">100%</option>';
             qtySelect.value = '100';
-            qtySelect.disabled = true;
-            if(boxQtyGroup) boxQtyGroup.style.display = 'block';
         } else {
-            // SPOOL MODE: Hide Quantity field and show 1-100% select
-            qtySelect.disabled = false;
-            if(boxQtyGroup) boxQtyGroup.style.display = 'none';
-
             qtySelect.innerHTML = `
                 <option value="100">100%</option>
                 <option value="90">90%</option>
@@ -776,53 +766,21 @@
     }
 
     function saveItem() {
-        const baseId = document.getElementById('f-id').value.toUpperCase();
-        if (!baseId) return showToast('ERROR: INVALID ID', 'error');
+        const id = document.getElementById('f-id').value.toUpperCase();
+        if (!id) return showToast('ERROR: INVALID ID', 'error');
 
-        const status = document.getElementById('f-status').value;
-        const brand = document.getElementById('f-brand').value;
-        const type = document.getElementById('f-material').value;
-        const color = document.getElementById('f-color').value;
-        const qty = parseInt(document.getElementById('f-qty').value);
-        
-        // BATCH SAVE LOGIC (For Boxes Only)
-        if (status === 'inventory') {
-            const boxCountInput = document.getElementById('f-box-count');
-            const boxCount = boxCountInput ? (parseInt(boxCountInput.value) || 1) : 1;
-
-            for (let i = 0; i < boxCount; i++) {
-                // Generate unique ID for each box
-                const uniqueSuffix = '-' + Math.random().toString(36).substr(2, 4).toUpperCase();
-                const uniqueId = baseId + uniqueSuffix;
-
-                db.ref('inventory/' + uniqueId).set({
-                    id: uniqueId,
-                    parentId: baseId,
-                    brand: brand,
-                    type: type,
-                    color: color,
-                    qty: 100,
-                    status: 'inventory',
-                    user: activeUser,
-                    timestamp: Date.now() + i
-                });
-            }
-            showToast(`SAVED ${boxCount} BOXES`, '');
-        } else {
-            // SINGLE SAVE (SPOOLS)
-            db.ref('inventory/' + baseId).set({
-                id: baseId,
-                brand: brand,
-                type: type,
-                color: color,
-                qty: qty,
-                status: status,
-                user: activeUser,
-                timestamp: Date.now()
-            });
-            showToast('ASSET SAVED', '');
-        }
+        db.ref('inventory/' + id).set({
+            id: id,
+            brand: document.getElementById('f-brand').value,
+            type: document.getElementById('f-material').value,
+            color: document.getElementById('f-color').value,
+            qty: parseInt(document.getElementById('f-qty').value),
+            status: document.getElementById('f-status').value,
+            user: activeUser,
+            timestamp: Date.now()
+        });
         closeModal();
+        showToast('ASSET SAVED', '');
     }
 
     function closeModal() {
@@ -852,17 +810,19 @@
         }
 
         try {
-            // ULTRA HD (4K) REQUEST
             stream = await navigator.mediaDevices.getUserMedia({ 
                 video: { 
                     facingMode: 'environment', 
-                    width: { ideal: 3840 }, 
-                    height: { ideal: 2160 },
+                    width: { ideal: 1920 }, 
+                    height: { ideal: 1080 },
                     focusMode: 'continuous'
                 } 
             });
             document.getElementById('video').srcObject = stream;
             
+            if (!barcodeReader) {
+                barcodeReader = new ZXing.BrowserMultiFormatReader();
+            }
         } catch(e) {
             showToast('ERROR: CAMERA ACCESS', 'error');
         }
@@ -874,129 +834,128 @@
             stream.getTracks().forEach(t => t.stop());
             stream = null;
         }
-        if (barcodeReader) {
-            barcodeReader.reset();
-        }
         document.getElementById('processing').classList.remove('active');
         document.getElementById('barcode-scanner').classList.remove('active');
         document.getElementById('qr-prompt').classList.remove('active');
+        if (barcodeScanInterval) {
+            clearInterval(barcodeScanInterval);
+            barcodeScanInterval = null;
+        }
         isScanning = false;
         detectedItemData = null;
     }
 
-    // --- OPTIMIZED SCANNER FUNCTIONS ---
-
     function scanQRCode() {
         document.getElementById('qr-prompt').classList.remove('active');
         document.getElementById('barcode-scanner').classList.add('active');
-        document.getElementById('scanner-hint').textContent = 'SCANNING QR CODE (SPOOL)...';
+        document.getElementById('scanner-hint').textContent = 'SCANNING FOR QR CODE...';
         document.getElementById('barcode-result').textContent = '';
         
         const video = document.getElementById('video');
         isScanning = true;
-
-        if (!barcodeReader) {
-            barcodeReader = new ZXing.BrowserMultiFormatReader();
-        }
         
-        const hints = new Map();
-        hints.set(ZXing.DecodeHintType.POSSIBLE_FORMATS, [
-            ZXing.BarcodeFormat.QR_CODE, 
-            ZXing.BarcodeFormat.DATA_MATRIX
-        ]);
-
-        barcodeReader.hints = hints;
-
-        barcodeReader.decodeFromVideoDevice(null, 'video', (result, err) => {
-            if (result && isScanning) {
-                isScanning = false; 
-                barcodeReader.reset();
-                
-                const qrData = result.text;
-                document.getElementById('barcode-result').textContent = `QR: ${qrData}`;
-                
-                const normalizedId = String(qrData).toUpperCase();
-                const exists = inventory.find(i => String(i.id).toUpperCase() === normalizedId);
-                
-                if (exists) {
-                    showToast('DUPLICATE SPOOL: EXISTS', 'error');
-                    setTimeout(() => {
-                        closeCamera();
-                        editItem(exists);
-                    }, 1000);
-                    return;
+        barcodeScanInterval = setInterval(async () => {
+            if (!isScanning || video.readyState !== video.HAVE_ENOUGH_DATA) return;
+            
+            try {
+                const result = await barcodeReader.decodeFromVideoElement(video);
+                if (result) {
+                    clearInterval(barcodeScanInterval);
+                    barcodeScanInterval = null;
+                    isScanning = false;
+                    
+                    const qrData = result.text;
+                    document.getElementById('barcode-result').textContent = `QR: ${qrData}`;
+                    
+                    const normalizedId = String(qrData).toUpperCase();
+                    const exists = inventory.find(i => String(i.id).toUpperCase() === normalizedId);
+                    
+                    if (exists) {
+                        showToast('DUPLICATE: ALREADY EXISTS', 'error');
+                        setTimeout(() => {
+                            closeCamera();
+                            editItem(exists);
+                        }, 1000);
+                        return;
+                    }
+                    
+                    try {
+                        const parsed = JSON.parse(qrData);
+                        setTimeout(() => {
+                            proceedWithData(parsed.id || qrData, {
+                                material: parsed.material || detectedItemData.material,
+                                color: parsed.color || detectedItemData.color,
+                                brand: parsed.brand || detectedItemData.brand,
+                                status: 'storage'
+                            });
+                        }, 200);
+                    } catch (e) {
+                        setTimeout(() => {
+                            proceedWithData(qrData, detectedItemData);
+                        }, 200);
+                    }
                 }
-                
-                try {
-                    const parsed = JSON.parse(qrData);
-                    setTimeout(() => {
-                        proceedWithData(parsed.id || qrData, {
-                            material: parsed.material || (detectedItemData ? detectedItemData.material : ''),
-                            color: parsed.color || (detectedItemData ? detectedItemData.color : ''),
-                            brand: parsed.brand || (detectedItemData ? detectedItemData.brand : ''),
-                            status: 'storage'
-                        });
-                    }, 200);
-                } catch (e) {
-                    setTimeout(() => {
-                        proceedWithData(qrData, detectedItemData);
-                    }, 200);
-                }
+            } catch (err) {
+                // Continue scanning
             }
-        });
+        }, 50); // 50ms = FASTER SCANNING
     }
 
-    function startBarcodeScanning(itemData) {
+    async function startBarcodeScanning(itemData) {
         detectedItemData = itemData;
         isScanning = true;
         
         document.getElementById('processing').classList.remove('active');
         document.getElementById('barcode-scanner').classList.add('active');
-        document.getElementById('scanner-hint').textContent = 'SCANNING BARCODE (BOX)...';
+        document.getElementById('scanner-hint').textContent = 'SCANNING FOR BARCODE...';
         document.getElementById('barcode-result').textContent = '';
         
-        if (!barcodeReader) {
-            barcodeReader = new ZXing.BrowserMultiFormatReader();
-        }
+        const video = document.getElementById('video');
         
-        const hints = new Map();
-        hints.set(ZXing.DecodeHintType.POSSIBLE_FORMATS, [
-            ZXing.BarcodeFormat.CODE_128,
-            ZXing.BarcodeFormat.EAN_13,
-            ZXing.BarcodeFormat.EAN_8,
-            ZXing.BarcodeFormat.UPC_A,
-            ZXing.BarcodeFormat.UPC_E,
-            ZXing.BarcodeFormat.CODE_39
-        ]);
-        
-        barcodeReader.hints = hints;
-        
-        barcodeReader.decodeFromVideoDevice(null, 'video', (result, err) => {
-            if (result && isScanning) {
-                isScanning = false;
-                barcodeReader.reset();
-                
-                const barcode = result.text;
-                document.getElementById('barcode-result').textContent = `BARCODE: ${barcode}`;
-                
-                setTimeout(() => {
-                    proceedWithData(barcode, itemData);
-                }, 200);
+        barcodeScanInterval = setInterval(async () => {
+            if (!isScanning || video.readyState < 2) return;
+            
+            try {
+                const result = await barcodeReader.decodeFromVideoElement(video);
+                if (result) {
+                    clearInterval(barcodeScanInterval);
+                    barcodeScanInterval = null;
+                    isScanning = false;
+                    
+                    const barcode = result.text;
+                    document.getElementById('barcode-result').textContent = `BARCODE: ${barcode}`;
+                    
+                    const normalizedId = String(barcode).toUpperCase();
+                    const exists = inventory.find(i => String(i.id).toUpperCase() === normalizedId);
+                    
+                    if (exists) {
+                        showToast('DUPLICATE: ALREADY EXISTS', 'error');
+                        setTimeout(() => {
+                            closeCamera();
+                            editItem(exists);
+                        }, 1000);
+                        return;
+                    }
+                    
+                    setTimeout(() => {
+                        proceedWithData(barcode, itemData);
+                    }, 200);
+                }
+            } catch (err) {
+                // Continue scanning
             }
-        });
+        }, 50); // FAST SCANNING INTERVAL
     }
 
     function proceedWithData(id, itemData) {
         const normalizedId = String(id).toUpperCase();
+        const exists = inventory.find(i => String(i.id).toUpperCase() === normalizedId);
         
-        if (itemData.status === 'storage') {
-            const exists = inventory.find(i => String(i.id).toUpperCase() === normalizedId);
-            if (exists) {
-                showToast('DUPLICATE: ALREADY EXISTS', 'error');
-                closeCamera();
-                editItem(exists);
-                return;
-            }
+        if (exists) {
+            showToast('DUPLICATE: ALREADY EXISTS', 'error');
+            closeCamera();
+            editItem(exists);
+            return;
         }
 
         document.getElementById('f-id').value = normalizedId;
@@ -1004,16 +963,14 @@
         document.getElementById('f-material').value = itemData.material || '';
         document.getElementById('f-color').value = itemData.color || '';
         document.getElementById('f-status').value = itemData.status || 'storage';
-        
-        const boxInput = document.getElementById('f-box-count');
-        if(boxInput) boxInput.value = '1';
-
+        document.getElementById('f-qty').value = '100';
         updateStockOptions();
         closeCamera();
         document.getElementById('modal').classList.add('open');
     }
 
     async function capture() {
+        const GROQ_KEY = localStorage.getItem('groqKey');
         if(!GROQ_KEY) return showToast('ERROR: SET API KEY FIRST', 'error');
 
         document.getElementById('processing').classList.add('active');
@@ -1021,11 +978,11 @@
         const vid = document.getElementById('video');
         const canvas = document.getElementById('canvas');
 
-        // MAXIMUM RESOLUTION SNAPSHOT
-        canvas.width = vid.videoWidth;
-        canvas.height = vid.videoHeight;
+        const scale = Math.min(1, 1400 / vid.videoWidth);
+        canvas.width = vid.videoWidth * scale;
+        canvas.height = vid.videoHeight * scale;
         canvas.getContext('2d').drawImage(vid, 0, 0, canvas.width, canvas.height);
-        let base64 = canvas.toDataURL('image/jpeg', 1.0); // 100% Quality
+        let base64 = canvas.toDataURL('image/jpeg', 0.95);
 
         try {
             let prompt = '';
@@ -1033,20 +990,15 @@
             if (currentScanMode === 'empty') {
                 prompt = `Extract the spool serial number from this image. Return JSON: {"id":"SERIAL"}`;
             } else {
-                // STRICTEST PROMPT POSSIBLE: IGNORE SHORT CODES
-                prompt = `Analyze this filament label.
-
+                prompt = `Analyze this filament label. Determine:
 1. Type: "spool" (opened) OR "box" (sealed)
-2. Unique serial: 
-   - MUST BE LONG & COMPLEX (12+ characters).
-   - REJECT simple codes like "02151018A" or "1.75mm". These are NOT unique serials.
-   - If you see a short code, assume has_unique_serial=false.
+2. Unique serial: Look for LONG codes (10+ chars). Ignore SHORT barcodes (8-9 chars like "02151018A")
 3. Material: PLA/PETG/ABS/ASA/TPU/NYLON
-4. Color
-5. Brand
+4. Color name
+5. Brand name
 
-Return JSON:
-{"type":"spool/box","has_unique_serial":true/false,"id":"SERIAL","material":"TYPE","color":"COLOR","brand":"BRAND"}`;
+Return JSON ONLY:
+{"type":"spool/box","has_unique_serial":true/false,"id":"SERIAL_IF_FOUND","material":"TYPE","color":"COLOR","brand":"BRAND"}`;
             }
 
             const res = await fetch("https://api.groq.com/openai/v1/chat/completions", {
@@ -1064,7 +1016,7 @@ Return JSON:
                             { type: "image_url", image_url: { url: base64 } }
                         ]
                     }],
-                    temperature: 0.0, // Zero temperature for max logic
+                    temperature: 0.1,
                     max_tokens: 200
                 })
             });
@@ -1082,9 +1034,7 @@ Return JSON:
                 result = JSON.parse(content);
             } catch(e) {
                 const match = content.match(/\{[\s\S]*\}/);
-                if (match) {
-                    try { result = JSON.parse(match[0]); } catch (e2) { throw new Error('INVALID JSON RESPONSE'); }
-                }
+                if (match) result = JSON.parse(match[0]);
             }
 
             if (!result) throw new Error('PARSE FAILED');
@@ -1116,10 +1066,7 @@ Return JSON:
             if (isBox) {
                 startBarcodeScanning(itemData);
             } else {
-                // STRICT CHECK: IF ID IS SHORT, FORCE QR MODE
-                const idIsTooShort = result.id && result.id.length < 10;
-
-                if (result.has_unique_serial && result.id && !idIsTooShort) {
+                if (result.has_unique_serial && result.id) {
                     const normalizedId = String(result.id).toUpperCase();
                     const exists = inventory.find(i => String(i.id).toUpperCase() === normalizedId);
                     
@@ -1140,7 +1087,6 @@ Return JSON:
                     closeCamera();
                     document.getElementById('modal').classList.add('open');
                 } else {
-                    // Fail safely to QR mode if ID is ambiguous
                     detectedItemData = itemData;
                     document.getElementById('processing').classList.remove('active');
                     document.getElementById('qr-prompt').classList.add('active');
