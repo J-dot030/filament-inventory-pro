@@ -839,6 +839,8 @@
         
         barcodeScanInterval = setInterval(async () => {
             try {
+                if (video.readyState !== video.HAVE_ENOUGH_DATA) return;
+                
                 const result = await barcodeReader.decodeFromVideoElement(video);
                 if (result) {
                     clearInterval(barcodeScanInterval);
@@ -876,9 +878,9 @@
                     }
                 }
             } catch (err) {
-                // Continue scanning
+                // Continue scanning silently
             }
-        }, 100);
+        }, 150);
     }
 
     async function startBarcodeScanning(itemData) {
@@ -892,9 +894,23 @@
         
         const video = document.getElementById('video');
         
-        // Faster scanning interval
+        // Wait for video to be ready before scanning
+        if (video.readyState < 2) {
+            await new Promise(resolve => {
+                const onCanPlay = () => {
+                    video.removeEventListener('canplay', onCanPlay);
+                    resolve();
+                };
+                video.addEventListener('canplay', onCanPlay);
+            });
+        }
+        
+        // Scanning interval with improved detection
         barcodeScanInterval = setInterval(async () => {
             try {
+                // Check video is ready
+                if (video.readyState !== video.HAVE_ENOUGH_DATA) return;
+                
                 const result = await barcodeReader.decodeFromVideoElement(video);
                 if (result) {
                     clearInterval(barcodeScanInterval);
@@ -920,9 +936,9 @@
                     }, 300);
                 }
             } catch (err) {
-                // Continue scanning
+                // Continue scanning - barcode not detected yet
             }
-        }, 100);
+        }, 150);
     }
 
     function proceedWithData(id, itemData) {
