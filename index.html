@@ -301,7 +301,6 @@
         <button class="shutter" id="shutter" onclick="capture()"></button>
     </div>
     
-    <!-- BARCODE SCANNER OVERLAY -->
     <div class="barcode-scanner" id="barcode-scanner">
         <div class="scanner-overlay">
             <div class="barcode-hint" id="scanner-hint">SCANNING FOR BARCODE...</div>
@@ -347,6 +346,14 @@
         <div class="form-group">
             <label class="form-label">Asset ID</label>
             <input type="text" id="f-id" class="form-input" readonly>
+        </div>
+
+        <div class="form-group" id="box-qty-group" style="display:none; background: #1f1f1f; padding: 10px; border-radius: 4px; border: 1px dashed #333;">
+            <label class="form-label" style="color: #00FF88;">📦 Box Quantity</label>
+            <div style="display:flex; gap:10px; align-items:center;">
+                <input type="number" id="f-box-count" class="form-input" value="1" min="1" style="font-weight:bold; color:#00FF88; text-align:center;">
+                <span style="font-size:11px; color:#888;">copies to add</span>
+            </div>
         </div>
 
         <div class="form-group">
@@ -745,11 +752,19 @@
     function updateStockOptions() {
         const status = document.getElementById('f-status').value;
         const qtySelect = document.getElementById('f-qty');
+        const boxQtyGroup = document.getElementById('box-qty-group');
         
         if (status === 'inventory') {
+            // BOX MODE: Show Quantity
             qtySelect.innerHTML = '<option value="100">100%</option>';
             qtySelect.value = '100';
+            qtySelect.disabled = true;
+            if(boxQtyGroup) boxQtyGroup.style.display = 'block';
         } else {
+            // SPOOL MODE: Hide Quantity
+            qtySelect.disabled = false;
+            if(boxQtyGroup) boxQtyGroup.style.display = 'none';
+
             qtySelect.innerHTML = `
                 <option value="100">100%</option>
                 <option value="90">90%</option>
@@ -767,21 +782,53 @@
     }
 
     function saveItem() {
-        const id = document.getElementById('f-id').value.toUpperCase();
-        if (!id) return showToast('ERROR: INVALID ID', 'error');
+        const baseId = document.getElementById('f-id').value.toUpperCase();
+        if (!baseId) return showToast('ERROR: INVALID ID', 'error');
 
-        db.ref('inventory/' + id).set({
-            id: id,
-            brand: document.getElementById('f-brand').value,
-            type: document.getElementById('f-material').value,
-            color: document.getElementById('f-color').value,
-            qty: parseInt(document.getElementById('f-qty').value),
-            status: document.getElementById('f-status').value,
-            user: activeUser,
-            timestamp: Date.now()
-        });
+        const status = document.getElementById('f-status').value;
+        const brand = document.getElementById('f-brand').value;
+        const type = document.getElementById('f-material').value;
+        const color = document.getElementById('f-color').value;
+        const qty = parseInt(document.getElementById('f-qty').value);
+        
+        // BATCH SAVE LOGIC
+        if (status === 'inventory') {
+            const boxCountInput = document.getElementById('f-box-count');
+            const boxCount = boxCountInput ? (parseInt(boxCountInput.value) || 1) : 1;
+
+            for (let i = 0; i < boxCount; i++) {
+                // Generate unique ID for each box
+                const uniqueSuffix = '-' + Math.random().toString(36).substr(2, 4).toUpperCase();
+                const uniqueId = baseId + uniqueSuffix;
+
+                db.ref('inventory/' + uniqueId).set({
+                    id: uniqueId,
+                    parentId: baseId,
+                    brand: brand,
+                    type: type,
+                    color: color,
+                    qty: 100,
+                    status: 'inventory',
+                    user: activeUser,
+                    timestamp: Date.now() + i
+                });
+            }
+            showToast(`SAVED ${boxCount} BOXES`, '');
+        } else {
+            // SINGLE SAVE (SPOOLS)
+            db.ref('inventory/' + baseId).set({
+                id: baseId,
+                brand: brand,
+                type: type,
+                color: color,
+                qty: qty,
+                status: status,
+                user: activeUser,
+                timestamp: Date.now()
+            });
+            showToast('ASSET SAVED', '');
+        }
         closeModal();
-        showToast('ASSET SAVED', '');
     }
 
     function closeModal() {
@@ -828,40 +875,29 @@
             showToast('ERROR: CAMERA ACCESS', 'error');
         }
     }
-// --- NEW FIXED CAMERA & SCANNER FUNCTIONS ---
 
     function closeCamera() {
         document.getElementById('camera').classList.remove('active');
-        
-        // Stop the video stream
         if(stream) {
-            stream.getTracks().forEach(track => track.stop());
+            stream.getTracks().forEach(t => t.stop());
             stream = null;
         }
-
-        // RESET the barcode reader to stop it from scanning in the background
         if (barcodeReader) {
             barcodeReader.reset();
         }
-
         document.getElementById('processing').classList.remove('active');
         document.getElementById('barcode-scanner').classList.remove('active');
         document.getElementById('qr-prompt').classList.remove('active');
-        
-        // Clear interval if it exists (cleanup)
-        if (barcodeScanInterval) {
-            clearInterval(barcodeScanInterval);
-            barcodeScanInterval = null;
-        }
-        
         isScanning = false;
         detectedItemData = null;
     }
 
+    // --- NEW FIXED & SEPARATED SCANNER FUNCTIONS ---
+
     function scanQRCode() {
         document.getElementById('qr-prompt').classList.remove('active');
         document.getElementById('barcode-scanner').classList.add('active');
-        document.getElementById('scanner-hint').textContent = 'SCANNING FOR QR CODE...';
+        document.getElementById('scanner-hint').textContent = 'SCANNING QR CODE (SPOOL)...';
         document.getElementById('barcode-result').textContent = '';
         
         const video = document.getElementById('video');
@@ -871,21 +907,25 @@
             barcodeReader = new ZXing.BrowserMultiFormatReader();
         }
 
-        // Continuous scan until found
+        // Only look for QR
         barcodeReader.decodeFromVideoDevice(null, 'video', (result, err) => {
             if (result && isScanning) {
-                // Found a code!
+                // FILTER: Only allow QR (Format 11) or DataMatrix (5)
+                // Ignore 1D barcodes on spools
+                if (result.format !== 11 && result.format !== 5) return;
+
                 isScanning = false; 
-                barcodeReader.reset(); // Stop scanning immediately
+                barcodeReader.reset();
                 
                 const qrData = result.text;
                 document.getElementById('barcode-result').textContent = `QR: ${qrData}`;
                 
+                // SPOOL DUPLICATE CHECK (STRICT)
                 const normalizedId = String(qrData).toUpperCase();
                 const exists = inventory.find(i => String(i.id).toUpperCase() === normalizedId);
                 
                 if (exists) {
-                    showToast('DUPLICATE: ALREADY EXISTS', 'error');
+                    showToast('DUPLICATE SPOOL: EXISTS', 'error');
                     setTimeout(() => {
                         closeCamera();
                         editItem(exists);
@@ -893,7 +933,6 @@
                     return;
                 }
                 
-                // Check if it is JSON
                 try {
                     const parsed = JSON.parse(qrData);
                     setTimeout(() => {
@@ -905,14 +944,10 @@
                         });
                     }, 200);
                 } catch (e) {
-                    // Not JSON, just an ID
                     setTimeout(() => {
                         proceedWithData(qrData, detectedItemData);
                     }, 200);
                 }
-            }
-            if (err && !(err instanceof ZXing.NotFoundException)) {
-                console.error(err);
             }
         });
     }
@@ -923,58 +958,59 @@
         
         document.getElementById('processing').classList.remove('active');
         document.getElementById('barcode-scanner').classList.add('active');
-        document.getElementById('scanner-hint').textContent = 'SCANNING BARCODE...';
+        document.getElementById('scanner-hint').textContent = 'SCANNING BARCODE (BOX)...';
         document.getElementById('barcode-result').textContent = '';
         
         if (!barcodeReader) {
             barcodeReader = new ZXing.BrowserMultiFormatReader();
         }
         
-        // Continuous scan until found
+        // Only look for Barcodes
         barcodeReader.decodeFromVideoDevice(null, 'video', (result, err) => {
             if (result && isScanning) {
+                // FILTER: Ignore QR codes on boxes
+                if (result.format === 11 || result.format === 5) return;
+
                 isScanning = false;
-                barcodeReader.reset(); // Stop scanning
+                barcodeReader.reset();
                 
                 const barcode = result.text;
                 document.getElementById('barcode-result').textContent = `BARCODE: ${barcode}`;
                 
-                const normalizedId = String(barcode).toUpperCase();
-                const exists = inventory.find(i => String(i.id).toUpperCase() === normalizedId);
-                
-                if (exists) {
-                    showToast('DUPLICATE: ALREADY EXISTS', 'error');
-                    setTimeout(() => {
-                        closeCamera();
-                        editItem(exists);
-                    }, 1000);
-                    return;
-                }
-                
+                // BOX MODE: ALLOW DUPLICATES
                 setTimeout(() => {
                     proceedWithData(barcode, itemData);
                 }, 200);
             }
         });
     }
-    
+
     function proceedWithData(id, itemData) {
         const normalizedId = String(id).toUpperCase();
-        const exists = inventory.find(i => String(i.id).toUpperCase() === normalizedId);
         
-        if (exists) {
-            showToast('DUPLICATE: ALREADY EXISTS', 'error');
-            closeCamera();
-            editItem(exists);
-            return;
+        // CHECK DUPLICATES:
+        // Only block if it is a SPOOL (storage). Allow matches for BOXES (inventory).
+        if (itemData.status === 'storage') {
+            const exists = inventory.find(i => String(i.id).toUpperCase() === normalizedId);
+            if (exists) {
+                showToast('DUPLICATE: ALREADY EXISTS', 'error');
+                closeCamera();
+                editItem(exists);
+                return;
+            }
         }
 
+        // Fill Data
         document.getElementById('f-id').value = normalizedId;
         document.getElementById('f-brand').value = itemData.brand || '';
         document.getElementById('f-material').value = itemData.material || '';
         document.getElementById('f-color').value = itemData.color || '';
         document.getElementById('f-status').value = itemData.status || 'storage';
-        document.getElementById('f-qty').value = '100';
+        
+        // Reset box count
+        const boxInput = document.getElementById('f-box-count');
+        if(boxInput) boxInput.value = '1';
+
         updateStockOptions();
         closeCamera();
         document.getElementById('modal').classList.add('open');
@@ -989,35 +1025,28 @@
         const vid = document.getElementById('video');
         const canvas = document.getElementById('canvas');
 
-        // BETTER CLARITY: Higher quality, don't downscale
         canvas.width = vid.videoWidth;
         canvas.height = vid.videoHeight;
         canvas.getContext('2d').drawImage(vid, 0, 0, canvas.width, canvas.height);
-        let base64 = canvas.toDataURL('image/jpeg', 0.95); // Highest quality
+        let base64 = canvas.toDataURL('image/jpeg', 0.95);
 
         try {
             let prompt = '';
             
             if (currentScanMode === 'empty') {
-                prompt = `Extract the spool serial number from this image. Look for alphanumeric codes. Return JSON: {"id":"SERIAL"}`;
+                prompt = `Extract the spool serial number from this image. Return JSON: {"id":"SERIAL"}`;
             } else {
                 prompt = `Analyze this filament label image VERY CAREFULLY. 
 
 Determine:
 1. Type: "spool" (opened/partial roll) OR "box" (sealed/unopened package)
-2. Unique serial: Look for LONG codes (10+ chars like "000M123456789" or similar long alphanumeric strings). IMPORTANT: Ignore SHORT barcodes (8-9 chars like "02151018A") - these are NOT unique serials.
-3. Material: PLA/PETG/ABS/ASA/TPU/NYLON (look at label carefully)
-4. Color name (exact color from label)
-5. Brand/Manufacturer name
+2. Unique serial: Look for LONG codes (10+ chars). Ignore SHORT barcodes.
+3. Material: PLA/PETG/ABS/ASA/TPU/NYLON
+4. Color name
+5. Brand name
 
-Return ONLY valid JSON (no markdown, no explanation):
-{"type":"spool/box","has_unique_serial":true/false,"id":"SERIAL_IF_FOUND","material":"TYPE","color":"COLOR","brand":"BRAND"}
-
-CRITICAL RULES:
-- If you see only a short 8-9 char barcode, set has_unique_serial=false and id=""
-- If you see a long 10+ char serial/ID code, set has_unique_serial=true and include it
-- Material MUST be one of: PLA, PETG, ABS, ASA, TPU, NYLON
-- Return VALID JSON only`;
+Return ONLY valid JSON:
+{"type":"spool/box","has_unique_serial":true/false,"id":"SERIAL","material":"TYPE","color":"COLOR","brand":"BRAND"}`;
             }
 
             const res = await fetch("https://api.groq.com/openai/v1/chat/completions", {
@@ -1027,7 +1056,7 @@ CRITICAL RULES:
                     'Content-Type': 'application/json'
                 },
                 body: JSON.stringify({
-                    model: "meta-llama/llama-4-scout-17b-16e-instruct",
+                    model: "meta-llama/llama-3.2-90b-vision-preview",
                     messages: [{
                         role: "user",
                         content: [
@@ -1035,7 +1064,7 @@ CRITICAL RULES:
                             { type: "image_url", image_url: { url: base64 } }
                         ]
                     }],
-                    temperature: 0.1, // Very low for accuracy
+                    temperature: 0.1,
                     max_tokens: 200
                 })
             });
@@ -1054,11 +1083,7 @@ CRITICAL RULES:
             } catch(e) {
                 const match = content.match(/\{[\s\S]*\}/);
                 if (match) {
-                    try {
-                        result = JSON.parse(match[0]);
-                    } catch (e2) {
-                        throw new Error('INVALID JSON RESPONSE');
-                    }
+                    try { result = JSON.parse(match[0]); } catch (e2) { throw new Error('INVALID JSON RESPONSE'); }
                 }
             }
 
@@ -1089,10 +1114,10 @@ CRITICAL RULES:
             };
 
             if (isBox) {
-                // Box detected - QUICK transition to barcode scanning
+                // BOX -> Scan Barcode (Batch mode)
                 startBarcodeScanning(itemData);
             } else {
-                // Spool detected
+                // SPOOL -> Scan QR (Strict mode)
                 if (result.has_unique_serial && result.id) {
                     const normalizedId = String(result.id).toUpperCase();
                     const exists = inventory.find(i => String(i.id).toUpperCase() === normalizedId);
