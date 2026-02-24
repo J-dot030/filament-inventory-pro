@@ -110,19 +110,19 @@
         .shutter.empty:active { background: var(--blue); }
         #canvas { display: none; }
         
-        .processing { position: absolute; inset: 0; background: rgba(0, 0, 0, 0.9); display: none; flex-direction: column; align-items: center; justify-content: center; z-index: 20; }
+        .processing { position: absolute; inset: 0; background: rgba(0, 0, 0, 0.85); display: none; flex-direction: column; align-items: center; justify-content: center; z-index: 20; }
         .processing.active { display: flex; }
         .spinner { width: 40px; height: 40px; border: 4px solid var(--surface); border-top: 4px solid var(--yellow); border-radius: 50%; animation: spin 1s linear infinite; margin-bottom: 16px; }
         @keyframes spin { to { transform: rotate(360deg); } }
         .process-text { font-family: 'JetBrains Mono', monospace; font-size: 14px; font-weight: 700; color: var(--yellow); }
         
-        .barcode-scanner { position: absolute; inset: 0; background: rgba(0, 0, 0, 0.95); display: none; flex-direction: column; align-items: center; justify-content: center; z-index: 25; }
+        .barcode-scanner { position: absolute; inset: 0; background: transparent; display: none; flex-direction: column; align-items: center; justify-content: center; z-index: 15; pointer-events: none; }
         .barcode-scanner.active { display: flex; }
-        .barcode-frame { position: relative; width: 80%; max-width: 400px; height: 200px; border: 3px solid var(--yellow); border-radius: 8px; margin-bottom: 24px; overflow: hidden; }
+        .barcode-frame { position: relative; width: 80%; max-width: 400px; height: 200px; border: 3px solid var(--yellow); border-radius: 8px; margin-bottom: 24px; overflow: hidden; background: rgba(0, 0, 0, 0.3); backdrop-filter: blur(2px); }
         .barcode-line { position: absolute; width: 100%; height: 2px; background: var(--yellow); box-shadow: 0 0 10px var(--yellow); animation: scan 2s linear infinite; }
         @keyframes scan { 0%, 100% { top: 0; } 50% { top: calc(100% - 2px); } }
-        .barcode-hint { font-family: 'JetBrains Mono', monospace; font-size: 13px; color: var(--yellow); text-align: center; margin-bottom: 16px; }
-        .barcode-result { font-family: 'JetBrains Mono', monospace; font-size: 16px; color: var(--green); font-weight: 800; margin-top: 16px; }
+        .barcode-hint { font-family: 'JetBrains Mono', monospace; font-size: 13px; color: var(--yellow); text-align: center; margin-bottom: 16px; background: rgba(0, 0, 0, 0.8); padding: 8px 16px; border-radius: 4px; border: 1px solid var(--yellow); }
+        .barcode-result { font-family: 'JetBrains Mono', monospace; font-size: 16px; color: var(--green); font-weight: 800; margin-top: 16px; background: rgba(0, 0, 0, 0.8); padding: 8px 16px; border-radius: 4px; }
         
         .qr-prompt { position: absolute; inset: 0; background: rgba(0, 0, 0, 0.95); display: none; flex-direction: column; align-items: center; justify-content: center; z-index: 30; padding: 40px; }
         .qr-prompt.active { display: flex; }
@@ -298,6 +298,13 @@
         </div><br>
         <button class="shutter" id="shutter" onclick="capture()"></button>
     </div>
+    <div class="barcode-scanner" id="barcode-scanner">
+        <div class="barcode-hint" id="scanner-hint">SCANNING FOR BARCODE...</div>
+        <div class="barcode-frame">
+            <div class="barcode-line"></div>
+        </div>
+        <div class="barcode-result" id="barcode-result"></div>
+    </div>
     <div class="processing" id="processing">
         <div class="spinner"></div>
         <div class="process-text" id="process-text">ANALYZING IMAGE...</div>
@@ -312,13 +319,6 @@
             <button class="qr-btn qr-btn-primary" onclick="scanQRCode()">SCAN QR CODE</button>
             <button class="qr-btn qr-btn-secondary" onclick="closeCamera()">CANCEL</button>
         </div>
-    </div>
-    <div class="barcode-scanner" id="barcode-scanner">
-        <div class="barcode-hint" id="scanner-hint">SCANNING FOR BARCODE...</div>
-        <div class="barcode-frame">
-            <div class="barcode-line"></div>
-        </div>
-        <div class="barcode-result" id="barcode-result"></div>
     </div>
 </div>
 
@@ -829,25 +829,6 @@
         detectedItemData = null;
     }
 
-    function hasUniqueSerial(text) {
-        // Pattern for unique serial numbers (e.g., 000M123456789, etc.)
-        // These typically have longer alphanumeric sequences with specific patterns
-        const serialPatterns = [
-            /\d{3}[A-Z]\d{9,}/,  // e.g., 000M123456789
-            /[A-Z]{2,}\d{8,}/,   // e.g., AB12345678
-            /\d{10,}/            // Long numeric sequences
-        ];
-        
-        return serialPatterns.some(pattern => pattern.test(text));
-    }
-
-    function isBarcodeOnly(text) {
-        // Pattern for barcode-only labels (e.g., 02151018A)
-        // These are shorter codes like the one in the image
-        const barcodePattern = /^[0-9]{8}[A-Z]$/;  // e.g., 02151018A
-        return barcodePattern.test(text);
-    }
-
     function scanQRCode() {
         document.getElementById('qr-prompt').classList.remove('active');
         document.getElementById('barcode-scanner').classList.add('active');
@@ -863,9 +844,8 @@
                     barcodeScanInterval = null;
                     
                     const qrData = result.text;
-                    document.getElementById('barcode-result').textContent = `QR CODE: ${qrData}`;
+                    document.getElementById('barcode-result').textContent = `QR: ${qrData}`;
                     
-                    // Parse QR code data (expecting JSON format)
                     try {
                         const parsed = JSON.parse(qrData);
                         setTimeout(() => {
@@ -875,18 +855,17 @@
                                 brand: parsed.brand || detectedItemData.brand,
                                 status: 'storage'
                             });
-                        }, 1000);
+                        }, 500);
                     } catch (e) {
-                        // If not JSON, use as plain ID
                         setTimeout(() => {
                             proceedWithData(qrData, detectedItemData);
-                        }, 1000);
+                        }, 500);
                     }
                 }
             } catch (err) {
                 // Continue scanning
             }
-        }, 300);
+        }, 200);
     }
 
     async function startBarcodeScanning(itemData) {
@@ -894,7 +873,6 @@
         document.getElementById('processing').classList.remove('active');
         document.getElementById('barcode-scanner').classList.add('active');
         document.getElementById('scanner-hint').textContent = 'SCANNING FOR BARCODE...';
-        document.getElementById('process-text').textContent = 'SCANNING BARCODE...';
         
         const video = document.getElementById('video');
         
@@ -910,12 +888,12 @@
                     
                     setTimeout(() => {
                         proceedWithData(barcode, itemData);
-                    }, 1000);
+                    }, 500);
                 }
             } catch (err) {
                 // Continue scanning
             }
-        }, 300);
+        }, 200);
     }
 
     function proceedWithData(id, itemData) {
@@ -942,46 +920,33 @@
         if(!GROQ_KEY) return showToast('ERROR: SET API KEY FIRST', 'error');
 
         document.getElementById('processing').classList.add('active');
-        document.getElementById('process-text').textContent = 'ANALYZING IMAGE...';
+        document.getElementById('process-text').textContent = 'ANALYZING...';
         const vid = document.getElementById('video');
         const canvas = document.getElementById('canvas');
 
-        const scale = Math.min(1, 1200 / vid.videoWidth);
+        const scale = Math.min(1, 1400 / vid.videoWidth);
         canvas.width = vid.videoWidth * scale;
         canvas.height = vid.videoHeight * scale;
         canvas.getContext('2d').drawImage(vid, 0, 0, canvas.width, canvas.height);
-        let base64 = canvas.toDataURL('image/jpeg', 0.85);
+        let base64 = canvas.toDataURL('image/jpeg', 0.9);
 
         try {
             let prompt = '';
             
             if (currentScanMode === 'empty') {
-                prompt = `Find the spool ID/serial number visible in this image. Look for alphanumeric codes on the spool label. Return ONLY valid JSON: {"id":"THE_SERIAL_NUMBER"}`;
+                prompt = `Extract the spool serial number from this image. Look for alphanumeric codes. Return JSON: {"id":"SERIAL"}`;
             } else {
-                prompt = `Analyze this filament spool/box image carefully:
+                prompt = `Analyze this filament label. Determine:
+1. Type: "spool" (opened/partial roll) OR "box" (sealed/unopened package)
+2. Unique serial: Look for LONG codes (10+ chars like "000M123456789"). Ignore SHORT barcodes (8-9 chars like "02151018A")
+3. Material: PLA/PETG/ABS/ASA/TPU/NYLON
+4. Color name
+5. Brand name
 
-1. Determine type: SPOOL (opened, visible filament) or BOX (unopened, sealed packaging)
+Return JSON ONLY:
+{"type":"spool/box","has_unique_serial":true/false,"id":"SERIAL_IF_FOUND","material":"TYPE","color":"COLOR","brand":"BRAND"}
 
-2. Check for unique serial number:
-   - LOOK FOR: Long alphanumeric codes like "000M123456789", "AB12345678", or 10+ digit numbers
-   - IGNORE: Short barcode numbers like "02151018A" (8 digits + 1 letter) - these are NOT unique serials
-
-3. Extract information:
-   - Material type (PLA/PETG/ABS/ASA/TPU/NYLON)
-   - Color name
-   - Brand name
-
-Return ONLY valid JSON:
-{
-  "type": "spool" or "box",
-  "has_unique_serial": true or false,
-  "id": "SERIAL_IF_FOUND_OTHERWISE_EMPTY",
-  "material": "TYPE",
-  "color": "COLOR",
-  "brand": "BRAND"
-}
-
-CRITICAL: If you only see a short barcode like "02151018A", set has_unique_serial to false and id to empty string.`;
+If only a short barcode exists, set has_unique_serial=false and id=""`;
             }
 
             const res = await fetch("https://api.groq.com/openai/v1/chat/completions", {
@@ -991,7 +956,7 @@ CRITICAL: If you only see a short barcode like "02151018A", set has_unique_seria
                     'Content-Type': 'application/json'
                 },
                 body: JSON.stringify({
-                    model: "meta-llama/llama-4-scout-17b-16e-instruct",
+                    model: "llama-3.2-90b-vision-preview",
                     messages: [{
                         role: "user",
                         content: [
@@ -999,8 +964,8 @@ CRITICAL: If you only see a short barcode like "02151018A", set has_unique_seria
                             { type: "image_url", image_url: { url: base64 } }
                         ]
                     }],
-                    temperature: 0.1,
-                    max_tokens: 500
+                    temperature: 0.05,
+                    max_tokens: 300
                 })
             });
 
@@ -1017,16 +982,16 @@ CRITICAL: If you only see a short barcode like "02151018A", set has_unique_seria
                 if (match) result = JSON.parse(match[0]);
             }
 
-            if (!result) throw new Error('FAILED TO PARSE RESPONSE');
+            if (!result) throw new Error('PARSE FAILED');
 
             if (currentScanMode === 'empty') {
                 if (!result.id) throw new Error('ID NOT FOUND');
                 const item = inventory.find(i => String(i.id).toUpperCase() === String(result.id).toUpperCase());
                 if (item) {
                     db.ref('inventory/' + item.id).remove();
-                    showToast('SPOOL EMPTIED & REMOVED', '');
+                    showToast('SPOOL REMOVED', '');
                 } else {
-                    showToast('ASSET NOT IN DATABASE', 'error');
+                    showToast('NOT IN DATABASE', 'error');
                 }
                 closeCamera();
                 return;
@@ -1043,12 +1008,9 @@ CRITICAL: If you only see a short barcode like "02151018A", set has_unique_seria
             };
 
             if (isBox) {
-                // Boxes always need barcode scanning
                 startBarcodeScanning(itemData);
             } else {
-                // It's a spool - check if it has a unique serial
                 if (result.has_unique_serial && result.id) {
-                    // Has unique serial, proceed normally
                     const exists = inventory.find(i => String(i.id).toUpperCase() === String(result.id).toUpperCase());
                     if (exists) {
                         closeCamera();
@@ -1066,7 +1028,6 @@ CRITICAL: If you only see a short barcode like "02151018A", set has_unique_seria
                     closeCamera();
                     document.getElementById('modal').classList.add('open');
                 } else {
-                    // No unique serial - prompt for QR code
                     detectedItemData = itemData;
                     document.getElementById('processing').classList.remove('active');
                     document.getElementById('qr-prompt').classList.add('active');
