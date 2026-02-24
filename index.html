@@ -454,7 +454,6 @@
     let isScanning = false;
 
     // --- YOUR API KEY IS HERE ---
-    // WARNING: This is visible in "View Source". Use only for private/personal apps.
     const GROQ_KEY = "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";
 
     const allowedUsers = ["benjamin", "christian", "rahul"];
@@ -853,18 +852,17 @@
         }
 
         try {
+            // HIGH RESOLUTION CAMERA REQUEST (4K)
             stream = await navigator.mediaDevices.getUserMedia({ 
                 video: { 
                     facingMode: 'environment', 
-                    width: { ideal: 1920 }, 
-                    height: { ideal: 1080 },
+                    width: { ideal: 3840 }, 
+                    height: { ideal: 2160 },
                     focusMode: 'continuous'
                 } 
             });
             document.getElementById('video').srcObject = stream;
             
-            // Note: We don't init the reader here anymore to save resources. 
-            // We init it only when scanQRCode or startBarcodeScanning is called.
         } catch(e) {
             showToast('ERROR: CAMERA ACCESS', 'error');
         }
@@ -1044,9 +1042,14 @@
             if (currentScanMode === 'empty') {
                 prompt = `Extract the spool serial number from this image. Return JSON: {"id":"SERIAL"}`;
             } else {
+                // REVISED PROMPT: Strict rules to ignore Sunlu/Generic product codes
                 prompt = `Analyze this filament label image.
+
 1. Type: "spool" (opened) OR "box" (sealed)
-2. Unique serial: Look for LONG codes. Ignore 8-9 digit barcodes.
+2. Unique serial: 
+   - MUST be a LONG alphanumeric code (12+ characters). 
+   - CRITICAL: Ignore short product codes like "02151018A", "PLA-BLK", or simple barcodes. These are NOT unique serials. 
+   - If you only see a short code (under 12 chars), set has_unique_serial=false.
 3. Material: PLA/PETG/ABS/ASA/TPU/NYLON
 4. Color
 5. Brand
@@ -1123,8 +1126,11 @@ Return ONLY JSON:
                 // BOX FOUND -> Scan Barcode Only
                 startBarcodeScanning(itemData);
             } else {
-                // SPOOL FOUND -> Scan QR Only
-                if (result.has_unique_serial && result.id) {
+                // SPOOL FOUND -> Check Logic
+                // If the ID is too short (likely a model number), fail it so we ask for QR.
+                const idIsTooShort = result.id && result.id.length < 10;
+
+                if (result.has_unique_serial && result.id && !idIsTooShort) {
                     const normalizedId = String(result.id).toUpperCase();
                     const exists = inventory.find(i => String(i.id).toUpperCase() === normalizedId);
                     
@@ -1145,6 +1151,7 @@ Return ONLY JSON:
                     closeCamera();
                     document.getElementById('modal').classList.add('open');
                 } else {
+                    // ID is missing OR too short (like 02151018A) -> Ask for QR Sticker
                     detectedItemData = itemData;
                     document.getElementById('processing').classList.remove('active');
                     document.getElementById('qr-prompt').classList.add('active');
