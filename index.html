@@ -1139,9 +1139,15 @@ try {
 if (typeof result !== "object" || result === null) {
   throw new Error("AI JSON result is empty.");
 }
-
-
-                let finalId = result.asset_id ? String(result.asset_id).toUpperCase().replace(/[\s\-\.]/g, '') : null;
+                
+// In the delete block, before the lookup:
+let lookupId = cleanExtractedId;
+const spoolPattern = /^[A-Z0-9]{3}M[A-Z0-9]{9}$/;
+if (spoolPattern.test(lookupId)) {
+    lookupId = normalizeSpoolId(lookupId) || lookupId;
+}
+if (inventoryArr.find(i => String(i.id).toUpperCase() === lookupId)) {
+    await db.ref('inventory/' + lookupId).remove();
 
             // THE JAVASCRIPT SAFETY NET – Crucial for Spools
 if (assignedStatus === "storage") {
