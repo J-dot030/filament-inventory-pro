@@ -3,773 +3,837 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Filament Inventory Pro — AI Powered</title>
+    <title>Filament Inventory Pro — Enterprise Edition</title>
     
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;600;700&family=Orbitron:wght@500;700;900&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        :root { 
-            --bg: #0a0a0a; 
-            --surface: #141414; 
-            --yellow: #FFD700; 
-            --yellow-dim: rgba(255, 215, 0, 0.2); 
-            --border: #333333; 
-            --text: #ffffff; 
-            --text-dim: #888888; 
-            --red: #FF4444; 
-            --green: #00FF88; 
-            --blue: #4488FF; 
-            --purple: #BB88FF; 
+
+        :root {
+            --primary: #2563EB;
+            --primary-dark: #1E40AF;
+            --primary-light: #3B82F6;
+            --secondary: #10B981;
+            --danger: #EF4444;
+            --warning: #F59E0B;
+            --bg: #FFFFFF;
+            --surface: #F9FAFB;
+            --border: #E5E7EB;
+            --text: #111827;
+            --text-dim: #6B7280;
+            --text-light: #9CA3AF;
         }
-        body { 
-            font-family: 'Rajdhani', sans-serif; 
-            background: var(--bg); 
-            color: var(--text); 
-            min-height: 100vh; 
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
             overflow-x: hidden;
-            position: relative;
-        }
-        
-        body::before {
-            content: '';
-            position: fixed;
-            inset: 0;
-            background: 
-                repeating-linear-gradient(90deg, rgba(255, 215, 0, 0.03) 0px, transparent 1px, transparent 50px, rgba(255, 215, 0, 0.03) 51px),
-                repeating-linear-gradient(0deg, rgba(255, 215, 0, 0.03) 0px, transparent 1px, transparent 50px, rgba(255, 215, 0, 0.03) 51px);
-            pointer-events: none;
-            z-index: 1;
-            animation: gridPulse 3s ease-in-out infinite;
-        }
-        
-        @keyframes gridPulse {
-            0%, 100% { opacity: 0.3; }
-            50% { opacity: 0.6; }
-        }
-        
-        body::after {
-            content: '';
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            height: 2px;
-            background: linear-gradient(90deg, transparent, var(--yellow), transparent);
-            animation: scanLine 4s linear infinite;
-            z-index: 2;
-            pointer-events: none;
-            opacity: 0.5;
-        }
-        
-        @keyframes scanLine {
-            0% { transform: translateY(0); }
-            100% { transform: translateY(100vh); }
         }
 
-        .container { max-width: 600px; margin: 0 auto; padding-bottom: 140px; position: relative; z-index: 10; }
-        
-        header { 
-            background: linear-gradient(135deg, rgba(20, 20, 20, 0.95), rgba(40, 40, 40, 0.95)); 
-            border-bottom: 3px solid var(--yellow); 
-            padding: 20px; 
-            position: sticky; 
-            top: 0; 
+        .container {
+            max-width: 1280px;
+            margin: 0 auto;
+            padding: 0;
+        }
+
+        /* HEADER */
+        header {
+            background: var(--bg);
+            border-bottom: 1px solid var(--border);
+            padding: 16px 24px;
+            position: sticky;
+            top: 0;
             z-index: 100;
-            backdrop-filter: blur(10px);
-            box-shadow: 0 4px 20px rgba(255, 215, 0, 0.2);
-            animation: slideDown 0.5s ease-out;
-        }
-        
-        @keyframes slideDown {
-            from { transform: translateY(-100%); opacity: 0; }
-            to { transform: translateY(0); opacity: 1; }
-        }
-        
-        .logo { 
-            font-family: 'Orbitron', monospace; 
-            font-size: 22px; 
-            font-weight: 900; 
-            color: var(--yellow); 
-            display: flex; 
-            align-items: center; 
-            gap: 10px;
-            text-shadow: 0 0 20px rgba(255, 215, 0, 0.5);
-            animation: glow 2s ease-in-out infinite;
-        }
-        
-        @keyframes glow {
-            0%, 100% { text-shadow: 0 0 20px rgba(255, 215, 0, 0.5); }
-            50% { text-shadow: 0 0 30px rgba(255, 215, 0, 0.8), 0 0 40px rgba(255, 215, 0, 0.4); }
-        }
-        
-        .header-info { 
-            font-size: 11px; 
-            color: var(--text-dim); 
-            margin-top: 10px; 
-            font-weight: 600;
-            letter-spacing: 1px;
-        }
-        .header-info span { 
-            color: var(--yellow); 
-            cursor: pointer; 
-            font-weight: bold; 
-            transition: all 0.3s ease;
-            padding: 4px 8px;
-            border-radius: 4px;
-        }
-        .header-info span:hover {
-            background: var(--yellow-dim);
-            transform: scale(1.05);
-        }
-        
-        .stats { 
-            padding: 20px; 
-            display: grid; 
-            grid-template-columns: 1fr 1fr 1fr; 
-            gap: 12px;
-            animation: fadeInUp 0.6s ease-out 0.2s both;
-        }
-        
-        @keyframes fadeInUp {
-            from { transform: translateY(20px); opacity: 0; }
-            to { transform: translateY(0); opacity: 1; }
-        }
-        
-        .stat-card { 
-            background: linear-gradient(135deg, rgba(30, 30, 30, 0.8), rgba(20, 20, 20, 0.8)); 
-            border: 1px solid var(--border); 
-            border-radius: 12px; 
-            padding: 16px; 
-            border-left: 4px solid var(--yellow);
-            transition: all 0.3s ease;
-            position: relative;
-            overflow: hidden;
-        }
-        
-        .stat-card::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: -100%;
-            width: 100%;
-            height: 100%;
-            background: linear-gradient(90deg, transparent, rgba(255, 215, 0, 0.1), transparent);
-            transition: left 0.5s ease;
-        }
-        
-        .stat-card:hover::before {
-            left: 100%;
-        }
-        
-        .stat-card:hover {
-            transform: translateY(-4px);
-            box-shadow: 0 8px 24px rgba(255, 215, 0, 0.2);
-            border-color: var(--yellow);
-        }
-        
-        .stat-card.low { border-left-color: var(--red); }
-        .stat-value { 
-            font-family: 'Orbitron', monospace; 
-            font-size: 28px; 
-            font-weight: 900;
-            background: linear-gradient(135deg, var(--yellow), #FFA500);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-        }
-        .stat-label { 
-            font-size: 10px; 
-            color: var(--text-dim); 
-            text-transform: uppercase; 
-            margin-bottom: 6px; 
-            font-weight: 700;
-            letter-spacing: 2px;
-        }
-        
-        .tabs { 
-            display: flex; 
-            padding: 0 20px; 
-            gap: 8px; 
-            margin-bottom: 20px; 
-            overflow-x: auto;
-            animation: fadeInUp 0.6s ease-out 0.3s both;
-        }
-        .tab { 
-            flex-shrink: 0; 
-            padding: 12px 18px; 
-            background: rgba(30, 30, 30, 0.6); 
-            border: 2px solid var(--border); 
-            border-radius: 8px; 
-            text-align: center; 
-            font-size: 12px; 
-            cursor: pointer; 
-            color: var(--text-dim); 
-            text-transform: uppercase; 
-            font-weight: 700; 
-            white-space: nowrap;
-            transition: all 0.3s ease;
-            letter-spacing: 1px;
-        }
-        .tab:hover {
-            border-color: var(--yellow);
-            transform: translateY(-2px);
-        }
-        .tab.active { 
-            background: linear-gradient(135deg, rgba(255, 215, 0, 0.2), rgba(255, 215, 0, 0.1)); 
-            color: var(--yellow); 
-            border-color: var(--yellow);
-            box-shadow: 0 0 20px rgba(255, 215, 0, 0.3);
-        }
-        
-        .search-bar { 
-            padding: 0 20px 20px;
-            animation: fadeInUp 0.6s ease-out 0.4s both;
-        }
-        .search-input { 
-            width: 100%; 
-            background: rgba(30, 30, 30, 0.8); 
-            border: 2px solid var(--border); 
-            border-radius: 10px; 
-            padding: 14px 18px; 
-            color: var(--text); 
-            outline: none; 
-            font-family: 'Rajdhani', sans-serif; 
-            font-size: 14px;
-            font-weight: 600;
-            transition: all 0.3s ease;
-        }
-        .search-input:focus {
-            border-color: var(--yellow);
-            background: rgba(40, 40, 40, 0.8);
-            box-shadow: 0 0 20px rgba(255, 215, 0, 0.2);
-        }
-        
-        .inventory { 
-            padding: 0 20px;
-        }
-        .item { 
-            background: linear-gradient(135deg, rgba(30, 30, 30, 0.6), rgba(20, 20, 20, 0.6)); 
-            border: 1px solid var(--border); 
-            border-radius: 10px; 
-            padding: 16px; 
-            display: flex; 
-            align-items: center; 
-            gap: 14px; 
-            margin-bottom: 10px; 
-            cursor: pointer; 
-            transition: all 0.3s ease;
-            animation: fadeInUp 0.4s ease-out both;
-            position: relative;
-        }
-        .item:nth-child(1) { animation-delay: 0.1s; }
-        .item:nth-child(2) { animation-delay: 0.15s; }
-        .item:nth-child(3) { animation-delay: 0.2s; }
-        .item:nth-child(4) { animation-delay: 0.25s; }
-        .item:nth-child(5) { animation-delay: 0.3s; }
-        
-        .item:hover { 
-            transform: translateX(8px) scale(1.02); 
-            background: linear-gradient(135deg, rgba(40, 40, 40, 0.8), rgba(30, 30, 30, 0.8));
-            border-color: var(--yellow);
-            box-shadow: 0 4px 20px rgba(255, 215, 0, 0.2);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
         }
 
-        .confidence-badge {
-            position: absolute;
-            top: 8px;
-            right: 8px;
-            font-size: 9px;
-            padding: 3px 6px;
-            border-radius: 4px;
-            font-weight: bold;
+        .logo {
+            font-size: 20px;
+            font-weight: 700;
+            color: var(--primary);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .header-actions {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+        }
+
+        .user-badge {
+            background: var(--surface);
+            padding: 6px 12px;
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--text-dim);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .status-dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: var(--secondary);
+        }
+
+        .header-btn {
+            padding: 6px 12px;
+            background: transparent;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            color: var(--text);
+        }
+
+        .header-btn:hover {
+            background: var(--surface);
+            border-color: var(--primary);
+        }
+
+        .header-btn.danger {
+            color: var(--danger);
+            border-color: var(--danger);
+        }
+
+        .header-btn.danger:hover {
+            background: rgba(239, 68, 68, 0.1);
+        }
+
+        /* MAIN CONTENT */
+        .main-content {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 24px;
+            padding: 24px;
+            max-width: 100%;
+        }
+
+        .stats-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 24px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .stats-label {
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--text-dim);
+            text-transform: uppercase;
             letter-spacing: 0.5px;
         }
 
-        .confidence-badge.high {
-            background: rgba(0, 255, 136, 0.2);
-            color: var(--green);
-            border: 1px solid var(--green);
+        .stats-value {
+            font-size: 28px;
+            font-weight: 700;
+            color: var(--primary);
+        }
+
+        .stats-card.danger .stats-value {
+            color: var(--danger);
+        }
+
+        /* TABS */
+        .tabs {
+            display: flex;
+            gap: 8px;
+            padding: 24px 24px 0;
+            border-bottom: 1px solid var(--border);
+            overflow-x: auto;
+        }
+
+        .tab {
+            padding: 12px 16px;
+            background: transparent;
+            border: none;
+            border-bottom: 2px solid transparent;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            color: var(--text-dim);
+            transition: all 0.2s;
+            white-space: nowrap;
+        }
+
+        .tab:hover {
+            color: var(--primary);
+        }
+
+        .tab.active {
+            color: var(--primary);
+            border-bottom-color: var(--primary);
+        }
+
+        /* SEARCH */
+        .search-section {
+            padding: 24px;
+            display: flex;
+            gap: 12px;
+        }
+
+        .search-input {
+            flex: 1;
+            padding: 10px 14px;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            font-size: 14px;
+            font-family: 'Inter', sans-serif;
+            transition: all 0.2s;
+        }
+
+        .search-input:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+        }
+
+        /* INVENTORY LIST */
+        .inventory {
+            padding: 0 24px 100px;
+        }
+
+        .inventory-item {
+            background: var(--bg);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 16px;
+            display: grid;
+            grid-template-columns: 80px 1fr 80px 100px auto auto;
+            gap: 16px;
+            align-items: center;
+            margin-bottom: 12px;
+            transition: all 0.2s;
+            position: relative;
+        }
+
+        .inventory-item:hover {
+            border-color: var(--primary);
+            background: var(--surface);
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        }
+
+        .item-id {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 12px;
+            font-weight: 600;
+            padding: 8px 10px;
+            background: var(--primary);
+            color: white;
+            border-radius: 4px;
+            text-align: center;
+        }
+
+        .item-id.box {
+            background: var(--secondary);
+        }
+
+        .item-info h3 {
+            font-size: 14px;
+            font-weight: 600;
+            margin-bottom: 4px;
+            color: var(--text);
+        }
+
+        .item-info p {
+            font-size: 12px;
+            color: var(--text-dim);
+        }
+
+        .item-qty {
+            font-size: 18px;
+            font-weight: 700;
+            color: var(--primary);
+            text-align: center;
+        }
+
+        .item-qty.low {
+            color: var(--danger);
+        }
+
+        .item-qty.mid {
+            color: var(--warning);
+        }
+
+        .confidence-badge {
+            font-size: 11px;
+            font-weight: 600;
+            padding: 4px 8px;
+            border-radius: 4px;
+            background: rgba(16, 185, 129, 0.1);
+            color: var(--secondary);
+            white-space: nowrap;
         }
 
         .confidence-badge.medium {
-            background: rgba(255, 170, 0, 0.2);
-            color: #FFAA00;
-            border: 1px solid #FFAA00;
+            background: rgba(245, 158, 11, 0.1);
+            color: var(--warning);
         }
 
         .confidence-badge.low {
-            background: rgba(255, 68, 68, 0.2);
-            color: var(--red);
-            border: 1px solid var(--red);
+            background: rgba(239, 68, 68, 0.1);
+            color: var(--danger);
         }
 
-        .item-id { 
-            font-family: 'Orbitron', monospace; 
-            font-size: 11px; 
-            font-weight: 900; 
-            color: var(--bg); 
-            background: linear-gradient(135deg, var(--yellow), #FFA500); 
-            padding: 6px 10px; 
-            border-radius: 6px; 
-            min-width: 70px; 
-            text-align: center;
-            box-shadow: 0 4px 12px rgba(255, 215, 0, 0.4);
-        }
-        .item.box .item-id { background: linear-gradient(135deg, var(--green), #00CC66); }
-        .item-info { flex: 1; min-width: 0; }
-        .item-name { font-weight: 700; font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-        .item-meta { font-size: 11px; color: var(--text-dim); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-        .item-qty { 
-            color: var(--yellow); 
-            font-weight: 800; 
-            font-size: 14px; 
-            min-width: 55px; 
-            text-align: right;
-            font-family: 'Orbitron', monospace;
-        }
-        .item-qty.low { color: var(--red); }
-        .item-qty.mid { color: #FFAA00; }
-        
-        .actions { 
-            position: fixed; 
-            bottom: 0; 
-            left: 50%; 
-            transform: translateX(-50%); 
-            width: 100%; 
-            max-width: 600px; 
-            background: linear-gradient(to top, rgba(10, 10, 10, 0.98), rgba(10, 10, 10, 0.95)); 
-            border-top: 3px solid var(--yellow); 
-            padding: 16px; 
-            display: flex; 
-            gap: 10px; 
-            z-index: 50;
-            backdrop-filter: blur(10px);
-            box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.5);
-        }
-        .btn-main { 
-            flex: 1; 
-            padding: 16px 10px; 
-            border-radius: 10px; 
-            border: none; 
-            font-weight: 800; 
-            font-size: 12px; 
-            cursor: pointer; 
-            text-transform: uppercase; 
-            font-family: 'Orbitron', monospace; 
-            color: var(--bg); 
-            transition: all 0.3s ease;
-            letter-spacing: 1px;
-            position: relative;
-            overflow: hidden;
-        }
-        .btn-main::before {
-            content: '';
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            width: 0;
-            height: 0;
-            background: rgba(255, 255, 255, 0.3);
-            border-radius: 50%;
-            transform: translate(-50%, -50%);
-            transition: width 0.6s, height 0.6s;
-        }
-        .btn-main:active::before {
-            width: 300px;
-            height: 300px;
-        }
-        .btn-main:active { transform: scale(0.95); }
-        .btn-scan { 
-            background: linear-gradient(135deg, var(--yellow), #FFA500);
-            box-shadow: 0 6px 20px rgba(255, 215, 0, 0.4);
-        }
-        .btn-scan:hover {
-            box-shadow: 0 8px 30px rgba(255, 215, 0, 0.6);
-            transform: translateY(-2px);
-        }
-        .btn-secondary { 
-            flex: 0.5; 
-            padding: 16px 10px; 
-            border-radius: 10px; 
-            border: 2px solid var(--text-dim); 
-            background: rgba(30, 30, 30, 0.6); 
-            color: var(--text-dim); 
-            font-weight: 700; 
-            font-size: 11px; 
-            cursor: pointer; 
-            text-transform: uppercase; 
-            font-family: 'Orbitron', monospace;
-            transition: all 0.3s ease;
-            letter-spacing: 1px;
-        }
-        .btn-secondary:hover {
-            border-color: var(--purple);
-            color: var(--purple);
-            transform: translateY(-2px);
-        }
-        .btn-delete { border-color: var(--red); color: var(--red); }
-        .btn-delete:hover {
-            border-color: var(--red);
-            color: var(--red);
-            background: rgba(255, 68, 68, 0.1);
-        }
-        
-        .camera { 
-            position: fixed; 
-            inset: 0; 
-            background: #000; 
-            z-index: 400; 
-            display: none;
-        }
-        #video { width: 100%; height: 100%; object-fit: cover; }
-        .shutter { 
-            width: 80px; 
-            height: 80px; 
-            border: 5px solid var(--yellow); 
-            background: var(--yellow-dim); 
-            border-radius: 50%; 
-            position: absolute; 
-            bottom: 40px; 
-            left: 50%; 
-            transform: translateX(-50%); 
-            z-index: 401; 
-            cursor: pointer; 
-            transition: all 0.2s ease;
-            box-shadow: 0 0 30px rgba(255, 215, 0, 0.5);
-            animation: pulse 2s ease-in-out infinite;
-        }
-        
-        @keyframes pulse {
-            0%, 100% { transform: translateX(-50%) scale(1); }
-            50% { transform: translateX(-50%) scale(1.05); }
-        }
-        
-        .shutter:active { transform: translateX(-50%) scale(0.9); }
-        .shutter.delete { 
-            border-color: var(--red); 
-            background: rgba(255,68,68,0.2);
-            box-shadow: 0 0 30px rgba(255, 68, 68, 0.5);
-        }
-        .shutter.box-mode { border-color: var(--green); background: rgba(0,255,136,0.2); box-shadow: 0 0 30px rgba(0, 255, 136, 0.5);}
-        
-        .processing { 
-            position: absolute; 
-            inset: 0; 
-            background: rgba(0,0,0,0.95); 
-            display: none; 
-            flex-direction: column; 
-            align-items: center; 
-            justify-content: center; 
-            z-index: 500;
-        }
-        .spinner { 
-            width: 60px; 
-            height: 60px; 
-            border: 5px solid #333; 
-            border-top: 5px solid var(--yellow); 
-            border-radius: 50%; 
-            animation: spin 1s linear infinite; 
-            margin-bottom: 20px;
-            box-shadow: 0 0 20px rgba(255, 215, 0, 0.5);
-        }
-        @keyframes spin { to { transform: rotate(360deg); } }
-
-        .ai-status {
-            position: absolute;
-            bottom: 130px;
-            left: 50%;
-            transform: translateX(-50%);
-            background: rgba(0,0,0,0.8);
-            padding: 8px 12px;
-            border-radius: 6px;
-            font-size: 10px;
-            color: var(--text-dim);
+        .item-actions {
             display: flex;
             gap: 8px;
+        }
+
+        .btn-icon {
+            width: 32px;
+            height: 32px;
+            border: 1px solid var(--border);
+            background: var(--bg);
+            border-radius: 6px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+            transition: all 0.2s;
+        }
+
+        .btn-icon:hover {
+            background: var(--surface);
+            border-color: var(--primary);
+        }
+
+        .btn-icon.danger:hover {
+            background: rgba(239, 68, 68, 0.1);
+            border-color: var(--danger);
+            color: var(--danger);
+        }
+
+        /* ACTION BAR */
+        .action-bar {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: var(--bg);
+            border-top: 1px solid var(--border);
+            padding: 16px 24px;
+            display: flex;
+            gap: 12px;
+            justify-content: flex-end;
+            box-shadow: 0 -1px 3px rgba(0, 0, 0, 0.1);
+            z-index: 50;
+        }
+
+        .btn-main {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 8px;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .btn-primary {
+            background: var(--primary);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: var(--primary-dark);
+            box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
+        }
+
+        .btn-secondary {
+            background: var(--surface);
+            color: var(--text);
+            border: 1px solid var(--border);
+        }
+
+        .btn-secondary:hover {
+            border-color: var(--primary);
+            color: var(--primary);
+        }
+
+        .btn-danger {
+            background: var(--danger);
+            color: white;
+        }
+
+        .btn-danger:hover {
+            background: #DC2626;
+            box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
+        }
+
+        /* CAMERA */
+        .camera {
+            position: fixed;
+            inset: 0;
+            background: #000;
+            z-index: 400;
+            display: none;
+        }
+
+        #video {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .camera-controls {
+            position: absolute;
+            bottom: 40px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 20px;
+            z-index: 401;
+        }
+
+        .shutter {
+            width: 80px;
+            height: 80px;
+            border: 4px solid white;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 50%;
+            cursor: pointer;
+            transition: all 0.2s;
+            box-shadow: 0 0 20px rgba(255, 255, 255, 0.3);
+        }
+
+        .shutter:hover {
+            transform: scale(1.05);
+        }
+
+        .shutter:active {
+            transform: scale(0.95);
+        }
+
+        .camera-instructions {
+            background: rgba(0, 0, 0, 0.8);
+            color: white;
+            padding: 12px 20px;
+            border-radius: 8px;
+            font-size: 13px;
+            font-weight: 600;
+            text-align: center;
+            backdrop-filter: blur(10px);
+        }
+
+        .camera-close {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: rgba(0, 0, 0, 0.7);
+            color: white;
+            border: none;
+            padding: 10px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
             z-index: 402;
         }
 
-        .ai-status span {
-            display: flex;
+        .camera-close:hover {
+            background: rgba(0, 0, 0, 0.9);
+        }
+
+        .processing {
+            position: absolute;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.95);
+            display: none;
+            flex-direction: column;
             align-items: center;
-            gap: 4px;
+            justify-content: center;
+            z-index: 500;
+            gap: 20px;
+        }
+
+        .spinner {
+            width: 50px;
+            height: 50px;
+            border: 3px solid rgba(255, 255, 255, 0.3);
+            border-top: 3px solid white;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .processing-text {
+            color: white;
+            font-size: 14px;
+            font-weight: 600;
+            text-align: center;
+        }
+
+        .ai-status-indicator {
+            position: absolute;
+            bottom: 140px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0, 0, 0, 0.8);
+            color: white;
+            padding: 8px 14px;
+            border-radius: 6px;
+            font-size: 11px;
+            font-weight: 600;
+            display: flex;
+            gap: 12px;
+            z-index: 401;
+            backdrop-filter: blur(10px);
+        }
+
+        .ai-status-item {
+            display: flex;
+            gap: 6px;
+            align-items: center;
         }
 
         .ai-dot {
             width: 6px;
             height: 6px;
             border-radius: 50%;
-            background: var(--text-dim);
+            background: rgba(255, 255, 255, 0.3);
         }
 
         .ai-dot.active {
-            background: var(--green);
-            box-shadow: 0 0 8px var(--green);
-        }
-        
-        .modal { 
-            position: fixed; 
-            inset: 0; 
-            background: rgba(0,0,0,0.95); 
-            z-index: 600; 
-            display: none; 
-            align-items: center; 
-            justify-content: center; 
-            padding: 20px; 
-            overflow-y: auto;
-            backdrop-filter: blur(10px);
-        }
-        .modal-content { 
-            background: linear-gradient(135deg, rgba(30, 30, 30, 0.95), rgba(20, 20, 20, 0.95)); 
-            border: 3px solid var(--yellow); 
-            border-radius: 12px; 
-            padding: 28px; 
-            width: 100%; 
-            max-width: 420px; 
-            max-height: 90vh; 
-            overflow-y: auto;
-            box-shadow: 0 20px 60px rgba(255, 215, 0, 0.3);
-            animation: modalSlideIn 0.3s ease-out;
-        }
-        
-        @keyframes modalSlideIn {
-            from { transform: scale(0.9) translateY(20px); opacity: 0; }
-            to { transform: scale(1) translateY(0); opacity: 1; }
-        }
-        
-        .form-group { margin-bottom: 16px; }
-        .form-label { 
-            font-size: 11px; 
-            color: var(--text-dim); 
-            text-transform: uppercase; 
-            margin-bottom: 6px; 
-            display: block; 
-            font-weight: 700;
-            letter-spacing: 1px;
-        }
-        .form-input, .form-select { 
-            width: 100%; 
-            background: rgba(10, 10, 10, 0.8); 
-            border: 2px solid var(--border); 
-            border-radius: 8px; 
-            padding: 12px; 
-            color: var(--text); 
-            outline: none; 
-            font-family: 'Rajdhani', sans-serif; 
-            font-size: 14px;
-            font-weight: 600;
-            transition: all 0.3s ease;
-        }
-        .form-input:focus, .form-select:focus { 
-            border-color: var(--yellow); 
-            background: rgba(20, 20, 20, 0.9);
-            box-shadow: 0 0 15px rgba(255, 215, 0, 0.2);
-        }
-        
-        .login-screen { 
-            position: fixed; 
-            inset: 0; 
-            background: linear-gradient(135deg, #0a0a0a, #1a1a1a); 
-            z-index: 800; 
-            display: flex; 
-            align-items: center; 
-            justify-content: center; 
-            padding: 20px;
-        }
-        .login-box { 
-            background: linear-gradient(135deg, rgba(30, 30, 30, 0.95), rgba(20, 20, 20, 0.95)); 
-            border: 3px solid var(--yellow); 
-            border-radius: 12px;
-            padding: 50px 40px; 
-            width: 100%; 
-            max-width: 380px; 
-            text-align: center;
-            box-shadow: 0 20px 60px rgba(255, 215, 0, 0.3);
-            animation: modalSlideIn 0.5s ease-out;
-        }
-        
-        .alert { 
-            background: rgba(255,68,68,0.1); 
-            border-left: 4px solid var(--red); 
-            padding: 14px; 
-            border-radius: 6px; 
-            margin-bottom: 14px; 
-            font-size: 13px;
-            font-weight: 600;
-        }
-        .alert.success { background: rgba(0,255,136,0.1); border-left-color: var(--green); }
-        
-        .btn-group { display: flex; gap: 10px; }
-        .btn-group .btn-main { flex: 1; }
-        
-        .stat-row { 
-            display: flex; 
-            justify-content: space-between; 
-            padding: 14px 0; 
-            border-bottom: 1px solid var(--border); 
-            font-size: 13px;
-            font-weight: 600;
-        }
-        .stat-row:last-child { border-bottom: none; }
-        
-        .empty-state { 
-            text-align: center; 
-            padding: 50px 20px; 
-            color: var(--text-dim); 
-            font-size: 13px;
-            font-weight: 600;
+            background: #10B981;
+            box-shadow: 0 0 8px #10B981;
         }
 
-        .scan-result-badge {
-            padding: 12px;
-            margin-bottom: 14px;
-            border-radius: 6px;
-            font-size: 12px;
-            font-weight: 600;
-            display: flex;
+        /* MODALS */
+        .modal {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 600;
+            display: none;
             align-items: center;
+            justify-content: center;
+            padding: 24px;
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: var(--bg);
+            border-radius: 12px;
+            padding: 32px;
+            width: 100%;
+            max-width: 500px;
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: 0 20px 25px rgba(0, 0, 0, 0.15);
+        }
+
+        .modal-header {
+            font-size: 18px;
+            font-weight: 700;
+            margin-bottom: 24px;
+            padding-bottom: 16px;
+            border-bottom: 1px solid var(--border);
+            color: var(--text);
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+            display: flex;
+            flex-direction: column;
             gap: 8px;
         }
 
-        .scan-result-badge.verified {
-            background: rgba(0,255,136,0.15);
-            border-left: 4px solid var(--green);
-            color: var(--green);
+        .form-label {
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--text-dim);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
         }
 
-        .scan-result-badge.warning {
-            background: rgba(255,170,0,0.15);
-            border-left: 4px solid #FFAA00;
-            color: #FFAA00;
+        .form-input, .form-select {
+            padding: 10px 12px;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            font-size: 14px;
+            font-family: 'Inter', sans-serif;
+            transition: all 0.2s;
         }
 
-        .scan-result-badge.ai-icon {
-            font-size: 16px;
+        .form-input:focus, .form-select:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+        }
+
+        .modal-actions {
+            display: flex;
+            gap: 12px;
+            margin-top: 24px;
+        }
+
+        .modal-actions button {
+            flex: 1;
+        }
+
+        /* LOGIN */
+        .login-screen {
+            position: fixed;
+            inset: 0;
+            background: linear-gradient(135deg, #667EEA 0%, #764BA2 100%);
+            z-index: 800;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 24px;
+        }
+
+        .login-screen.hidden {
+            display: none;
+        }
+
+        .login-box {
+            background: var(--bg);
+            border-radius: 12px;
+            padding: 48px 32px;
+            width: 100%;
+            max-width: 360px;
+            box-shadow: 0 20px 25px rgba(0, 0, 0, 0.15);
+        }
+
+        .login-title {
+            font-size: 28px;
+            font-weight: 700;
+            margin-bottom: 8px;
+            color: var(--text);
+        }
+
+        .login-subtitle {
+            font-size: 14px;
+            color: var(--text-dim);
+            margin-bottom: 32px;
+        }
+
+        .login-input {
+            width: 100%;
+            padding: 12px 14px;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            font-size: 14px;
+            margin-bottom: 16px;
+            font-family: 'Inter', sans-serif;
+        }
+
+        .login-input:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 60px 24px;
+            color: var(--text-dim);
+        }
+
+        .empty-state-icon {
+            font-size: 48px;
+            margin-bottom: 16px;
+        }
+
+        /* RESPONSIVE */
+        @media (max-width: 1024px) {
+            .main-content {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .inventory-item {
+                grid-template-columns: 1fr;
+                gap: 12px;
+            }
+
+            .item-id {
+                width: 100%;
+            }
+
+            .item-actions {
+                width: 100%;
+            }
+
+            .item-actions button {
+                flex: 1;
+            }
+
+            .action-bar {
+                flex-direction: column;
+            }
+
+            .action-bar button {
+                width: 100%;
+            }
         }
     </style>
 </head>
 <body>
 
+    <!-- LOGIN SCREEN -->
     <div class="login-screen" id="login-screen">
         <div class="login-box">
-            <div style="font-family: 'Orbitron', monospace; font-size: 32px; color: var(--yellow); margin-bottom: 8px; font-weight: 900; text-shadow: 0 0 20px rgba(255,215,0,0.5);">🧵 PRO</div>
-            <div style="font-size: 14px; color: var(--text-dim); margin-bottom: 30px; font-weight: 600;">Filament Inventory Management</div>
-            <input type="text" class="form-input" id="member-id" placeholder="Access ID (Name)" style="text-align: center; margin-bottom: 16px; font-size: 16px;">
-            <button class="btn-main btn-scan" onclick="login()" style="width: 100%; margin-bottom: 12px; font-size: 16px;">ACCESS SYSTEM</button>
+            <div class="login-title">🧵 FILAMENT PRO</div>
+            <div class="login-subtitle">Enterprise Inventory System</div>
+            <input type="text" class="login-input" id="member-id" placeholder="Enter your name" autofocus>
+            <button class="btn-main btn-primary" onclick="login()" style="width: 100%; margin-top: 8px;">ACCESS SYSTEM</button>
         </div>
     </div>
 
+    <!-- MAIN APP -->
     <div class="container" id="main-app" style="display: none;">
+        <!-- HEADER -->
         <header>
-            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 12px;">
-                <div class="logo">🧵 FILAMENT PRO</div>
-                <div style="display: flex; gap: 12px; align-items: center;">
-                    <span style="font-size:10px; color:var(--green); font-weight:bold;">● ONLINE</span>
-                    <span style="font-size:12px; color:var(--red); font-weight:bold; cursor:pointer;" onclick="logout()">LOGOUT</span>
+            <div class="logo">🧵 FILAMENT PRO</div>
+            <div class="header-actions">
+                <div class="user-badge">
+                    <span class="status-dot"></span>
+                    <span id="user-name">-</span>
                 </div>
-            </div>
-            <div class="header-info">
-                OP: <span id="user-name">-</span> | 
-                <span onclick="setGroqKey()">🔑 GROQ</span> |
-                <span onclick="setGeminiKey()">🔑 GEMINI</span> |
-                <span onclick="showStats()">📊 STATS</span> |
-                <span onclick="exportData()">⬇️ EXPORT</span>
+                <button class="header-btn" onclick="setGroqKey()">🔑 GROQ API</button>
+                <button class="header-btn" onclick="setGeminiKey()">🔑 GEMINI API</button>
+                <button class="header-btn" onclick="showStats()">📊 STATS</button>
+                <button class="header-btn" onclick="exportData()">⬇️ EXPORT</button>
+                <button class="header-btn danger" onclick="logout()">LOGOUT</button>
             </div>
         </header>
 
-        <div class="stats">
-            <div class="stat-card">
-                <div class="stat-label">Spools</div>
-                <div class="stat-value" id="total-spools">0</div>
+        <!-- STATS -->
+        <div class="main-content">
+            <div class="stats-card">
+                <div class="stats-label">Total Spools</div>
+                <div class="stats-value" id="total-spools">0</div>
             </div>
-            <div class="stat-card">
-                <div class="stat-label">Boxes</div>
-                <div class="stat-value" id="total-boxes">0</div>
+            <div class="stats-card">
+                <div class="stats-label">Total Boxes</div>
+                <div class="stats-value" id="total-boxes">0</div>
             </div>
-            <div class="stat-card low">
-                <div class="stat-label">Low Stock</div>
-                <div class="stat-value" id="low-stock" style="color:var(--red);">0</div>
+            <div class="stats-card danger">
+                <div class="stats-label">Low Stock</div>
+                <div class="stats-value" id="low-stock">0</div>
             </div>
         </div>
 
+        <!-- TABS -->
         <div class="tabs">
-            <div class="tab active" id="tab-all" onclick="setTab('all')">ALL</div>
-            <div class="tab" id="tab-storage" onclick="setTab('storage')">SPOOLS</div>
-            <div class="tab" id="tab-inventory" onclick="setTab('inventory')">BOXES</div>
-            <div class="tab" id="tab-low" onclick="setTab('low')">⚠️ LOW</div>
-            <div class="tab" id="tab-recent" onclick="setTab('recent')">🆕 RECENT</div>
+            <button class="tab active" id="tab-all" onclick="setTab('all')">All Items</button>
+            <button class="tab" id="tab-storage" onclick="setTab('storage')">Spools</button>
+            <button class="tab" id="tab-inventory" onclick="setTab('inventory')">Boxes</button>
+            <button class="tab" id="tab-low" onclick="setTab('low')">Low Stock</button>
+            <button class="tab" id="tab-recent" onclick="setTab('recent')">Recently Added</button>
         </div>
 
-        <div class="search-bar">
-            <input type="text" class="search-input" id="search" placeholder="🔍 Search ID, brand, color..." onkeyup="renderInventory()">
+        <!-- SEARCH -->
+        <div class="search-section">
+            <input type="text" class="search-input" id="search" placeholder="Search by ID, brand, color, or material..." onkeyup="renderInventory()">
+            <button class="btn-main btn-secondary" onclick="manualEntry()">➕ NEW ITEM</button>
         </div>
+
+        <!-- INVENTORY LIST -->
         <div class="inventory" id="inventory"></div>
     </div>
 
-    <div class="actions" id="action-bar" style="display: none;">
-        <button class="btn-secondary btn-delete" onclick="openCamera('delete')">🗑️ PURGE</button>
-        <button class="btn-main btn-scan" onclick="openCamera('box')" style="background: linear-gradient(135deg, var(--green), #00CC66);">📦 BOX</button>
-        <button class="btn-main btn-scan" onclick="openCamera('spool')">🧵 SPOOL</button>
-        <button class="btn-secondary" onclick="manualEntry()" style="border-color: var(--purple); color: var(--purple);">✎ NEW</button>
+    <!-- ACTION BAR -->
+    <div class="action-bar" id="action-bar" style="display: none;">
+        <button class="btn-main btn-primary" onclick="openCamera('auto')">📷 SCAN ITEM</button>
     </div>
 
+    <!-- CAMERA -->
     <div class="camera" id="camera">
         <video id="video" autoplay playsinline></video>
         <canvas id="canvas" style="display:none;"></canvas>
-        <button class="shutter" id="shutter" onclick="capture()"></button>
-        <button onclick="closeCamera()" style="position:absolute; top:40px; right:20px; background:rgba(0,0,0,0.7); color:white; border:1px solid var(--yellow); padding:10px 16px; border-radius:8px; cursor:pointer; z-index: 402; font-weight: bold;">✕ CLOSE</button>
         
-        <div style="position:absolute; bottom:140px; left:50%; transform:translateX(-50%); text-align:center; width:100%; z-index: 402;">
-            <div style="font-family:'Orbitron', monospace; font-size:14px; font-weight:bold; color:var(--yellow); background:rgba(0,0,0,0.8); padding:12px 20px; border-radius:8px; display:inline-block; border: 1px solid var(--yellow);" id="scan-instructions">
-                > HOLD STEADY <
-            </div>
+        <button class="camera-close" onclick="closeCamera()">✕ CLOSE</button>
+        
+        <div class="ai-status-indicator" id="ai-status-indicator">
+            <span class="ai-status-item">
+                <span class="ai-dot" id="groq-dot"></span>
+                <span>GROQ</span>
+            </span>
+            <span class="ai-status-item">
+                <span class="ai-dot" id="gemini-dot"></span>
+                <span>GEMINI</span>
+            </span>
         </div>
 
-        <div class="ai-status" id="ai-status">
-            <span>AI Status:</span>
-            <span><div class="ai-dot" id="groq-dot"></div>GROQ</span>
-            <span><div class="ai-dot" id="gemini-dot"></div>GEMINI</span>
+        <div class="camera-controls">
+            <div class="camera-instructions" id="scan-instructions">Hold steady and center the item</div>
+            <button class="shutter" id="shutter" onclick="capture()"></button>
         </div>
 
         <div class="processing" id="processing">
             <div class="spinner"></div>
-            <div style="color:var(--yellow); font-family:'Orbitron'; font-weight:900; font-size: 18px; letter-spacing: 2px;">UPLINKING</div>
-            <div style="color:var(--text-dim); font-family:'Rajdhani'; font-weight:600; font-size: 14px; margin-top: 8px;" id="processing-msg">Connecting to AI models...</div>
+            <div class="processing-text" id="processing-msg">Scanning with AI...</div>
         </div>
     </div>
 
+    <!-- EDIT MODAL -->
     <div class="modal" id="modal">
         <div class="modal-content">
-            <div style="color:var(--yellow); font-weight:800; margin-bottom:20px; font-family:'Orbitron'; font-size: 18px; text-align:center; border-bottom: 1px solid #333; padding-bottom: 10px;">⚙️ ASSET_DATA</div>
+            <div class="modal-header">Asset Details</div>
             
-            <div class="alert" id="modal-alert" style="display: none;"></div>
-            <div class="scan-result-badge" id="scan-result-badge" style="display: none;"></div>
-
             <div class="form-group">
                 <label class="form-label">Status</label>
                 <select id="f-status" class="form-select">
-                    <option value="storage">📦 Storage (Spool)</option>
-                    <option value="inventory">📫 Inventory (Box)</option>
+                    <option value="storage">📦 Spool (Storage)</option>
+                    <option value="inventory">📫 Box (Inventory)</option>
                 </select>
             </div>
 
             <div class="form-group">
                 <label class="form-label">Asset ID</label>
-                <input type="text" id="f-id" class="form-input" readonly style="color: var(--yellow); font-family: 'Orbitron', monospace; font-weight: bold; font-size: 16px; background: rgba(255,215,0,0.1);">
+                <input type="text" id="f-id" class="form-input" readonly style="background: var(--surface); color: var(--primary); font-weight: 600;">
             </div>
 
-            <div class="form-row" style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+            <div class="form-row">
                 <div class="form-group">
                     <label class="form-label">Brand</label>
-                    <input type="text" id="f-brand" class="form-input" placeholder="e.g., Extrudr">
+                    <input type="text" id="f-brand" class="form-input" placeholder="Extrudr, etc.">
                 </div>
-
                 <div class="form-group">
-                    <label class="form-label">Material Type</label>
+                    <label class="form-label">Material</label>
                     <select id="f-material" class="form-select">
                         <option value="">Select...</option>
                         <option value="PLA">PLA</option>
@@ -786,27 +850,26 @@
 
             <div class="form-group">
                 <label class="form-label">Color</label>
-                <input type="text" id="f-color" class="form-input" placeholder="e.g., Jet Black">
+                <input type="text" id="f-color" class="form-input" placeholder="Jet Black, etc.">
             </div>
 
             <div class="form-group">
-                <label class="form-label">Stock Level</label>
-                <select id="f-qty" class="form-select" style="font-weight: bold; color: var(--yellow);">
-                    <option value="100">🟢 100% - Full Spool</option>
-                    <option value="75">🟡 75% - 3/4 Remaining</option>
-                    <option value="50">🟡 50% - Half Spool</option>
-                    <option value="25">🔴 25% - Low Stock</option>
-                    <option value="10">🔴 10% - Almost Empty</option>
-                    <option value="0">⚫ 0% - Empty/Used</option>
+                <label class="form-label">Stock Level (%)</label>
+                <select id="f-qty" class="form-select">
+                    <option value="100">🟢 100% - Full</option>
+                    <option value="75">🟡 75% - 3/4 Full</option>
+                    <option value="50">🟡 50% - Half</option>
+                    <option value="25">🔴 25% - Low</option>
+                    <option value="10">🔴 10% - Critical</option>
+                    <option value="0">⚫ 0% - Empty</option>
                 </select>
             </div>
 
-            <div class="form-row" style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+            <div class="form-row">
                 <div class="form-group">
                     <label class="form-label">Weight (g)</label>
                     <input type="number" id="f-weight" class="form-input" placeholder="1000">
                 </div>
-
                 <div class="form-group">
                     <label class="form-label">Cost (€)</label>
                     <input type="number" id="f-cost" class="form-input" placeholder="25.99">
@@ -818,55 +881,60 @@
                 <input type="text" id="f-notes" class="form-input" placeholder="Any notes...">
             </div>
 
-            <div class="btn-group" style="margin-top: 20px;">
-                <button class="btn-main btn-scan" onclick="saveItem()">COMMIT TO DATABASE</button>
-                <button class="btn-secondary" onclick="closeModal()">CANCEL</button>
+            <div class="modal-actions">
+                <button class="btn-main btn-primary" onclick="saveItem()">SAVE</button>
+                <button class="btn-main btn-secondary" onclick="closeModal()">CANCEL</button>
             </div>
         </div>
     </div>
 
+    <!-- STATS MODAL -->
     <div class="modal" id="stats-modal">
         <div class="modal-content">
-            <div style="color:var(--yellow); font-weight:800; margin-bottom:16px; font-family:'Orbitron'; font-size: 18px; text-align: center;">📊 ANALYTICS</div>
+            <div class="modal-header">Inventory Statistics</div>
             
-            <div style="margin-bottom: 16px;">
-                <div class="stat-row">
-                    <span>Total Assets</span>
-                    <span style="color: var(--yellow); font-weight: 800; font-size: 16px;" id="stat-total">0</span>
+            <div class="form-group" style="margin-bottom: 0;">
+                <div style="display: grid; gap: 12px;">
+                    <div style="display: flex; justify-content: space-between; padding: 12px; background: var(--surface); border-radius: 6px;">
+                        <span>Total Assets</span>
+                        <span style="font-weight: 700; color: var(--primary);" id="stat-total">0</span>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; padding: 12px; background: var(--surface); border-radius: 6px;">
+                        <span>Total Spools</span>
+                        <span style="font-weight: 700;" id="stat-spools">0</span>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; padding: 12px; background: var(--surface); border-radius: 6px;">
+                        <span>Total Boxes</span>
+                        <span style="font-weight: 700;" id="stat-boxes">0</span>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; padding: 12px; background: var(--surface); border-radius: 6px;">
+                        <span>Low Stock Items</span>
+                        <span style="font-weight: 700; color: var(--danger);" id="stat-low">0</span>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; padding: 12px; background: var(--surface); border-radius: 6px;">
+                        <span>Full Stock Items</span>
+                        <span style="font-weight: 700; color: var(--secondary);" id="stat-full">0</span>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; padding: 12px; background: var(--surface); border-radius: 6px;">
+                        <span>Avg Stock Level</span>
+                        <span style="font-weight: 700;" id="stat-avg">0%</span>
+                    </div>
                 </div>
-                <div class="stat-row">
-                    <span>Total Spools</span>
-                    <span id="stat-spools">0</span>
+
+                <div style="margin-top: 24px; padding-top: 24px; border-top: 1px solid var(--border);">
+                    <h3 style="font-size: 12px; font-weight: 700; color: var(--text-dim); text-transform: uppercase; margin-bottom: 12px;">Material Breakdown</h3>
+                    <div id="material-stats" style="display: grid; gap: 8px;"></div>
                 </div>
-                <div class="stat-row">
-                    <span>Total Boxes</span>
-                    <span id="stat-boxes">0</span>
-                </div>
-                <div class="stat-row">
-                    <span>Low Stock Items</span>
-                    <span style="color: var(--red); font-weight: bold;" id="stat-low">0</span>
-                </div>
-                <div class="stat-row">
-                    <span>Full Stock Items</span>
-                    <span style="color: var(--green);" id="stat-full">0</span>
-                </div>
-                <div class="stat-row">
-                    <span>Avg Stock Level</span>
-                    <span id="stat-avg">0%</span>
+
+                <div style="margin-top: 20px;">
+                    <h3 style="font-size: 12px; font-weight: 700; color: var(--text-dim); text-transform: uppercase; margin-bottom: 12px;">Top Brands</h3>
+                    <div id="brand-stats" style="display: grid; gap: 8px;"></div>
                 </div>
             </div>
 
-            <div style="border-top: 1px solid var(--border); padding-top: 16px; margin-bottom: 16px;">
-                <div style="font-size: 11px; color: var(--yellow); text-transform: uppercase; margin-bottom: 12px; font-weight: 700; font-family:'Orbitron';">MATERIAL BREAKDOWN</div>
-                <div id="material-stats"></div>
+            <div class="modal-actions">
+                <button class="btn-main btn-secondary" onclick="closeStatsModal()" style="flex: 1;">CLOSE</button>
             </div>
-
-            <div style="border-top: 1px solid var(--border); padding-top: 16px;">
-                <div style="font-size: 11px; color: var(--yellow); text-transform: uppercase; margin-bottom: 12px; font-weight: 700; font-family:'Orbitron';">BRAND BREAKDOWN</div>
-                <div id="brand-stats"></div>
-            </div>
-
-            <button class="btn-secondary" onclick="closeStatsModal()" style="width: 100%; margin-top: 20px;">CLOSE</button>
         </div>
     </div>
 
@@ -890,42 +958,16 @@
         let inventoryArr = [];
         let activeUser = localStorage.getItem('activeUser');
         let currentTab = 'all';
-        let currentScanMode = 'spool';
         let stream = null;
         let lastScanResult = null;
 
-        // ===== AI CONFIG =====
-        let useGeminiVerification = localStorage.getItem('useGemini') === 'true';
-
-        function setGroqKey() {
-            const k = prompt("Enter Groq API Key:\n\nGet it from: https://console.groq.com/keys", localStorage.getItem('groqKey') || "");
-            if(k) {
-                localStorage.setItem('groqKey', k);
-                alert("✅ Groq API Key saved!");
-            }
-        }
-
-        function setGeminiKey() {
-            const k = prompt("Enter Google Gemini API Key (Optional):\n\nGet it from: https://aistudio.google.com/app/apikey\n\nThis enables dual-AI verification for 99% accuracy.", localStorage.getItem('geminiKey') || "");
-            if(k) {
-                localStorage.setItem('geminiKey', k);
-                localStorage.setItem('useGemini', 'true');
-                useGeminiVerification = true;
-                alert("✅ Gemini API Key saved! Dual-AI verification ENABLED.");
-            }
-        }
-
-        // ---- EXTRUDR SERIAL NORMALIZATION ----
+        // ===== NORMALIZE SPOOL ID =====
         function normalizeSpoolId(idRaw) {
             if (!idRaw) return null;
             let id = String(idRaw).toUpperCase();
             id = id.replace(/[^A-Z0-9]/g, "");
             id = id.replace(/[OQ]/g, "0");
             
-            if (id.startsWith("888M")) id = "000M" + id.substring(4);
-            if (id.startsWith("846M")) id = "046M" + id.substring(4);
-            if (id.startsWith("800M")) id = "000M" + id.substring(4);
-
             const mIndex = id.indexOf("M");
             if (mIndex === -1) return null;
             const start = Math.max(0, mIndex - 3);
@@ -935,13 +977,18 @@
             return id;
         }
 
+        // ===== DETECT ITEM TYPE =====
+        function isSpoolSerial(id) {
+            return /^[0-9]{3}M[0-9]{9}$/.test(String(id).toUpperCase());
+        }
+
         if(activeUser) { loginSuccess(activeUser); }
 
-        // ===== AUTHENTICATION =====
+        // ===== AUTH =====
         function login() {
             const name = document.getElementById('member-id').value.trim();
             if (!name) {
-                alert("Please enter a name");
+                alert("Please enter your name");
                 return;
             }
             activeUser = name.charAt(0).toUpperCase() + name.slice(1);
@@ -950,7 +997,7 @@
         }
 
         function loginSuccess(user) {
-            document.getElementById('login-screen').style.display = 'none';
+            document.getElementById('login-screen').classList.add('hidden');
             document.getElementById('main-app').style.display = 'block';
             document.getElementById('action-bar').style.display = 'flex';
             document.getElementById('user-name').textContent = user;
@@ -960,6 +1007,23 @@
         function logout() {
             localStorage.removeItem('activeUser');
             location.reload();
+        }
+
+        // ===== API KEYS =====
+        function setGroqKey() {
+            const k = prompt("Enter Groq API Key (from console.groq.com/keys):", localStorage.getItem('groqKey') || "");
+            if(k) {
+                localStorage.setItem('groqKey', k);
+                alert("✅ Groq API key saved!");
+            }
+        }
+
+        function setGeminiKey() {
+            const k = prompt("Enter Google Gemini API Key (from aistudio.google.com/app/apikey):", localStorage.getItem('geminiKey') || "");
+            if(k) {
+                localStorage.setItem('geminiKey', k);
+                alert("✅ Gemini API key saved!");
+            }
         }
 
         // ===== FIREBASE SYNC =====
@@ -1012,34 +1076,31 @@
             }
 
             if (filtered.length === 0) {
-                container.innerHTML = '<div class="empty-state">NO ASSETS FOUND IN DATABASE</div>';
+                container.innerHTML = '<div class="empty-state"><div class="empty-state-icon">📭</div>No items found</div>';
                 return;
             }
 
             filtered.forEach(item => {
-                const div = document.createElement('div');
-                div.className = item.status === 'inventory' ? 'item box' : 'item';
+                const isBox = item.status === 'inventory';
                 const qtyClass = item.qty <= 10 ? 'low' : item.qty <= 50 ? 'mid' : '';
-                const icon = item.status === 'inventory' ? '📫' : '📦';
+                const confClass = item.ai_confidence === 'HIGH' ? 'confidence-badge' : item.ai_confidence === 'MEDIUM' ? 'confidence-badge medium' : 'confidence-badge low';
 
-                // Show confidence badge if available
-                let confidenceBadge = '';
-                if (item.ai_confidence) {
-                    const badge = item.ai_confidence === 'HIGH' ? 'high' : item.ai_confidence === 'MEDIUM' ? 'medium' : 'low';
-                    confidenceBadge = `<span class="confidence-badge ${badge}">✓ ${item.ai_confidence}</span>`;
-                }
-
-                div.onclick = () => editItem(item);
-                div.innerHTML = `
-                    <div class="item-id">${item.id}</div>
-                    <div class="item-info">
-                        <div class="item-name">${icon} ${item.brand || 'Unknown'} ${item.type || ''}</div>
-                        <div class="item-meta">${item.color || 'N/A'} • LOG: ${item.user || 'Unknown'}</div>
+                const html = `
+                    <div class="inventory-item">
+                        <div class="item-id ${isBox ? 'box' : ''}">${item.id}</div>
+                        <div class="item-info">
+                            <h3>${isBox ? '📫' : '📦'} ${item.brand || 'Unknown'} ${item.type || ''}</h3>
+                            <p>${item.color || 'N/A'} • Added by ${item.user || 'Unknown'}</p>
+                        </div>
+                        <div class="item-qty ${qtyClass}">${item.qty}%</div>
+                        <div>${item.ai_confidence ? `<span class="${confClass}">${item.ai_confidence}</span>` : ''}</div>
+                        <div class="item-actions">
+                            <button class="btn-icon" onclick="editItem(JSON.parse('${JSON.stringify(item).replace(/'/g, "\\'")}'))">✏️</button>
+                            <button class="btn-icon danger" onclick="deleteItem('${item.id}')">🗑️</button>
+                        </div>
                     </div>
-                    <div class="item-qty ${qtyClass}">${item.qty}%</div>
-                    ${confidenceBadge}
                 `;
-                container.appendChild(div);
+                container.innerHTML += html;
             });
         }
 
@@ -1050,7 +1111,7 @@
             renderInventory();
         }
 
-        // ===== EDIT/NEW ITEM =====
+        // ===== EDIT/DELETE =====
         function editItem(item) {
             document.getElementById('f-status').value = item.status || 'storage';
             document.getElementById('f-id').value = item.id;
@@ -1061,19 +1122,13 @@
             document.getElementById('f-weight').value = item.weight || "";
             document.getElementById('f-cost').value = item.cost || "";
             document.getElementById('f-notes').value = item.notes || "";
-            
-            // Show scan confidence if available
-            const resultBadge = document.getElementById('scan-result-badge');
-            if (item.ai_confidence) {
-                const isBadge = item.ai_confidence === 'HIGH' ? 'verified' : 'warning';
-                resultBadge.className = `scan-result-badge ${isBadge}`;
-                resultBadge.innerHTML = `<span class="ai-icon">🤖</span> AI Confidence: ${item.ai_confidence}`;
-                resultBadge.style.display = 'flex';
-            } else {
-                resultBadge.style.display = 'none';
-            }
+            document.getElementById('modal').classList.add('active');
+        }
 
-            document.getElementById('modal').style.display = 'flex';
+        function deleteItem(id) {
+            if (confirm(`Delete asset ${id}?`)) {
+                db.ref('inventory/' + id).remove();
+            }
         }
 
         function manualEntry() {
@@ -1086,17 +1141,15 @@
             document.getElementById('f-weight').value = '';
             document.getElementById('f-cost').value = '';
             document.getElementById('f-notes').value = '';
-            
-            document.getElementById('scan-result-badge').style.display = 'none';
-            document.getElementById('modal').style.display = 'flex';
+            document.getElementById('modal').classList.add('active');
         }
 
         function closeModal() {
-            document.getElementById('modal').style.display = 'none';
+            document.getElementById('modal').classList.remove('active');
         }
 
         function closeStatsModal() {
-            document.getElementById('stats-modal').style.display = 'none';
+            document.getElementById('stats-modal').classList.remove('active');
         }
 
         // ===== SAVE ITEM =====
@@ -1122,36 +1175,16 @@
             closeModal();
         }
 
-        // ===== CAMERA FUNCTIONS =====
+        // ===== CAMERA =====
         async function openCamera(mode) {
-            currentScanMode = mode;
-            const shutter = document.getElementById('shutter');
-            const instructions = document.getElementById('scan-instructions');
-            shutter.disabled = false;
-
-            if (mode === 'box') {
-                shutter.className = 'shutter box-mode';
-                instructions.textContent = "> HOLD CLOSE TO BOX BARCODE <";
-                instructions.style.color = "var(--bg)";
-                instructions.style.background = "var(--green)";
-            } else if (mode === 'spool') {
-                shutter.className = 'shutter';
-                instructions.textContent = "> CENTER SERIAL NUMBER IN VIEW <";
-                instructions.style.color = "var(--bg)";
-                instructions.style.background = "var(--yellow)";
-            } else {
-                shutter.className = 'shutter delete';
-                instructions.textContent = "> SCAN ASSET TO PURGE <";
-                instructions.style.color = "var(--bg)";
-                instructions.style.background = "var(--red)";
-            }
-
             document.getElementById('camera').style.display = 'block';
             try {
-                stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment', width: { ideal: 1280 } } });
+                stream = await navigator.mediaDevices.getUserMedia({ 
+                    video: { facingMode: 'environment', width: { ideal: 1280 } } 
+                });
                 document.getElementById('video').srcObject = stream;
             } catch(e) {
-                alert("Camera Error. Please allow permissions.");
+                alert("Camera access denied. Please allow permissions.");
             }
         }
 
@@ -1161,15 +1194,15 @@
             document.getElementById('processing').style.display = 'none';
         }
 
-        // ===== DUAL-AI CAPTURE (GROQ + OPTIONAL GEMINI VERIFICATION) =====
+        // ===== SMART AI ROUTING =====
         async function capture() {
             const GROQ_KEY = localStorage.getItem('groqKey');
+            const GEMINI_KEY = localStorage.getItem('geminiKey');
+            
             if(!GROQ_KEY) {
-                closeCamera();
-                return alert("Please set your Groq API key first by clicking '🔑 GROQ' at the top!");
+                alert("Please set Groq API key first!");
+                return;
             }
-
-            const GEMINI_KEY = useGeminiVerification ? localStorage.getItem('geminiKey') : null;
 
             const shutterBtn = document.getElementById('shutter');
             if (shutterBtn.disabled) return;
@@ -1186,36 +1219,27 @@
             let base64 = canvas.toDataURL('image/jpeg', 0.8);
 
             try {
-                let aiPrompt = "";
-                let assignedStatus = "";
-
-                if (currentScanMode === 'box') {
-                    aiPrompt = "Extract the standard 1D barcode number from this cardboard box. Ignore everything else. Return strictly JSON: {\"asset_id\": \"barcode_number\", \"brand\": \"brand_name\", \"type\": \"material_type\", \"color\": \"color_name\", \"raw_text_lines\": [\"line1\", \"line2\"]}";
-                    assignedStatus = "inventory";
-                } else if (currentScanMode === 'spool') {
-                    aiPrompt = "Analyze this 3D filament spool. Find the 13-character alphanumeric serial (3 digits, 'M', 9 digits). Slashed zero is '0'. Open top-right is '6'. Read every line of text on the label into the raw_text_lines array. Return strictly valid JSON: {\"brand\": \"string\", \"color\": \"string\", \"type\": \"string\", \"asset_id\": \"string\", \"raw_text_lines\": [\"line 1\", \"line 2\"]}";
-                    assignedStatus = "storage";
-                } else {
-                    aiPrompt = "Read the most prominent ID number or serial on this item. It could be a barcode number or a serial like 000M123456789. Return strictly JSON: {\"asset_id\": \"the_id_you_see\", \"raw_text_lines\": [\"line1\", \"line2\"]}";
-                    assignedStatus = "delete";
-                }
-
-                document.getElementById('processing-msg').textContent = useGeminiVerification ? 'Groq: Extracting...' : 'Scanning with Groq AI...';
-
-                // PRIMARY SCAN WITH GROQ
+                document.getElementById('processing-msg').textContent = 'Analyzing image...';
                 document.getElementById('groq-dot').classList.add('active');
-                const groqRes = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+
+                // FIRST: Use Groq to detect item type (fast universal model)
+                const typeDetectionPrompt = `Quickly determine what this is and extract any visible ID:
+1. Is this a CARDBOARD BOX (flat surface, barcode-like)? Extract barcode.
+2. OR is this a 3D SPOOL (cylindrical, has label with serial)? Extract 13-char serial (000M123456789).
+3. Return ONLY: {"type": "box"|"spool", "asset_id": "...", "brand": "...", "color": "...", "material": "..."}`;
+
+                const detectionRes = await fetch("https://api.groq.com/openai/v1/chat/completions", {
                     method: 'POST',
                     headers: {
                         'Authorization': `Bearer ${GROQ_KEY}`,
                         'Content-Type': 'application/json'
                     },
                     body: JSON.stringify({
-                        model: "llama-3.2-90b-vision-preview",
+                        model: "meta-llama/llama-4-scout-17b-16e-instruct",
                         messages: [{
                             role: "user",
                             content: [
-                                { type: "text", text: aiPrompt },
+                                { type: "text", text: typeDetectionPrompt },
                                 { type: "image_url", image_url: { url: base64 } }
                             ]
                         }],
@@ -1223,77 +1247,44 @@
                     })
                 });
 
-                if (!groqRes.ok) {
-                    const err = await groqRes.json();
-                    throw new Error(`Groq API Error: ${err.error?.message || groqRes.status}`);
+                if (!detectionRes.ok) {
+                    const err = await detectionRes.json();
+                    throw new Error(`Groq Error: ${err.error?.message || detectionRes.status}`);
                 }
 
-                const groqData = await groqRes.json();
-                if (!groqData.choices || !groqData.choices[0]?.message?.content) {
-                    throw new Error("Groq AI response missing content.");
-                }
-
-                const groqContent = groqData.choices[0].message.content;
-                let groqResult = null;
+                const detectionData = await detectionRes.json();
+                const detectionContent = detectionData.choices?.[0]?.message?.content || "";
+                
+                let detectionResult = null;
                 try {
-                    groqResult = JSON.parse(groqContent);
+                    detectionResult = JSON.parse(detectionContent);
                 } catch (e) {
-                    const jsonMatch = groqContent.match(/\{[\s\S]*\}/);
-                    if (jsonMatch) {
-                        groqResult = JSON.parse(jsonMatch[0]);
-                    } else {
-                        throw new Error("Groq did not return valid JSON.");
-                    }
+                    const match = detectionContent.match(/\{[\s\S]*\}/);
+                    if (match) detectionResult = JSON.parse(match[0]);
                 }
 
-                // EXTRACT ID FROM GROQ
-                let finalId = groqResult.asset_id || "";
-                if (assignedStatus === "storage" && Array.isArray(groqResult.raw_text_lines)) {
-                    for (let line of groqResult.raw_text_lines) {
-                        if (!line) continue;
-                        let cleanLine = String(line).toUpperCase().replace(/[^A-Z0-9]/g, "");
-                        if (cleanLine.length >= 10 && cleanLine.length <= 20 && cleanLine.includes("M")) {
-                            const maybe = normalizeSpoolId(cleanLine);
-                            if (maybe) {
-                                finalId = maybe;
-                                break;
-                            }
-                        }
-                    }
+                if (!detectionResult || !detectionResult.type) {
+                    throw new Error("Could not detect item type");
                 }
 
-                if (assignedStatus === "storage") {
-                    finalId = normalizeSpoolId(finalId) || finalId;
-                }
+                const itemType = detectionResult.type.toLowerCase();
+                const assignedStatus = itemType === 'spool' ? 'storage' : 'inventory';
+                let finalId = detectionResult.asset_id || "";
+                let finalBrand = detectionResult.brand || "";
+                let finalColor = detectionResult.color || "";
+                let finalMaterial = detectionResult.material || "";
+                let confidence = "MEDIUM";
 
-                const cleanExtractedId = String(finalId).toUpperCase();
+                document.getElementById('processing-msg').textContent = 'Verifying with specialized AI...';
 
-                if (!cleanExtractedId || cleanExtractedId === "") {
-                    alert("SCAN REJECTED – could not read ID cleanly. Try better lighting and hold steady.");
-                    shutterBtn.disabled = false;
-                    document.getElementById("processing").style.display = "none";
-                    return;
-                }
-
-                // OPTIONAL: GEMINI VERIFICATION
-                let verificationConfidence = "HIGH";
-                if (GEMINI_KEY && (assignedStatus === "storage" || assignedStatus === "inventory")) {
-                    document.getElementById('processing-msg').textContent = 'Gemini: Verifying...';
+                // SECOND: Route to specialized AI based on type
+                if (itemType === 'spool' && GEMINI_KEY) {
+                    // Use Gemini 2.0 Flash for spools (better OCR for dot-matrix)
                     document.getElementById('gemini-dot').classList.add('active');
 
-                    const verificationPrompt = `Given this image and the extracted ID "${cleanExtractedId}", verify:
-1. Is the ID format valid?
-2. Is the material type visible?
-3. What brand is visible?
-4. Confidence level (HIGH/MEDIUM/LOW)?
-
-Return strictly JSON: {
-  "is_valid": boolean,
-  "confidence": "HIGH|MEDIUM|LOW",
-  "brand": "string",
-  "type": "string",
-  "color": "string"
-}`;
+                    const spoolPrompt = `Extract precise spool serial: 3 digits + M + 9 digits (e.g. 000M123456789).
+Read every label line. Slashed zero is 0, open top-right is 6, not O/Q/G.
+Brand? Color? Return: {"asset_id":"...", "brand":"...", "color":"...", "type":"...", "confidence":"HIGH|MEDIUM|LOW"}`;
 
                     const geminiRes = await fetch("https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent", {
                         method: 'POST',
@@ -1304,7 +1295,7 @@ Return strictly JSON: {
                         body: JSON.stringify({
                             contents: [{
                                 parts: [
-                                    { text: verificationPrompt },
+                                    { text: spoolPrompt },
                                     { inline_data: { mime_type: "image/jpeg", data: base64.split(',')[1] } }
                                 ]
                             }],
@@ -1316,77 +1307,74 @@ Return strictly JSON: {
                         const geminiData = await geminiRes.json();
                         const geminiContent = geminiData.candidates?.[0]?.content?.parts?.[0]?.text || "";
                         try {
-                            const geminiResult = JSON.parse(geminiContent.match(/\{[\s\S]*\}/)[0]);
-                            verificationConfidence = geminiResult.confidence || "MEDIUM";
-                            
-                            // Update other fields if verification provides better data
-                            if (!groqResult.brand) groqResult.brand = geminiResult.brand;
-                            if (!groqResult.type) groqResult.type = geminiResult.type;
-                            if (!groqResult.color) groqResult.color = geminiResult.color;
+                            const match = geminiContent.match(/\{[\s\S]*\}/);
+                            if (match) {
+                                const geminiResult = JSON.parse(match[0]);
+                                const normalizedId = normalizeSpoolId(geminiResult.asset_id);
+                                if (normalizedId) {
+                                    finalId = normalizedId;
+                                    confidence = geminiResult.confidence || "HIGH";
+                                    finalBrand = geminiResult.brand || finalBrand;
+                                    finalColor = geminiResult.color || finalColor;
+                                    finalMaterial = geminiResult.type || finalMaterial;
+                                }
+                            }
                         } catch (e) {
-                            console.log("Gemini verification parse failed, using Groq result");
+                            console.log("Gemini parse failed, using Groq result");
                         }
                     }
 
                     document.getElementById('gemini-dot').classList.remove('active');
+                } else if (itemType === 'box') {
+                    // Groq is already good for barcodes
+                    confidence = "HIGH";
                 }
 
                 document.getElementById('groq-dot').classList.remove('active');
 
-                // DELETE MODE
-                if (currentScanMode === 'delete') {
-                    if (inventoryArr.find(i => String(i.id).toUpperCase() === cleanExtractedId)) {
-                        await db.ref('inventory/' + cleanExtractedId).remove();
-                        alert("✅ ASSET PURGED");
-                    } else {
-                        alert("❌ ID NOT FOUND IN DATABASE");
-                    }
+                // NORMALIZE SPOOL ID
+                if (assignedStatus === 'storage' && !isSpoolSerial(finalId)) {
+                    finalId = normalizeSpoolId(finalId);
+                }
+
+                if (!finalId) {
+                    alert("Could not read ID. Try again with better lighting.");
+                    shutterBtn.disabled = false;
+                    document.getElementById('processing').style.display = 'none';
+                    return;
+                }
+
+                const cleanId = String(finalId).toUpperCase();
+
+                // Check for duplicates
+                const exists = inventoryArr.find(i => String(i.id).toUpperCase() === cleanId);
+                if (exists) {
+                    alert(`Asset ${cleanId} already exists. Opening to update...`);
+                    editItem(exists);
                     closeCamera();
                     return;
                 }
 
-                // DUPLICATE CHECK
-                const existingItem = inventoryArr.find(i => String(i.id).toUpperCase() === cleanExtractedId);
-                if (existingItem) {
-                    alert(`⚠️ DUPLICATE DETECTED\n\nAsset ID: ${cleanExtractedId} is already in the database.`);
-                    editItem(existingItem);
-                    closeCamera();
-                    return;
-                }
-
-                // SAVE SCAN RESULT FOR LATER
-                lastScanResult = {
-                    id: cleanExtractedId,
-                    confidence: verificationConfidence
-                };
-
-                // OPEN FORM WITH EXTRACTED DATA
-                document.getElementById('f-id').value = cleanExtractedId;
-                document.getElementById('f-brand').value = groqResult.brand || "";
-                document.getElementById('f-material').value = groqResult.type || "";
-                document.getElementById('f-color').value = groqResult.color || "";
-                document.getElementById('f-qty').value = 100;
+                // POPULATE FORM
+                lastScanResult = { confidence };
                 document.getElementById('f-status').value = assignedStatus;
-
-                // SHOW CONFIDENCE BADGE
-                const resultBadge = document.getElementById('scan-result-badge');
-                const isBadge = verificationConfidence === 'HIGH' ? 'verified' : 'warning';
-                resultBadge.className = `scan-result-badge ${isBadge}`;
-                resultBadge.innerHTML = `<span class="ai-icon">${useGeminiVerification ? '🤖🤖' : '🤖'}</span> AI Confidence: ${verificationConfidence}${useGeminiVerification ? ' (Dual-Verified)' : ''}`;
-                resultBadge.style.display = 'flex';
-
-                document.getElementById('modal').style.display = 'flex';
+                document.getElementById('f-id').value = cleanId;
+                document.getElementById('f-brand').value = finalBrand;
+                document.getElementById('f-material').value = finalMaterial;
+                document.getElementById('f-color').value = finalColor;
+                document.getElementById('f-qty').value = 100;
+                document.getElementById('modal').classList.add('active');
                 closeCamera();
 
             } catch (e) {
                 console.error(e);
-                alert(`Error: ${e.message}\n\nMake sure your API keys are correct.`);
+                alert(`Error: ${e.message}`);
                 shutterBtn.disabled = false;
                 document.getElementById('processing').style.display = 'none';
             }
         }
 
-        // ===== STATS MODAL =====
+        // ===== STATS =====
         function showStats() {
             const material = {};
             const brands = {};
@@ -1407,27 +1395,27 @@ Return strictly JSON: {
 
             let materialHtml = '';
             Object.keys(material).sort((a, b) => material[b] - material[a]).forEach(m => {
-                materialHtml += `<div class="stat-row"><span>${m}</span><span>${material[m]}</span></div>`;
+                materialHtml += `<div style="display: flex; justify-content: space-between; padding: 8px; background: var(--surface); border-radius: 4px;"><span>${m}</span><span style="font-weight: 700;">${material[m]}</span></div>`;
             });
-            document.getElementById('material-stats').innerHTML = materialHtml || '<div style="font-size: 10px; color: var(--text-dim);">No data</div>';
+            document.getElementById('material-stats').innerHTML = materialHtml || '<div style="color: var(--text-dim); font-size: 12px;">No data</div>';
 
             let brandHtml = '';
-            Object.keys(brands).sort((a, b) => brands[b] - brands[a]).slice(0, 10).forEach(b => {
-                brandHtml += `<div class="stat-row"><span>${b}</span><span>${brands[b]}</span></div>`;
+            Object.keys(brands).sort((a, b) => brands[b] - brands[a]).slice(0, 5).forEach(b => {
+                brandHtml += `<div style="display: flex; justify-content: space-between; padding: 8px; background: var(--surface); border-radius: 4px;"><span>${b}</span><span style="font-weight: 700;">${brands[b]}</span></div>`;
             });
-            document.getElementById('brand-stats').innerHTML = brandHtml || '<div style="font-size: 10px; color: var(--text-dim);">No data</div>';
+            document.getElementById('brand-stats').innerHTML = brandHtml || '<div style="color: var(--text-dim); font-size: 12px;">No data</div>';
 
-            document.getElementById('stats-modal').style.display = 'flex';
+            document.getElementById('stats-modal').classList.add('active');
         }
 
-        // ===== EXPORT FEATURE =====
+        // ===== EXPORT =====
         function exportData() {
             if (inventoryArr.length === 0) {
                 alert('No data to export');
                 return;
             }
 
-            let csv = 'ID,Brand,Type,Color,Stock%,Weight(g),Cost($),User,AI_Confidence,Date\n';
+            let csv = 'ID,Brand,Type,Color,Stock%,Weight(g),Cost(€),User,AI Confidence,Date\n';
             inventoryArr.forEach(item => {
                 csv += `"${item.id}","${item.brand || ''}","${item.type || ''}","${item.color || ''}",${item.qty || 0},"${item.weight || ''}","${item.cost || ''}","${item.user || ''}","${item.ai_confidence || 'N/A'}","${new Date(item.timestamp).toLocaleDateString()}"\n`;
             });
