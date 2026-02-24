@@ -133,7 +133,7 @@
         /* FLOATING BUTTON */
         .floating-btn {
             position: fixed;
-            bottom: 80px;
+            bottom: 100px;
             right: 20px;
             width: 60px;
             height: 60px;
@@ -389,12 +389,13 @@
             position: absolute;
         }
 
-        .camera-ui {
+        .camera-overlay {
             position: absolute;
+            inset: 0;
             display: flex;
             flex-direction: column;
             align-items: center;
-            gap: 20px;
+            justify-content: center;
             z-index: 301;
         }
 
@@ -412,37 +413,33 @@
             z-index: 302;
         }
 
-        .camera-info {
-            background: rgba(0,0,0,0.8);
-            color: white;
-            padding: 12px 16px;
-            border-radius: 8px;
-            font-size: 13px;
-            text-align: center;
-            max-width: 300px;
+        .camera-close:hover {
+            background: rgba(0,0,0,0.9);
         }
 
-        .scan-display {
-            background: rgba(0,0,0,0.85);
+        .scan-info {
+            background: rgba(0,0,0,0.8);
             color: #FCD34D;
             padding: 16px 20px;
             border-radius: 8px;
-            min-width: 280px;
-            text-align: center;
             border: 2px solid #FCD34D;
+            margin-bottom: 30px;
+            text-align: center;
+            min-width: 280px;
+            max-width: 320px;
         }
 
-        .scan-display p {
-            font-size: 11px;
-            margin-bottom: 6px;
-            opacity: 0.8;
+        .scan-info-label {
+            font-size: 10px;
+            opacity: 0.7;
+            margin-bottom: 4px;
         }
 
-        .scan-display strong {
-            font-size: 16px;
-            display: block;
-            margin: 8px 0;
+        .scan-info-value {
+            font-size: 14px;
+            font-weight: 600;
             word-break: break-all;
+            margin-bottom: 8px;
         }
 
         .shutter {
@@ -462,7 +459,7 @@
         .processing {
             position: absolute;
             inset: 0;
-            background: rgba(0,0,0,0.9);
+            background: rgba(0,0,0,0.95);
             display: none;
             align-items: center;
             justify-content: center;
@@ -623,6 +620,60 @@
             padding: 40px 20px;
             color: var(--text-dim);
         }
+
+        .delete-modal {
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.5);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 500;
+        }
+
+        .delete-modal.active {
+            display: flex;
+        }
+
+        .delete-modal-content {
+            background: var(--bg);
+            padding: 20px;
+            border-radius: 8px;
+            border: 2px solid var(--primary);
+            text-align: center;
+        }
+
+        .delete-modal-content h3 {
+            font-size: 16px;
+            margin-bottom: 12px;
+        }
+
+        .delete-modal-content p {
+            font-size: 13px;
+            color: var(--text-dim);
+            margin-bottom: 16px;
+        }
+
+        .delete-confirm-btn {
+            background: #EF4444;
+            color: white;
+            border: none;
+            padding: 10px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            margin-right: 8px;
+            font-weight: 600;
+        }
+
+        .delete-cancel-btn {
+            background: var(--surface);
+            color: var(--text);
+            border: none;
+            padding: 10px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+        }
     </style>
 </head>
 <body>
@@ -701,7 +752,6 @@
     <!-- ACTION BAR -->
     <div class="action-bar">
         <button class="btn btn-primary" onclick="openCamera()">📷 SCAN</button>
-        <button class="btn btn-secondary" onclick="showEmptySpool()">🗑️ EMPTY SPOOL</button>
     </div>
 </div>
 
@@ -711,13 +761,17 @@
     <canvas id="canvas" style="display:none;"></canvas>
     <button class="camera-close" onclick="closeCamera()">✕</button>
     
-    <div class="camera-ui">
-        <div class="camera-info" id="camera-info">Center the item</div>
-        <div class="scan-display" id="scan-display" style="display:none;">
-            <p>SCANNING</p>
-            <strong id="scan-id">000M000000000</strong>
-            <p id="scan-type">Spool PLA</p>
-            <p id="scan-color">Jet Black</p>
+    <div class="camera-overlay">
+        <div class="scan-info" id="scan-info" style="display:none;">
+            <div class="scan-info-label">SCANNING...</div>
+            <div class="scan-info-label">Type:</div>
+            <div class="scan-info-value" id="scan-type-display">-</div>
+            <div class="scan-info-label">Color:</div>
+            <div class="scan-info-value" id="scan-color-display">-</div>
+            <div class="scan-info-label">Percentage:</div>
+            <div class="scan-info-value" id="scan-percentage-display">-</div>
+            <div class="scan-info-label">ID:</div>
+            <div class="scan-info-value" id="scan-id-display">-</div>
         </div>
         <button class="shutter" onclick="capture()"></button>
     </div>
@@ -769,7 +823,7 @@
             <input type="text" id="f-color" class="form-input">
         </div>
 
-        <div class="form-group">
+        <div class="form-group" id="stock-group">
             <label class="form-label">Stock Level (%)</label>
             <select id="f-qty" class="form-select">
                 <option value="100">100%</option>
@@ -792,8 +846,17 @@
     </div>
 </div>
 
+<!-- DELETE CONFIRMATION MODAL -->
+<div class="delete-modal" id="delete-modal">
+    <div class="delete-modal-content">
+        <h3>Delete Item?</h3>
+        <p id="delete-item-id">-</p>
+        <button class="delete-confirm-btn" onclick="confirmDelete()">DELETE</button>
+        <button class="delete-cancel-btn" onclick="cancelDelete()">CANCEL</button>
+    </div>
+</div>
+
 <script>
-    // ===== FIREBASE =====
     const firebaseConfig = {
         apiKey: "AIzaSyCLlCKwujLGtQw9DEvHl-ZYW1Z0cK8Xw-E",
         authDomain: "inventory-86d26.firebaseapp.com",
@@ -808,14 +871,12 @@
     const db = firebase.database();
     const inventoryRef = db.ref('inventory');
 
-    // ===== STATE =====
     let inventoryArr = [];
     let activeUser = localStorage.getItem('activeUser');
     let currentTab = 'all';
     let stream = null;
-    let currentEditItem = null;
+    let deleteItemId = null;
 
-    // ===== THEME =====
     const darkMode = localStorage.getItem('darkMode') === 'true';
     if(darkMode) document.body.classList.add('dark-mode');
 
@@ -824,12 +885,10 @@
         localStorage.setItem('darkMode', isDark);
     }
 
-    // ===== MENU =====
     function toggleMenu() {
         document.getElementById('menu-dropdown').classList.toggle('active');
     }
 
-    // ===== AUTH =====
     function login() {
         const name = document.getElementById('member-id').value.trim();
         if (!name) return alert('Enter name');
@@ -846,7 +905,6 @@
         location.reload();
     }
 
-    // ===== API =====
     function setGroqKey() {
         const k = prompt("Groq API Key (console.groq.com/keys):", localStorage.getItem('groqKey') || "");
         if(k) {
@@ -855,7 +913,6 @@
         }
     }
 
-    // ===== SYNC =====
     function syncData() {
         inventoryRef.on('value', (snapshot) => {
             const data = snapshot.val();
@@ -865,7 +922,6 @@
         });
     }
 
-    // ===== STATS =====
     function updateStats() {
         const spools = inventoryArr.filter(i => i.status === 'storage').length;
         const boxes = inventoryArr.filter(i => i.status === 'inventory').length;
@@ -875,7 +931,6 @@
         document.getElementById('low-stock').textContent = low;
     }
 
-    // ===== RENDER =====
     function renderInventory() {
         const container = document.getElementById('inventory');
         const search = document.getElementById('search').value.toLowerCase();
@@ -911,7 +966,7 @@
                     <div class="item-qty">${item.qty}%</div>
                     <div class="item-actions">
                         <button class="btn-icon" onclick="editItem(JSON.parse('${JSON.stringify(item).replace(/'/g, "\\'")}'))">✏️</button>
-                        <button class="btn-icon delete" onclick="deleteItem('${item.id}')">🗑️</button>
+                        <button class="btn-icon delete" onclick="openDeleteModal('${item.id}')">🗑️</button>
                     </div>
                 </div>
             `;
@@ -926,9 +981,7 @@
         renderInventory();
     }
 
-    // ===== EDIT/DELETE =====
     function editItem(item) {
-        currentEditItem = item;
         document.getElementById('f-status').value = item.status;
         document.getElementById('f-id').value = item.id;
         document.getElementById('f-brand').value = item.brand || '';
@@ -940,10 +993,22 @@
         document.getElementById('modal').classList.add('active');
     }
 
-    function deleteItem(id) {
-        if (confirm('Delete this item?')) {
-            db.ref('inventory/' + id).remove();
+    function openDeleteModal(id) {
+        deleteItemId = id;
+        document.getElementById('delete-item-id').textContent = id;
+        document.getElementById('delete-modal').classList.add('active');
+    }
+
+    function confirmDelete() {
+        if (deleteItemId) {
+            db.ref('inventory/' + deleteItemId).remove();
         }
+        cancelDelete();
+    }
+
+    function cancelDelete() {
+        deleteItemId = null;
+        document.getElementById('delete-modal').classList.remove('active');
     }
 
     function updateStockOptions() {
@@ -970,7 +1035,6 @@
     }
 
     function manualEntry() {
-        currentEditItem = null;
         document.getElementById('f-status').value = 'storage';
         document.getElementById('f-id').value = 'M-' + Date.now().toString(36).toUpperCase();
         document.getElementById('f-brand').value = '';
@@ -1003,18 +1067,6 @@
         document.getElementById('modal').classList.remove('active');
     }
 
-    // ===== EMPTY SPOOL =====
-    function showEmptySpool() {
-        const id = prompt('Enter spool ID to mark as empty:');
-        if (!id) return;
-        const item = inventoryArr.find(i => String(i.id).toUpperCase() === String(id).toUpperCase());
-        if (!item) return alert('Not found');
-        if (item.status !== 'storage') return alert('Only for spools');
-        db.ref('inventory/' + item.id).update({ qty: 0 });
-        alert('✅ Marked as empty');
-    }
-
-    // ===== CAMERA =====
     async function openCamera() {
         document.getElementById('camera').classList.add('active');
         try {
@@ -1031,13 +1083,12 @@
         document.getElementById('camera').classList.remove('active');
         if(stream) stream.getTracks().forEach(t => t.stop());
         document.getElementById('processing').classList.remove('active');
-        document.getElementById('scan-display').style.display = 'none';
+        document.getElementById('scan-info').style.display = 'none';
     }
 
-    // ===== SCAN =====
     async function capture() {
         const GROQ_KEY = localStorage.getItem('groqKey');
-        if(!GROQ_KEY) return alert('Set Groq API key first!');
+        if(!GROQ_KEY) return alert('Set Groq API key!');
 
         document.getElementById('processing').classList.add('active');
         const vid = document.getElementById('video');
@@ -1052,11 +1103,10 @@
         try {
             document.getElementById('processing-msg').textContent = 'Scanning...';
 
-            const prompt = `Detect item type & extract data:
-1. Is this a SPOOL (3D cylinder) or BOX (flat carton)?
-2. If SPOOL: Extract serial (000M123456789), type, color
-3. If BOX: Extract barcode, type, color
-Return: {"type":"spool"|"box", "id":"...", "type":"PLA|ABS...", "color":"...", "brand":"..."}`;
+            const prompt = `ANALYZE THIS IMAGE IMMEDIATELY. 
+If SPOOL (3D cylinder filament): Extract serial (000M123456789), filament type (PLA/ABS/PETG/etc), color.
+If BOX (flat cardboard): Extract barcode, type, color.
+Return ONLY JSON: {"type":"spool"|"box", "id":"...", "type":"PLA|ABS|PETG|TPU|NYLON|OTHER", "color":"...", "brand":"..."}`;
 
             const res = await fetch("https://api.groq.com/openai/v1/chat/completions", {
                 method: 'POST',
@@ -1093,40 +1143,43 @@ Return: {"type":"spool"|"box", "id":"...", "type":"PLA|ABS...", "color":"...", "
             if (!result || !result.id) throw new Error('Could not extract ID');
 
             // Show scan display
-            document.getElementById('scan-id').textContent = result.id;
-            document.getElementById('scan-type').textContent = (result.type === 'spool' ? '📦' : '📫') + ' ' + (result.type || 'Unknown');
-            document.getElementById('scan-color').textContent = result.color || '';
-            document.getElementById('scan-display').style.display = 'block';
+            document.getElementById('scan-type-display').textContent = result.type === 'spool' ? '📦 Spool' : '📫 Box';
+            document.getElementById('scan-color-display').textContent = result.color || 'Unknown';
+            document.getElementById('scan-percentage-display').textContent = result.type === 'spool' ? '100%' : '100%';
+            document.getElementById('scan-id-display').textContent = result.id;
+            document.getElementById('scan-info').style.display = 'block';
 
             // Check duplicate
             const exists = inventoryArr.find(i => String(i.id).toUpperCase() === String(result.id).toUpperCase());
             if (exists) {
-                alert('Item exists. Opening to edit...');
-                closeCamera();
-                editItem(exists);
+                setTimeout(() => {
+                    alert('Item exists. Opening to edit...');
+                    closeCamera();
+                    editItem(exists);
+                }, 1000);
                 return;
             }
 
             // Populate form
-            document.getElementById('f-id').value = result.id;
-            document.getElementById('f-brand').value = result.brand || '';
-            document.getElementById('f-material').value = result.type || '';
-            document.getElementById('f-color').value = result.color || '';
-            document.getElementById('f-status').value = result.type === 'spool' ? 'storage' : 'inventory';
-            document.getElementById('f-qty').value = result.type === 'spool' ? '100' : '100';
-            updateStockOptions();
-            document.getElementById('modal-header').textContent = 'New Item';
-            closeCamera();
-            document.getElementById('modal').classList.add('active');
+            setTimeout(() => {
+                document.getElementById('f-id').value = result.id;
+                document.getElementById('f-brand').value = result.brand || '';
+                document.getElementById('f-material').value = result.type || '';
+                document.getElementById('f-color').value = result.color || '';
+                document.getElementById('f-status').value = result.type === 'spool' ? 'storage' : 'inventory';
+                document.getElementById('f-qty').value = result.type === 'spool' ? '100' : '100';
+                updateStockOptions();
+                document.getElementById('modal-header').textContent = 'Confirm Scan';
+                closeCamera();
+                document.getElementById('modal').classList.add('active');
+            }, 1000);
 
         } catch (e) {
             alert('Error: ' + e.message);
-        } finally {
             document.getElementById('processing').classList.remove('active');
         }
     }
 
-    // ===== STATS & EXPORT =====
     function showStats() {
         const stats = {
             total: inventoryArr.length,
@@ -1135,7 +1188,7 @@ Return: {"type":"spool"|"box", "id":"...", "type":"PLA|ABS...", "color":"...", "
             low: inventoryArr.filter(i => i.qty <= 25).length,
             avg: Math.round(inventoryArr.reduce((a, b) => a + (b.qty || 0), 0) / (inventoryArr.length || 1))
         };
-        alert(`Total: ${stats.total} | Spools: ${stats.spools} | Boxes: ${stats.boxes} | Low: ${stats.low} | Avg: ${stats.avg}%`);
+        alert(`Total: ${stats.total}\nSpools: ${stats.spools}\nBoxes: ${stats.boxes}\nLow Stock: ${stats.low}\nAvg: ${stats.avg}%`);
     }
 
     function exportData() {
@@ -1152,7 +1205,6 @@ Return: {"type":"spool"|"box", "id":"...", "type":"PLA|ABS...", "color":"...", "
         a.click();
     }
 
-    // Init
     if(activeUser) {
         document.getElementById('login-screen').classList.add('hidden');
         document.getElementById('main-app').style.display = 'block';
