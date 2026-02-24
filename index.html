@@ -118,11 +118,11 @@
         
         .barcode-scanner { position: absolute; inset: 0; background: transparent; display: none; flex-direction: column; align-items: center; justify-content: center; z-index: 15; pointer-events: none; }
         .barcode-scanner.active { display: flex; }
-        .barcode-frame { position: relative; width: 80%; max-width: 400px; height: 200px; border: 3px solid var(--yellow); border-radius: 8px; margin-bottom: 24px; overflow: hidden; background: rgba(0, 0, 0, 0.3); backdrop-filter: blur(2px); }
-        .barcode-line { position: absolute; width: 100%; height: 2px; background: var(--yellow); box-shadow: 0 0 10px var(--yellow); animation: scan 2s linear infinite; }
-        @keyframes scan { 0%, 100% { top: 0; } 50% { top: calc(100% - 2px); } }
-        .barcode-hint { font-family: 'JetBrains Mono', monospace; font-size: 13px; color: var(--yellow); text-align: center; margin-bottom: 16px; background: rgba(0, 0, 0, 0.8); padding: 8px 16px; border-radius: 4px; border: 1px solid var(--yellow); }
-        .barcode-result { font-family: 'JetBrains Mono', monospace; font-size: 16px; color: var(--green); font-weight: 800; margin-top: 16px; background: rgba(0, 0, 0, 0.8); padding: 8px 16px; border-radius: 4px; }
+        .barcode-frame { position: relative; width: 80%; max-width: 400px; height: 200px; border: 3px solid var(--yellow); border-radius: 8px; margin-bottom: 24px; overflow: visible; background: transparent; }
+        .barcode-line { position: absolute; width: 100%; height: 3px; background: var(--yellow); box-shadow: 0 0 20px var(--yellow), 0 0 40px var(--yellow); animation: scan 1.5s linear infinite; z-index: 20; }
+        @keyframes scan { 0%, 100% { top: 0; opacity: 0.8; } 50% { top: calc(100% - 3px); opacity: 1; } }
+        .barcode-hint { font-family: 'JetBrains Mono', monospace; font-size: 14px; font-weight: 700; color: var(--yellow); text-align: center; margin-bottom: 16px; background: rgba(0, 0, 0, 0.9); padding: 10px 20px; border-radius: 6px; border: 2px solid var(--yellow); box-shadow: 0 0 20px rgba(255, 215, 0, 0.3); }
+        .barcode-result { font-family: 'JetBrains Mono', monospace; font-size: 16px; color: var(--green); font-weight: 800; margin-top: 16px; background: rgba(0, 0, 0, 0.9); padding: 10px 20px; border-radius: 6px; border: 2px solid var(--green); box-shadow: 0 0 20px rgba(0, 255, 136, 0.3); }
         
         .qr-prompt { position: absolute; inset: 0; background: rgba(0, 0, 0, 0.95); display: none; flex-direction: column; align-items: center; justify-content: center; z-index: 30; padding: 40px; }
         .qr-prompt.active { display: flex; }
@@ -847,7 +847,6 @@
                     const qrData = result.text;
                     document.getElementById('barcode-result').textContent = `QR: ${qrData}`;
                     
-                    // Check for duplicate before proceeding
                     const normalizedId = String(qrData).toUpperCase();
                     const exists = inventory.find(i => String(i.id).toUpperCase() === normalizedId);
                     
@@ -869,21 +868,23 @@
                                 brand: parsed.brand || detectedItemData.brand,
                                 status: 'storage'
                             });
-                        }, 500);
+                        }, 300);
                     } catch (e) {
                         setTimeout(() => {
                             proceedWithData(qrData, detectedItemData);
-                        }, 500);
+                        }, 300);
                     }
                 }
             } catch (err) {
                 // Continue scanning
             }
-        }, 200);
+        }, 100);
     }
 
     async function startBarcodeScanning(itemData) {
         detectedItemData = itemData;
+        
+        // Instantly transition to barcode scanner
         document.getElementById('processing').classList.remove('active');
         document.getElementById('barcode-scanner').classList.add('active');
         document.getElementById('scanner-hint').textContent = 'SCANNING FOR BARCODE...';
@@ -891,6 +892,7 @@
         
         const video = document.getElementById('video');
         
+        // Faster scanning interval
         barcodeScanInterval = setInterval(async () => {
             try {
                 const result = await barcodeReader.decodeFromVideoElement(video);
@@ -901,7 +903,6 @@
                     const barcode = result.text;
                     document.getElementById('barcode-result').textContent = `BARCODE: ${barcode}`;
                     
-                    // Check for duplicate before proceeding
                     const normalizedId = String(barcode).toUpperCase();
                     const exists = inventory.find(i => String(i.id).toUpperCase() === normalizedId);
                     
@@ -916,16 +917,15 @@
                     
                     setTimeout(() => {
                         proceedWithData(barcode, itemData);
-                    }, 500);
+                    }, 300);
                 }
             } catch (err) {
                 // Continue scanning
             }
-        }, 200);
+        }, 100);
     }
 
     function proceedWithData(id, itemData) {
-        // Final duplicate check with normalized ID
         const normalizedId = String(id).toUpperCase();
         const exists = inventory.find(i => String(i.id).toUpperCase() === normalizedId);
         
@@ -1044,12 +1044,11 @@ If only a short barcode exists, set has_unique_serial=false and id=""`;
             };
 
             if (isBox) {
-                // Box detected - start barcode scanning
+                // Box detected - start barcode scanning immediately
                 startBarcodeScanning(itemData);
             } else {
                 // Spool detected
                 if (result.has_unique_serial && result.id) {
-                    // Has unique serial - check for duplicate
                     const normalizedId = String(result.id).toUpperCase();
                     const exists = inventory.find(i => String(i.id).toUpperCase() === normalizedId);
                     
@@ -1060,7 +1059,6 @@ If only a short barcode exists, set has_unique_serial=false and id=""`;
                         return;
                     }
 
-                    // Not a duplicate - proceed with new entry
                     document.getElementById('f-id').value = normalizedId;
                     document.getElementById('f-brand').value = itemData.brand;
                     document.getElementById('f-material').value = itemData.material;
@@ -1071,7 +1069,6 @@ If only a short barcode exists, set has_unique_serial=false and id=""`;
                     closeCamera();
                     document.getElementById('modal').classList.add('open');
                 } else {
-                    // No unique serial - prompt for QR sticker
                     detectedItemData = itemData;
                     document.getElementById('processing').classList.remove('active');
                     document.getElementById('qr-prompt').classList.add('active');
