@@ -6,6 +6,7 @@
     <title>SpoolVault — Filament Inventory System</title>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
+    <script src="https://unpkg.com/@zxing/library@latest"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700;800&display=swap" rel="stylesheet">
     <style>
@@ -113,6 +114,14 @@
         .spinner { width: 40px; height: 40px; border: 4px solid var(--surface); border-top: 4px solid var(--yellow); border-radius: 50%; animation: spin 1s linear infinite; margin-bottom: 16px; }
         @keyframes spin { to { transform: rotate(360deg); } }
         .process-text { font-family: 'JetBrains Mono', monospace; font-size: 14px; font-weight: 700; color: var(--yellow); }
+        
+        .barcode-scanner { position: absolute; inset: 0; background: rgba(0, 0, 0, 0.95); display: none; flex-direction: column; align-items: center; justify-content: center; z-index: 25; }
+        .barcode-scanner.active { display: flex; }
+        .barcode-frame { position: relative; width: 80%; max-width: 400px; height: 200px; border: 3px solid var(--yellow); border-radius: 8px; margin-bottom: 24px; overflow: hidden; }
+        .barcode-line { position: absolute; width: 100%; height: 2px; background: var(--yellow); box-shadow: 0 0 10px var(--yellow); animation: scan 2s linear infinite; }
+        @keyframes scan { 0%, 100% { top: 0; } 50% { top: calc(100% - 2px); } }
+        .barcode-hint { font-family: 'JetBrains Mono', monospace; font-size: 13px; color: var(--yellow); text-align: center; margin-bottom: 16px; }
+        .barcode-result { font-family: 'JetBrains Mono', monospace; font-size: 16px; color: var(--green); font-weight: 800; margin-top: 16px; }
         
         .modal { position: fixed; inset: 0; background: rgba(0, 0, 0, 0.85); z-index: 450; display: none; align-items: center; justify-content: center; padding: 20px; }
         .modal.open { display: flex; }
@@ -277,7 +286,14 @@
     </div>
     <div class="processing" id="processing">
         <div class="spinner"></div>
-        <div class="process-text">ANALYZING IMAGE...</div>
+        <div class="process-text" id="process-text">ANALYZING IMAGE...</div>
+    </div>
+    <div class="barcode-scanner" id="barcode-scanner">
+        <div class="barcode-hint">SCANNING FOR BARCODE...</div>
+        <div class="barcode-frame">
+            <div class="barcode-line"></div>
+        </div>
+        <div class="barcode-result" id="barcode-result"></div>
     </div>
 </div>
 
@@ -394,6 +410,9 @@
     let currentScanMode = 'scan';
     let stream = null;
     let userSessions = {};
+    let barcodeReader = null;
+    let barcodeScanInterval = null;
+    let detectedItemData = null;
 
     const allowedUsers = ["benjamin", "christian", "rahul"];
 
@@ -408,14 +427,12 @@
         activeUser = inputId.charAt(0).toUpperCase() + inputId.slice(1).toLowerCase();
         localStorage.setItem('activeUser', activeUser);
         
-        // Log user session
         db.ref('sessions/' + activeUser).set({
             name: activeUser,
             loginTime: Date.now(),
             lastActive: Date.now()
         });
         
-        // Update last active every minute
         setInterval(() => {
             if (activeUser) {
                 db.ref('sessions/' + activeUser).update({
@@ -540,7 +557,6 @@
             );
         }
 
-        // Group by type and color
         const groups = {};
         filtered.forEach(item => {
             const type = item.type || 'UNKNOWN';
@@ -557,7 +573,6 @@
             return;
         }
 
-        // Sort by type, then color
         const sorted = Object.values(groups).sort((a, b) => {
             if (a.type !== b.type) return a.type.localeCompare(b.type);
             return a.color.localeCompare(b.color);
@@ -768,6 +783,11 @@
                 video: { facingMode: 'environment', width: { ideal: 1920 }, height: { ideal: 1080 } } 
             });
             document.getElementById('video').srcObject = stream;
+            
+            // Initialize barcode reader
+            if (!barcodeReader) {
+                barcodeReader = new ZXing.BrowserMultiFormatReader();
+            }
         } catch(e) {
             showToast('ERROR: CAMERA ACCESS', 'error');
         }
@@ -777,6 +797,59 @@
         document.getElementById('camera').classList.remove('active');
         if(stream) stream.getTracks().forEach(t => t.stop());
         document.getElementById('processing').classList.remove('active');
+        document.getElementById('barcode-scanner').classList.remove('active');
+        if (barcodeScanInterval) {
+            clearInterval(barcodeScanInterval);
+            barcodeScanInterval = null;
+        }
+        detectedItemData = null;
+    }
+
+    async function startBarcodeScanning(itemData) {
+        detectedItemData = itemData;
+        document.getElementById('processing').classList.remove('active');
+        document.getElementById('barcode-scanner').classList.add('active');
+        document.getElementById('process-text').textContent = 'SCANNING BARCODE...';
+        
+        const video = document.getElementById('video');
+        
+        barcodeScanInterval = setInterval(async () => {
+            try {
+                const result = await barcodeReader.decodeFromVideoElement(video);
+                if (result) {
+                    clearInterval(barcodeScanInterval);
+                    barcodeScanInterval = null;
+                    
+                    const barcode = result.text;
+                    document.getElementById('barcode-result').textContent = `BARCODE: ${barcode}`;
+                    
+                    setTimeout(() => {
+                        proceedWithData(barcode, itemData);
+                    }, 1000);
+                }
+            } catch (err) {
+                // Continue scanning
+            }
+        }, 300);
+    }
+
+    function proceedWithData(id, itemData) {
+        const exists = inventory.find(i => String(i.id).toUpperCase() === String(id).toUpperCase());
+        if (exists) {
+            closeCamera();
+            editItem(exists);
+            return;
+        }
+
+        document.getElementById('f-id').value = id;
+        document.getElementById('f-brand').value = itemData.brand || '';
+        document.getElementById('f-material').value = itemData.material || '';
+        document.getElementById('f-color').value = itemData.color || '';
+        document.getElementById('f-status').value = itemData.status || 'storage';
+        document.getElementById('f-qty').value = '100';
+        updateStockOptions();
+        closeCamera();
+        document.getElementById('modal').classList.add('open');
     }
 
     async function capture() {
@@ -784,6 +857,7 @@
         if(!GROQ_KEY) return showToast('ERROR: SET API KEY FIRST', 'error');
 
         document.getElementById('processing').classList.add('active');
+        document.getElementById('process-text').textContent = 'ANALYZING IMAGE...';
         const vid = document.getElementById('video');
         const canvas = document.getElementById('canvas');
 
@@ -799,19 +873,18 @@
             if (currentScanMode === 'empty') {
                 prompt = `Find the spool ID/serial number visible in this image. Look for alphanumeric codes on the spool label. Return ONLY valid JSON: {"id":"THE_SERIAL_NUMBER"}`;
             } else {
-                prompt = `Analyze this image and determine:
-1. Is this an OPENED SPOOL or an UNOPENED BOX?
-   - SPOOL: Look for visible filament wound on a spool, exposed filament, or a spool with a partially used roll
-   - BOX: Look for sealed packaging, unopened cardboard box with filament inside, or factory-sealed packaging
+                prompt = `Analyze this image and determine if this is an OPENED SPOOL or an UNOPENED BOX:
+- SPOOL: Visible filament wound on a spool, exposed filament, or partially used roll
+- BOX: Sealed packaging, unopened cardboard box, or factory-sealed packaging
 
-2. Extract information based on type:
-   - For SPOOL: Find the serial number (often format like 000M123456789 or similar alphanumeric code on the label), material type (PLA/ABS/PETG/etc), color name, and brand name
-   - For BOX: Find and READ THE BARCODE NUMBER precisely (the number printed below/beside the barcode, NOT text from other parts of label), material type, color, and brand
+Then extract:
+- Material type (PLA/ABS/PETG/TPU/NYLON/ASA/etc)
+- Color name
+- Brand name
+- For SPOOL only: Serial number (format like 000M123456789 or similar alphanumeric code)
 
-Return ONLY valid JSON in this exact format:
-{"type":"spool" or "box", "id":"SERIAL_OR_BARCODE", "material":"PLA|ABS|PETG|etc", "color":"color name", "brand":"brand name"}
-
-CRITICAL for boxes: The "id" must be the BARCODE NUMBER (the digits), not any other text. Focus on reading the barcode accurately.`;
+Return ONLY valid JSON:
+{"type":"spool" or "box", "id":"SERIAL_NUMBER_IF_SPOOL_OTHERWISE_EMPTY", "material":"TYPE", "color":"COLOR", "brand":"BRAND"}`;
             }
 
             const res = await fetch("https://api.groq.com/openai/v1/chat/completions", {
@@ -847,9 +920,10 @@ CRITICAL for boxes: The "id" must be the BARCODE NUMBER (the digits), not any ot
                 if (match) result = JSON.parse(match[0]);
             }
 
-            if (!result || !result.id) throw new Error('ID NOT FOUND');
+            if (!result) throw new Error('FAILED TO PARSE RESPONSE');
 
             if (currentScanMode === 'empty') {
+                if (!result.id) throw new Error('ID NOT FOUND');
                 const item = inventory.find(i => String(i.id).toUpperCase() === String(result.id).toUpperCase());
                 if (item) {
                     db.ref('inventory/' + item.id).remove();
@@ -861,29 +935,43 @@ CRITICAL for boxes: The "id" must be the BARCODE NUMBER (the digits), not any ot
                 return;
             }
 
-            const exists = inventory.find(i => String(i.id).toUpperCase() === String(result.id).toUpperCase());
-            if (exists) {
+            // Determine if it's a box or spool
+            const isBox = result.type === 'box';
+            const status = isBox ? 'inventory' : 'storage';
+
+            if (isBox) {
+                // For boxes, start barcode scanning
+                const itemData = {
+                    material: result.material || '',
+                    color: result.color || '',
+                    brand: result.brand || '',
+                    status: status
+                };
+                startBarcodeScanning(itemData);
+            } else {
+                // For spools, use the detected ID
+                if (!result.id) throw new Error('SPOOL ID NOT FOUND');
+                
+                const exists = inventory.find(i => String(i.id).toUpperCase() === String(result.id).toUpperCase());
+                if (exists) {
+                    closeCamera();
+                    editItem(exists);
+                    return;
+                }
+
+                document.getElementById('f-id').value = result.id;
+                document.getElementById('f-brand').value = result.brand || '';
+                document.getElementById('f-material').value = result.material || '';
+                document.getElementById('f-color').value = result.color || '';
+                document.getElementById('f-status').value = status;
+                document.getElementById('f-qty').value = '100';
+                updateStockOptions();
                 closeCamera();
-                editItem(exists);
-                return;
+                document.getElementById('modal').classList.add('open');
             }
-
-            // Determine status based on detected type
-            const status = result.type === 'box' ? 'inventory' : 'storage';
-
-            document.getElementById('f-id').value = result.id;
-            document.getElementById('f-brand').value = result.brand || '';
-            document.getElementById('f-material').value = result.material || result.type || '';
-            document.getElementById('f-color').value = result.color || '';
-            document.getElementById('f-status').value = status;
-            document.getElementById('f-qty').value = '100';
-            updateStockOptions();
-            closeCamera();
-            document.getElementById('modal').classList.add('open');
 
         } catch (e) {
             showToast('ERROR: ' + e.message, 'error');
-        } finally {
             document.getElementById('processing').classList.remove('active');
         }
     }
@@ -897,7 +985,6 @@ CRITICAL for boxes: The "id" must be the BARCODE NUMBER (the digits), not any ot
     }
 
     if(activeUser) {
-        // Re-login to update session
         db.ref('sessions/' + activeUser).set({
             name: activeUser,
             loginTime: Date.now(),
