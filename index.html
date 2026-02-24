@@ -978,19 +978,15 @@
         const vid = document.getElementById('video');
         const canvas = document.getElementById('canvas');
 
-        const scale = Math.min(1, 1400 / vid.videoWidth);
+        // Scaling to ensure the image stays under the API payload limits
+        const scale = Math.min(1, 1024 / vid.videoWidth);
         canvas.width = vid.videoWidth * scale;
         canvas.height = vid.videoHeight * scale;
         canvas.getContext('2d').drawImage(vid, 0, 0, canvas.width, canvas.height);
-        let base64 = canvas.toDataURL('image/jpeg', 0.95);
+        let base64 = canvas.toDataURL('image/jpeg', 0.8);
 
         try {
-            let prompt = '';
-            
-            if (currentScanMode === 'empty') {
-                prompt = `Extract the spool serial number from this image. Return JSON: {"id":"SERIAL"}`;
-            } else {
-                prompt = `Analyze this filament label. Determine:
+            let prompt = `Analyze this filament label. Determine:
 1. Type: "spool" (opened) OR "box" (sealed)
 2. Unique serial: Look for LONG codes (10+ chars). Ignore SHORT barcodes (8-9 chars like "02151018A")
 3. Material: PLA/PETG/ABS/ASA/TPU/NYLON
@@ -998,8 +994,7 @@
 5. Brand name
 
 Return JSON ONLY:
-{"type":"spool/box","has_unique_serial":true/false,"id":"SERIAL_IF_FOUND","material":"TYPE","color":"COLOR","brand":"BRAND"}`;
-            }
+{"type":"spool/box","has_unique_serial":true, "id":"SERIAL_IF_FOUND","material":"TYPE","color":"COLOR","brand":"BRAND"}`;
 
             const res = await fetch("https://api.groq.com/openai/v1/chat/completions", {
                 method: 'POST',
@@ -1008,6 +1003,7 @@ Return JSON ONLY:
                     'Content-Type': 'application/json'
                 },
                 body: JSON.stringify({
+                    // Use the Scout multimodal model as per current documentation
                     model: "meta-llama/llama-4-scout-17b-16e-instruct",
                     messages: [{
                         role: "user",
@@ -1017,7 +1013,8 @@ Return JSON ONLY:
                         ]
                     }],
                     temperature: 0.1,
-                    max_tokens: 200
+                    // Use json_object response format for strict data parsing
+                    response_format: { "type": "json_object" }
                 })
             });
 
@@ -1029,15 +1026,7 @@ Return JSON ONLY:
             const data = await res.json();
             const content = data.choices[0].message.content;
             
-            let result = null;
-            try {
-                result = JSON.parse(content);
-            } catch(e) {
-                const match = content.match(/\{[\s\S]*\}/);
-                if (match) result = JSON.parse(match[0]);
-            }
-
-            if (!result) throw new Error('PARSE FAILED');
+            let result = JSON.parse(content);
 
             if (currentScanMode === 'empty') {
                 if (!result.id) throw new Error('ID NOT FOUND');
@@ -1067,25 +1056,7 @@ Return JSON ONLY:
                 startBarcodeScanning(itemData);
             } else {
                 if (result.has_unique_serial && result.id) {
-                    const normalizedId = String(result.id).toUpperCase();
-                    const exists = inventory.find(i => String(i.id).toUpperCase() === normalizedId);
-                    
-                    if (exists) {
-                        showToast('DUPLICATE: ALREADY EXISTS', 'error');
-                        closeCamera();
-                        editItem(exists);
-                        return;
-                    }
-
-                    document.getElementById('f-id').value = normalizedId;
-                    document.getElementById('f-brand').value = itemData.brand;
-                    document.getElementById('f-material').value = itemData.material;
-                    document.getElementById('f-color').value = itemData.color;
-                    document.getElementById('f-status').value = status;
-                    document.getElementById('f-qty').value = '100';
-                    updateStockOptions();
-                    closeCamera();
-                    document.getElementById('modal').classList.add('open');
+                    proceedWithData(result.id, itemData);
                 } else {
                     detectedItemData = itemData;
                     document.getElementById('processing').classList.remove('active');
