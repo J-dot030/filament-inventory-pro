@@ -5,344 +5,314 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>SpoolVault — Lindner Filament Inventory</title>
     
-    <script src="https://www.gstatic.com/firebasejs/11.1.0/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/11.1.0/firebase-database-compat.js"></script>
-    
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
+
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
     
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         :root {
-            --bg: #0a0a0a;
-            --surface: #141414;
-            --surface-hover: #1f1f1f;
-            --accent: #FFD700;
-            --accent-dim: rgba(255, 215, 0, 0.15);
-            --border: #2a2a2a;
-            --text: #ffffff;
-            --text-dim: #666666;
-            --error: #FF4444;
-            --success: #00FF88;
-            --info: #4A9EFF;
+            --bg: #0a0a0a; --surface: #141414; --surface2: #1a1a1a;
+            --accent: #FFD700; --accent-dim: rgba(255,215,0,0.12);
+            --border: #2a2a2a; --text: #ffffff; --text-dim: #666;
+            --red: #FF4444; --green: #00FF88; --blue: #4A9EFF;
         }
         body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; overflow-x: hidden; }
-        
-        .container { max-width: 600px; margin: 0 auto; position: relative; padding-bottom: 100px; }
-        
+        .container { max-width: 600px; margin: 0 auto; padding-bottom: 100px; }
+
         /* HEADER */
-        header { background: var(--surface); border-bottom: 2px solid var(--accent); padding: 14px 20px; position: sticky; top: 0; z-index: 100; box-shadow: 0 4px 30px rgba(255,215,0,0.1); }
-        .header-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
-        .logo-container { display: flex; align-items: center; gap: 10px; }
-        .logo-icon { width: 36px; height: 36px; background: linear-gradient(135deg, var(--accent), #FFA500); border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 20px; }
-        .logo-text { font-family: 'Space Mono', monospace; font-size: 16px; font-weight: 700; color: var(--accent); line-height: 1; }
-        .logo-sub { font-size: 8px; color: var(--success); font-weight: 700; letter-spacing: 2px; }
-        .sync-status { display: flex; align-items: center; gap: 6px; font-size: 10px; color: var(--success); font-weight: 700; }
-        .sync-dot { width: 7px; height: 7px; background: var(--success); border-radius: 50%; animation: pulse 1.5s infinite; }
-        @keyframes pulse { 0%,100%{opacity:1;} 50%{opacity:0.3;} }
-        .user-bar { display: flex; justify-content: space-between; align-items: center; }
+        header { background: var(--surface); border-bottom: 2px solid var(--accent); padding: 14px 20px; position: sticky; top: 0; z-index: 100; }
+        .hrow1 { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+        .logo { display: flex; align-items: center; gap: 10px; }
+        .logo-icon { width: 38px; height: 38px; background: linear-gradient(135deg, var(--accent), #FFA500); border-radius: 9px; display: flex; align-items: center; justify-content: center; font-size: 20px; flex-shrink: 0; }
+        .logo-name { font-family: 'Space Mono', monospace; font-size: 16px; font-weight: 700; color: var(--accent); }
+        .logo-sub { font-size: 8px; color: var(--green); font-weight: 700; letter-spacing: 2px; }
+        .sync-pill { display: flex; align-items: center; gap: 5px; font-size: 10px; color: var(--green); font-weight: 700; font-family: 'Space Mono', monospace; }
+        .sync-dot { width: 7px; height: 7px; background: var(--green); border-radius: 50%; animation: blink 1.5s infinite; }
+        @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.3} }
+        .hrow2 { display: flex; justify-content: space-between; align-items: center; }
         .user-info { font-family: 'Space Mono', monospace; font-size: 10px; color: var(--text-dim); display: flex; align-items: center; gap: 8px; }
-        .user-badge { background: var(--accent); color: var(--bg); padding: 2px 8px; border-radius: 10px; font-size: 9px; font-weight: 800; }
-        .header-btns { display: flex; gap: 6px; }
-        .header-btn { background: transparent; border: 1px solid var(--border); color: var(--text-dim); padding: 5px 10px; border-radius: 6px; font-size: 10px; cursor: pointer; transition: 0.2s; font-family: 'Space Mono', monospace; }
-        .header-btn:hover { border-color: var(--accent); color: var(--accent); }
-        
+        .ubadge { background: var(--accent); color: var(--bg); padding: 2px 8px; border-radius: 10px; font-size: 9px; font-weight: 800; }
+        .hbtns { display: flex; gap: 6px; }
+        .hbtn { background: transparent; border: 1px solid var(--border); color: var(--text-dim); padding: 5px 10px; border-radius: 6px; font-size: 10px; cursor: pointer; font-family: 'Space Mono', monospace; transition: 0.2s; }
+        .hbtn:hover { border-color: var(--accent); color: var(--accent); }
+
         /* STATS */
         .stats { padding: 16px 20px 0; display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; }
-        .stat-card { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 14px; border-left: 3px solid var(--accent); }
-        .stat-label { font-size: 9px; color: var(--text-dim); text-transform: uppercase; font-weight: 700; margin-bottom: 4px; letter-spacing: 1px; }
-        .stat-value { font-family: 'Space Mono', monospace; font-size: 28px; font-weight: 700; color: var(--accent); line-height: 1; }
-        
+        .scard { background: var(--surface); border: 1px solid var(--border); border-left: 3px solid var(--accent); border-radius: 8px; padding: 14px; }
+        .slabel { font-size: 9px; color: var(--text-dim); text-transform: uppercase; font-weight: 700; letter-spacing: 1px; margin-bottom: 4px; }
+        .sval { font-family: 'Space Mono', monospace; font-size: 26px; font-weight: 700; color: var(--accent); }
+
         /* TABS */
-        .tabs { display: flex; padding: 16px 20px 0; gap: 8px; }
+        .tabs { display: flex; padding: 14px 20px 0; gap: 8px; }
         .tab { flex: 1; padding: 10px; background: var(--surface); border: 1px solid var(--border); border-radius: 8px; text-align: center; font-weight: 700; font-size: 10px; cursor: pointer; color: var(--text-dim); text-transform: uppercase; transition: 0.2s; font-family: 'Space Mono', monospace; }
         .tab:hover { border-color: var(--accent); color: var(--accent); }
         .tab.active { background: var(--accent-dim); color: var(--accent); border-color: var(--accent); }
-        
+
         /* SEARCH */
-        .search { padding: 14px 20px 0; }
-        .search-input { width: 100%; background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 12px 16px; color: var(--text); font-size: 14px; outline: none; transition: 0.2s; font-family: 'Inter', sans-serif; }
-        .search-input::placeholder { color: var(--text-dim); }
-        .search-input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-dim); }
-        
+        .search { padding: 12px 20px 0; }
+        .sinput { width: 100%; background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 12px 16px; color: var(--text); font-size: 14px; outline: none; transition: 0.2s; font-family: 'Inter', sans-serif; }
+        .sinput::placeholder { color: var(--text-dim); }
+        .sinput:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-dim); }
+
         /* INVENTORY */
-        .inventory { padding: 14px 20px 0; }
-        .item { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 14px; display: grid; grid-template-columns: 52px 1fr auto auto; gap: 12px; align-items: center; margin-bottom: 10px; transition: 0.2s; }
-        .item:hover { border-color: rgba(255,215,0,0.3); background: var(--surface-hover); }
-        .item-badge { font-family: 'Space Mono', monospace; font-size: 8px; font-weight: 700; color: var(--bg); background: var(--accent); padding: 4px 6px; border-radius: 6px; text-align: center; line-height: 1.4; }
-        .item-badge.box-type { background: var(--info); }
-        .item-info .item-brand { font-weight: 700; font-size: 14px; margin-bottom: 3px; display: flex; align-items: center; gap: 6px; }
-        .item-info .item-meta { font-size: 10px; color: var(--text-dim); display: flex; gap: 8px; flex-wrap: wrap; }
-        .item-qty { font-family: 'Space Mono', monospace; font-size: 18px; font-weight: 700; color: var(--success); text-align: right; white-space: nowrap; }
-        .item-actions { display: flex; gap: 6px; }
-        .action-btn { width: 32px; height: 32px; background: transparent; border: 1px solid var(--border); border-radius: 6px; cursor: pointer; font-size: 13px; display: flex; align-items: center; justify-content: center; transition: 0.2s; color: var(--text-dim); }
-        .action-btn:hover { border-color: var(--accent); color: var(--text); }
-        .action-btn.del:hover { border-color: var(--error); color: var(--error); }
-        
-        /* AI BADGE */
-        .ai-tag { display: inline-flex; align-items: center; background: rgba(0,255,136,0.1); color: var(--success); padding: 2px 6px; border-radius: 4px; font-size: 8px; font-weight: 700; border: 1px solid rgba(0,255,136,0.25); font-family: 'Space Mono', monospace; }
-        
-        /* BOTTOM ACTIONS */
+        .inventory { padding: 12px 20px 0; }
+        .item { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 14px; display: grid; grid-template-columns: 54px 1fr auto auto; gap: 12px; align-items: center; margin-bottom: 10px; transition: 0.2s; }
+        .item:hover { border-color: rgba(255,215,0,0.3); background: var(--surface2); }
+        .ibadge { font-family: 'Space Mono', monospace; font-size: 8px; font-weight: 700; color: #000; background: var(--accent); padding: 5px 6px; border-radius: 6px; text-align: center; line-height: 1.5; }
+        .ibadge.box { background: var(--blue); }
+        .iname { font-weight: 700; font-size: 14px; margin-bottom: 3px; }
+        .imeta { font-size: 10px; color: var(--text-dim); display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
+        .ai-chip { display: inline-flex; background: rgba(0,255,136,0.1); color: var(--green); padding: 1px 5px; border-radius: 3px; font-size: 8px; font-weight: 700; border: 1px solid rgba(0,255,136,0.2); font-family: 'Space Mono', monospace; }
+        .iqty { font-family: 'Space Mono', monospace; font-size: 17px; font-weight: 700; color: var(--green); text-align: right; white-space: nowrap; }
+        .iacts { display: flex; gap: 5px; }
+        .iact { width: 32px; height: 32px; background: transparent; border: 1px solid var(--border); border-radius: 6px; cursor: pointer; font-size: 13px; display: flex; align-items: center; justify-content: center; transition: 0.2s; color: var(--text-dim); }
+        .iact:hover { border-color: var(--accent); color: var(--text); }
+        .iact.del:hover { border-color: var(--red); color: var(--red); }
+
+        /* EMPTY STATE */
+        .empty { text-align: center; padding: 50px 20px; color: var(--text-dim); }
+        .empty-icon { font-size: 44px; margin-bottom: 14px; opacity: 0.4; }
+        .empty-title { font-size: 15px; font-weight: 600; color: var(--text); margin-bottom: 6px; }
+        .empty-sub { font-size: 12px; }
+
+        /* BOTTOM BAR */
         .actions { position: fixed; bottom: 0; left: 50%; transform: translateX(-50%); width: 100%; max-width: 600px; background: rgba(10,10,10,0.97); border-top: 2px solid var(--accent); padding: 12px 20px; display: flex; gap: 10px; z-index: 50; backdrop-filter: blur(10px); }
-        .btn-main { flex: 2; padding: 14px; border-radius: 8px; border: none; background: linear-gradient(135deg, var(--accent), #FFA500); color: var(--bg); font-weight: 800; font-size: 12px; cursor: pointer; text-transform: uppercase; font-family: 'Space Mono', monospace; transition: 0.2s; letter-spacing: 1px; }
-        .btn-main:hover { transform: translateY(-1px); box-shadow: 0 6px 20px rgba(255,215,0,0.35); }
-        .btn-main:active { transform: translateY(0); }
-        .btn-secondary { flex: 1; padding: 14px; border-radius: 8px; border: 1px solid var(--border); background: transparent; color: var(--text-dim); font-weight: 700; font-size: 11px; cursor: pointer; text-transform: uppercase; font-family: 'Space Mono', monospace; transition: 0.2s; }
-        .btn-secondary:hover { border-color: var(--accent); color: var(--accent); }
-        
-        /* CAMERA */
-        .camera { position: fixed; inset: 0; background: #000; z-index: 400; display: none; flex-direction: column; align-items: center; justify-content: center; }
-        .camera.active { display: flex; }
-        .camera-header { position: absolute; top: 0; left: 0; right: 0; padding: 20px; display: flex; justify-content: space-between; align-items: center; z-index: 10; background: linear-gradient(to bottom, rgba(0,0,0,0.8), transparent); }
-        .camera-title { font-family: 'Space Mono', monospace; color: var(--accent); font-weight: 700; font-size: 14px; }
-        .camera-close-btn { background: rgba(255,215,0,0.1); border: 2px solid var(--accent); color: var(--accent); width: 44px; height: 44px; border-radius: 8px; font-size: 22px; cursor: pointer; transition: 0.2s; display: flex; align-items: center; justify-content: center; }
-        .camera-close-btn:hover { background: var(--accent); color: var(--bg); }
-        #video { width: 100%; height: 100%; object-fit: cover; }
+        .bmain { flex: 2; padding: 14px; border-radius: 8px; border: none; background: linear-gradient(135deg, var(--accent), #FFA500); color: #000; font-weight: 800; font-size: 12px; cursor: pointer; text-transform: uppercase; font-family: 'Space Mono', monospace; transition: 0.2s; letter-spacing: 1px; }
+        .bmain:hover { transform: translateY(-1px); box-shadow: 0 6px 20px rgba(255,215,0,0.4); }
+        .bmain:active { transform: translateY(0); }
+        .bsec { flex: 1; padding: 14px; border-radius: 8px; border: 1px solid var(--border); background: transparent; color: var(--text-dim); font-weight: 700; font-size: 11px; cursor: pointer; text-transform: uppercase; font-family: 'Space Mono', monospace; transition: 0.2s; }
+        .bsec:hover { border-color: var(--accent); color: var(--accent); }
+
+        /* ═══════════════════ CAMERA ═══════════════════ */
+        .camera { position: fixed; inset: 0; background: #000; z-index: 400; display: none; }
+        .camera.active { display: block; }
+        #video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
         #canvas { display: none; }
-        
-        /* SCAN OVERLAY */
-        .scan-overlay { position: absolute; inset: 0; z-index: 5; pointer-events: none; }
-        .scan-frame { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 280px; height: 180px; border: 2px solid var(--accent); border-radius: 12px; box-shadow: 0 0 0 9999px rgba(0,0,0,0.5); }
-        .scan-line { position: absolute; left: 0; right: 0; height: 2px; background: linear-gradient(90deg, transparent, var(--accent), transparent); animation: scan 2s linear infinite; top: 0; }
-        @keyframes scan { 0%{top:0%;} 100%{top:100%;} }
-        .scan-corners { position: absolute; inset: -2px; }
-        .scan-corner { position: absolute; width: 20px; height: 20px; border-color: var(--accent); border-style: solid; }
-        .scan-corner.tl { top: 0; left: 0; border-width: 3px 0 0 3px; border-radius: 4px 0 0 0; }
-        .scan-corner.tr { top: 0; right: 0; border-width: 3px 3px 0 0; border-radius: 0 4px 0 0; }
-        .scan-corner.bl { bottom: 0; left: 0; border-width: 0 0 3px 3px; border-radius: 0 0 0 4px; }
-        .scan-corner.br { bottom: 0; right: 0; border-width: 0 3px 3px 0; border-radius: 0 0 4px 0; }
-        
-        .camera-status { position: absolute; bottom: 120px; left: 20px; right: 20px; z-index: 10; }
-        .camera-status-inner { background: rgba(0,0,0,0.85); border: 1px solid var(--accent); border-radius: 10px; padding: 14px 20px; text-align: center; font-family: 'Space Mono', monospace; }
-        .camera-msg { font-size: 12px; color: var(--accent); font-weight: 700; margin-bottom: 4px; }
-        .camera-sub { font-size: 10px; color: var(--text-dim); }
-        .camera-bottom { position: absolute; bottom: 30px; left: 0; right: 0; display: flex; justify-content: center; gap: 20px; z-index: 10; }
-        .capture-btn { background: var(--accent); color: var(--bg); border: none; border-radius: 50px; padding: 14px 30px; font-family: 'Space Mono', monospace; font-weight: 800; font-size: 12px; cursor: pointer; transition: 0.2s; display: flex; align-items: center; gap: 8px; }
-        .capture-btn:hover { transform: scale(1.05); box-shadow: 0 0 25px rgba(255,215,0,0.5); }
-        .capture-btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
-        
+
+        /* Camera top bar */
+        .cam-header { position: absolute; top: 0; left: 0; right: 0; padding: 20px; display: flex; justify-content: space-between; align-items: center; z-index: 10; background: linear-gradient(to bottom, rgba(0,0,0,0.75), transparent); }
+        .cam-title { font-family: 'Space Mono', monospace; color: var(--accent); font-weight: 700; font-size: 13px; letter-spacing: 1px; }
+        .cam-close { background: rgba(255,215,0,0.1); border: 2px solid var(--accent); color: var(--accent); width: 44px; height: 44px; border-radius: 8px; font-size: 22px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: 0.2s; }
+        .cam-close:hover { background: var(--accent); color: #000; }
+
+        /* Scan frame */
+        .cam-frame-wrap { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; pointer-events: none; z-index: 5; }
+        .cam-frame { position: relative; width: 80vw; max-width: 320px; height: 180px; }
+        .cam-frame::before { content: ''; position: absolute; inset: 0; box-shadow: 0 0 0 9999px rgba(0,0,0,0.45); border-radius: 8px; }
+        .cam-frame-border { position: absolute; inset: 0; border: 2px solid var(--accent); border-radius: 8px; }
+        .cam-scan-line { position: absolute; left: 4px; right: 4px; height: 2px; background: linear-gradient(90deg, transparent, var(--accent), transparent); animation: scanline 2s linear infinite; top: 0; }
+        @keyframes scanline { 0%{top:4px} 100%{top:calc(100% - 4px)} }
+        .cam-corner { position: absolute; width: 18px; height: 18px; border-color: var(--accent); border-style: solid; }
+        .cam-corner.tl { top: -1px; left: -1px; border-width: 3px 0 0 3px; border-radius: 6px 0 0 0; }
+        .cam-corner.tr { top: -1px; right: -1px; border-width: 3px 3px 0 0; border-radius: 0 6px 0 0; }
+        .cam-corner.bl { bottom: -1px; left: -1px; border-width: 0 0 3px 3px; border-radius: 0 0 0 6px; }
+        .cam-corner.br { bottom: -1px; right: -1px; border-width: 0 3px 3px 0; border-radius: 0 0 6px 0; }
+
+        /* Camera status */
+        .cam-status { position: absolute; bottom: 160px; left: 20px; right: 20px; z-index: 10; }
+        .cam-status-box { background: rgba(0,0,0,0.82); border: 1px solid var(--accent); border-radius: 10px; padding: 14px 18px; text-align: center; }
+        .cam-msg { font-family: 'Space Mono', monospace; font-size: 11px; color: var(--accent); font-weight: 700; margin-bottom: 3px; min-height: 18px; }
+        .cam-sub { font-size: 10px; color: var(--text-dim); }
+
+        /* Shutter button */
+        .cam-shutter-wrap { position: absolute; bottom: 40px; left: 0; right: 0; display: flex; justify-content: center; z-index: 10; }
+        .cam-shutter { width: 80px; height: 80px; border-radius: 50%; background: linear-gradient(135deg, var(--accent), #FFA500); border: 5px solid rgba(255,255,255,0.3); cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 28px; transition: 0.2s; box-shadow: 0 0 30px rgba(255,215,0,0.5); }
+        .cam-shutter:hover { transform: scale(1.08); box-shadow: 0 0 40px rgba(255,215,0,0.7); }
+        .cam-shutter:active { transform: scale(0.93); }
+        .cam-shutter:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
+
+        /* Processing overlay */
+        .cam-processing { position: absolute; inset: 0; background: rgba(0,0,0,0.92); z-index: 20; display: none; flex-direction: column; align-items: center; justify-content: center; gap: 20px; }
+        .cam-processing.show { display: flex; }
+        .spin { width: 56px; height: 56px; border: 4px solid #333; border-top-color: var(--accent); border-radius: 50%; animation: spin 0.8s linear infinite; }
+        @keyframes spin { to{transform:rotate(360deg)} }
+        .cam-proc-text { font-family: 'Space Mono', monospace; color: var(--accent); font-size: 12px; font-weight: 700; text-align: center; }
+
         /* MODAL */
         .modal { position: fixed; inset: 0; background: rgba(0,0,0,0.88); z-index: 450; display: none; align-items: flex-end; justify-content: center; }
         .modal.open { display: flex; }
-        .modal-content { background: var(--surface); border: 1px solid var(--border); border-top: 2px solid var(--accent); border-radius: 16px 16px 0 0; padding: 24px; width: 100%; max-width: 600px; max-height: 90vh; overflow-y: auto; animation: slide-up 0.3s ease; }
-        @keyframes slide-up { from{transform:translateY(100%);} to{transform:translateY(0);} }
-        .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
-        .modal-title { font-family: 'Space Mono', monospace; font-weight: 800; color: var(--accent); font-size: 14px; letter-spacing: 1px; }
-        .modal-close { background: transparent; border: none; color: var(--text-dim); font-size: 22px; cursor: pointer; padding: 0 4px; transition: 0.2s; }
-        .modal-close:hover { color: var(--accent); transform: rotate(90deg); }
-        
-        .form-group { margin-bottom: 14px; }
-        .form-label { display: block; font-size: 9px; font-weight: 700; color: var(--text-dim); text-transform: uppercase; margin-bottom: 6px; letter-spacing: 1px; font-family: 'Space Mono', monospace; }
-        .form-input, .form-select { width: 100%; background: var(--bg); border: 1px solid var(--border); border-radius: 8px; padding: 11px 14px; color: var(--text); font-size: 14px; outline: none; font-family: 'Inter', sans-serif; transition: 0.2s; appearance: none; }
-        .form-input:focus, .form-select:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-dim); }
-        .form-select option { background: var(--surface); color: var(--text); }
-        
-        .ai-indicator { display: inline-flex; align-items: center; gap: 4px; font-size: 9px; color: var(--success); font-family: 'Space Mono', monospace; margin-left: 6px; }
-        
-        .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-        
+        .modal-box { background: var(--surface); border: 1px solid var(--border); border-top: 2px solid var(--accent); border-radius: 16px 16px 0 0; padding: 24px; width: 100%; max-width: 600px; max-height: 92vh; overflow-y: auto; animation: mup 0.3s ease; }
+        @keyframes mup { from{transform:translateY(100%)} to{transform:translateY(0)} }
+        .mhead { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+        .mtitle { font-family: 'Space Mono', monospace; font-weight: 800; color: var(--accent); font-size: 13px; letter-spacing: 1px; }
+        .mclose { background: transparent; border: none; color: var(--text-dim); font-size: 22px; cursor: pointer; padding: 0 4px; transition: 0.2s; }
+        .mclose:hover { color: var(--accent); transform: rotate(90deg); }
+        .fgrp { margin-bottom: 14px; }
+        .flabel { display: block; font-size: 9px; font-weight: 700; color: var(--text-dim); text-transform: uppercase; margin-bottom: 6px; letter-spacing: 1px; font-family: 'Space Mono', monospace; }
+        .flabel .aibadge { display: inline-flex; align-items: center; background: rgba(0,255,136,0.1); color: var(--green); padding: 1px 5px; border-radius: 3px; font-size: 8px; font-weight: 700; border: 1px solid rgba(0,255,136,0.2); margin-left: 6px; }
+        .finput, .fselect { width: 100%; background: var(--bg); border: 1px solid var(--border); border-radius: 8px; padding: 11px 14px; color: var(--text); font-size: 14px; outline: none; font-family: 'Inter', sans-serif; transition: 0.2s; appearance: none; }
+        .finput:focus, .fselect:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-dim); }
+        .frow { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+
         /* LOGIN */
         .login-screen { position: fixed; inset: 0; background: var(--bg); z-index: 500; display: flex; align-items: center; justify-content: center; padding: 20px; }
-        .login-screen.hidden { display: none; }
+        .login-screen.gone { display: none; }
         .login-box { background: var(--surface); border: 1px solid var(--border); border-top: 3px solid var(--accent); border-radius: 16px; padding: 40px 32px; width: 100%; max-width: 360px; }
-        .login-logo { display: flex; flex-direction: column; align-items: center; margin-bottom: 36px; gap: 12px; }
-        .login-icon { width: 70px; height: 70px; background: linear-gradient(135deg, var(--accent), #FFA500); border-radius: 16px; display: flex; align-items: center; justify-content: center; font-size: 38px; box-shadow: 0 0 40px rgba(255,215,0,0.3); }
-        .login-name { font-family: 'Space Mono', monospace; font-size: 24px; font-weight: 800; color: var(--accent); }
-        .login-tagline { font-size: 10px; color: var(--text-dim); letter-spacing: 3px; text-transform: uppercase; }
-        
-        /* EMPTY STATE */
-        .empty-state { text-align: center; padding: 50px 20px; color: var(--text-dim); }
-        .empty-icon { font-size: 44px; margin-bottom: 14px; opacity: 0.5; }
-        .empty-title { font-size: 15px; font-weight: 600; color: var(--text); margin-bottom: 6px; }
-        .empty-sub { font-size: 12px; }
-        
+        .login-logo { display: flex; flex-direction: column; align-items: center; margin-bottom: 34px; gap: 10px; }
+        .login-icon { width: 70px; height: 70px; background: linear-gradient(135deg, var(--accent), #FFA500); border-radius: 16px; display: flex; align-items: center; justify-content: center; font-size: 36px; box-shadow: 0 0 40px rgba(255,215,0,0.25); }
+        .login-name { font-family: 'Space Mono', monospace; font-size: 22px; font-weight: 800; color: var(--accent); }
+        .login-tag { font-size: 10px; color: var(--text-dim); letter-spacing: 3px; text-transform: uppercase; }
+
         /* TOAST */
-        .toast { position: fixed; top: 16px; left: 50%; transform: translateX(-50%) translateY(-100px); background: var(--surface); color: var(--text); padding: 12px 24px; border-radius: 10px; font-family: 'Space Mono', monospace; font-weight: 700; font-size: 12px; z-index: 600; transition: transform 0.3s ease; border: 1px solid var(--border); box-shadow: 0 8px 30px rgba(0,0,0,0.5); white-space: nowrap; max-width: 90vw; text-align: center; }
+        .toast { position: fixed; top: 16px; left: 50%; transform: translateX(-50%) translateY(-80px); background: var(--surface); color: var(--text); padding: 12px 22px; border-radius: 10px; font-family: 'Space Mono', monospace; font-weight: 700; font-size: 11px; z-index: 700; transition: transform 0.3s ease; border: 1px solid var(--border); box-shadow: 0 8px 30px rgba(0,0,0,0.6); max-width: 90vw; text-align: center; pointer-events: none; }
         .toast.show { transform: translateX(-50%) translateY(0); }
-        .toast.success { border-color: var(--success); color: var(--success); }
-        .toast.error { border-color: var(--error); color: var(--error); }
+        .toast.success { border-color: var(--green); color: var(--green); }
+        .toast.error { border-color: var(--red); color: var(--red); }
         .toast.info { border-color: var(--accent); color: var(--accent); }
-        
-        /* SCANNING INDICATOR */
-        .scanning-spinner { display: inline-block; width: 14px; height: 14px; border: 2px solid rgba(255,215,0,0.3); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.8s linear infinite; }
-        @keyframes spin { to { transform: rotate(360deg); } }
-        
-        /* PROGRESS BAR */
-        .progress-bar { width: 100%; height: 4px; background: var(--border); border-radius: 2px; overflow: hidden; margin-top: 8px; }
-        .progress-fill { height: 100%; background: linear-gradient(90deg, var(--accent), var(--success)); transition: width 0.3s; }
+
+        .spinner-inline { display: inline-block; width: 12px; height: 12px; border: 2px solid rgba(255,215,0,0.3); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.7s linear infinite; vertical-align: middle; margin-right: 6px; }
     </style>
 </head>
 <body>
 
-<!-- CAMERA UI -->
+<!-- ═══════════════════════════ CAMERA ═══════════════════════════ -->
 <div class="camera" id="camera">
-    <div class="camera-header">
-        <div class="camera-title">📷 DUAL-SCAN ENGINE</div>
-        <button class="camera-close-btn" onclick="closeCamera()">✕</button>
-    </div>
-    
     <video id="video" autoplay playsinline muted></video>
     <canvas id="canvas"></canvas>
-    
-    <div class="scan-overlay">
-        <div class="scan-frame">
-            <div class="scan-line"></div>
-            <div class="scan-corners">
-                <div class="scan-corner tl"></div>
-                <div class="scan-corner tr"></div>
-                <div class="scan-corner bl"></div>
-                <div class="scan-corner br"></div>
-            </div>
+
+    <div class="cam-header">
+        <div class="cam-title">📷 DUAL-SCAN</div>
+        <button class="cam-close" onclick="closeCamera()">✕</button>
+    </div>
+
+    <div class="cam-frame-wrap">
+        <div class="cam-frame">
+            <div class="cam-frame-border"></div>
+            <div class="cam-scan-line"></div>
+            <div class="cam-corner tl"></div>
+            <div class="cam-corner tr"></div>
+            <div class="cam-corner bl"></div>
+            <div class="cam-corner br"></div>
         </div>
     </div>
-    
-    <div class="camera-status">
-        <div class="camera-status-inner">
-            <div class="camera-msg" id="cameraMsg">
-                <span class="scanning-spinner"></span> Initializing camera...
-            </div>
-            <div class="camera-sub" id="cameraSub">Point at barcode or spool label</div>
+
+    <div class="cam-status">
+        <div class="cam-status-box">
+            <div class="cam-msg" id="camMsg">Starting camera...</div>
+            <div class="cam-sub" id="camSub">Align barcode or spool label in frame</div>
         </div>
     </div>
-    
-    <div class="camera-bottom">
-        <button class="capture-btn" id="captureBtn" onclick="manualCapture()" disabled>
-            📸 CAPTURE & ANALYZE
-        </button>
+
+    <div class="cam-shutter-wrap">
+        <button class="cam-shutter" id="shutterBtn" onclick="captureForAI()" disabled>📸</button>
+    </div>
+
+    <div class="cam-processing" id="camProcessing">
+        <div class="spin"></div>
+        <div class="cam-proc-text" id="camProcText">Analyzing with Claude AI...</div>
     </div>
 </div>
 
-<!-- LOGIN SCREEN -->
+<!-- ═══════════════════════════ LOGIN ═══════════════════════════ -->
 <div class="login-screen" id="loginScreen">
     <div class="login-box">
         <div class="login-logo">
             <div class="login-icon">🧵</div>
             <div class="login-name">SPOOLVAULT</div>
-            <div class="login-tagline">Lindner Team Inventory</div>
+            <div class="login-tag">Lindner Team Inventory</div>
         </div>
-        <div class="form-group">
-            <label class="form-label">Team Member</label>
-            <select id="loginUsername" class="form-select">
+        <div class="fgrp">
+            <label class="flabel">Team Member</label>
+            <select id="loginUser" class="fselect">
                 <option value="">Select name...</option>
                 <option value="Benjamin">Benjamin</option>
                 <option value="Christian">Christian</option>
                 <option value="Rahul">Rahul</option>
             </select>
         </div>
-        <button class="btn-main" style="width:100%; margin-top:8px;" onclick="handleLogin()">ENTER VAULT</button>
+        <button class="bmain" style="width:100%;margin-top:8px;" onclick="doLogin()">ENTER VAULT</button>
     </div>
 </div>
 
-<!-- MAIN APP -->
-<div class="container" id="mainApp" style="display:none;">
+<!-- ═══════════════════════════ MAIN APP ═══════════════════════════ -->
+<div class="container" id="app" style="display:none;">
     <header>
-        <div class="header-row">
-            <div class="logo-container">
+        <div class="hrow1">
+            <div class="logo">
                 <div class="logo-icon">🧵</div>
                 <div>
-                    <div class="logo-text">SPOOLVAULT</div>
+                    <div class="logo-name">SPOOLVAULT</div>
                     <div class="logo-sub">LIVE SYNC</div>
                 </div>
             </div>
-            <div class="sync-status">
-                <div class="sync-dot"></div>
-                <span id="syncText">CONNECTED</span>
-            </div>
+            <div class="sync-pill"><div class="sync-dot"></div><span>LIVE</span></div>
         </div>
-        <div class="user-bar">
-            <div class="user-info">
-                👤 <span id="userDisplay">—</span>
-                <span class="user-badge" id="totalCount">0</span>
-            </div>
-            <div class="header-btns">
-                <button class="header-btn" onclick="showApiModal()">🔑 API</button>
-                <button class="header-btn" onclick="logout()">↩ OUT</button>
+        <div class="hrow2">
+            <div class="user-info">👤 <span id="uName">—</span> <span class="ubadge" id="uCount">0</span></div>
+            <div class="hbtns">
+                <button class="hbtn" onclick="openApiModal()">🔑 API</button>
+                <button class="hbtn" onclick="doLogout()">↩ OUT</button>
             </div>
         </div>
     </header>
-    
+
     <div class="stats">
-        <div class="stat-card">
-            <div class="stat-label">Boxes</div>
-            <div class="stat-value" id="statBoxes">0</div>
-        </div>
-        <div class="stat-card">
-            <div class="stat-label">Spools</div>
-            <div class="stat-value" id="statSpools">0</div>
-        </div>
-        <div class="stat-card">
-            <div class="stat-label">Empty</div>
-            <div class="stat-value" id="statEmpty">0</div>
-        </div>
+        <div class="scard"><div class="slabel">Boxes</div><div class="sval" id="sBoxes">0</div></div>
+        <div class="scard"><div class="slabel">Spools</div><div class="sval" id="sSpools">0</div></div>
+        <div class="scard"><div class="slabel">Empty</div><div class="sval" id="sEmpty">0</div></div>
     </div>
-    
+
     <div class="tabs">
-        <button class="tab active" id="tab-all" onclick="switchTab('all')">All</button>
-        <button class="tab" id="tab-boxes" onclick="switchTab('boxes')">📦 Boxes</button>
-        <button class="tab" id="tab-spools" onclick="switchTab('spools')">🔴 Spools</button>
+        <button class="tab active" id="tab-all" onclick="setTab('all')">All</button>
+        <button class="tab" id="tab-boxes" onclick="setTab('boxes')">📦 Boxes</button>
+        <button class="tab" id="tab-spools" onclick="setTab('spools')">🔴 Spools</button>
     </div>
-    
+
     <div class="search">
-        <input type="text" class="search-input" id="searchInput" placeholder="🔍  Search brand, color, material, serial..." oninput="renderInventory()">
+        <input type="text" class="sinput" id="searchQ" placeholder="🔍 Search brand, color, material..." oninput="render()">
     </div>
-    
-    <div class="inventory" id="inventoryView">
-        <div class="empty-state">
-            <div class="empty-icon">📭</div>
-            <div class="empty-title">Vault is empty</div>
-            <div class="empty-sub">Scan or add filament to get started</div>
-        </div>
+
+    <div class="inventory" id="inv">
+        <div class="empty"><div class="empty-icon">📭</div><div class="empty-title">Vault is empty</div><div class="empty-sub">Scan or add filament to start</div></div>
     </div>
 </div>
 
-<!-- ACTIONS BAR -->
-<div class="actions" id="actions" style="display:none;">
-    <button class="btn-main" onclick="openCamera()">📷 SCAN</button>
-    <button class="btn-secondary" onclick="openAddModal()">＋ ADD</button>
-    <button class="btn-secondary" onclick="openDeleteModal()">🗑</button>
+<div class="actions" id="actbar" style="display:none;">
+    <button class="bmain" onclick="openCamera()">📷 SCAN</button>
+    <button class="bsec" onclick="openAddModal()">＋ ADD</button>
+    <button class="bsec" onclick="openDelModal()">🗑</button>
 </div>
 
-<!-- API MODAL -->
+<!-- ═══════════════════════════ MODALS ═══════════════════════════ -->
+
+<!-- API KEY -->
 <div class="modal" id="apiModal">
-    <div class="modal-content">
-        <div class="modal-header">
-            <div class="modal-title">🔑 CLAUDE API KEY</div>
-            <button class="modal-close" onclick="closeModal('apiModal')">✕</button>
+    <div class="modal-box">
+        <div class="mhead"><div class="mtitle">🔑 CLAUDE API KEY</div><button class="mclose" onclick="closeModal('apiModal')">✕</button></div>
+        <div class="fgrp">
+            <label class="flabel">API Key (saved to your browser only)</label>
+            <input type="password" id="apiInput" class="finput" placeholder="sk-ant-api03-...">
         </div>
-        <div class="form-group">
-            <label class="form-label">API Key (stored locally)</label>
-            <input type="password" id="apiKeyInput" class="form-input" placeholder="sk-ant-api03-...">
-        </div>
-        <div style="font-size:11px; color:var(--text-dim); margin-bottom:16px;">Required for AI label scanning. Never sent to any server except Anthropic.</div>
-        <button class="btn-main" style="width:100%;" onclick="saveApiKey()">SAVE KEY</button>
+        <div style="font-size:11px;color:var(--text-dim);margin-bottom:16px;">Required for AI spool label scanning. Never leaves your device except to Anthropic.</div>
+        <button class="bmain" style="width:100%;" onclick="saveApiKey()">SAVE KEY</button>
     </div>
 </div>
 
-<!-- ADD / EDIT MODAL -->
+<!-- ADD / EDIT -->
 <div class="modal" id="addModal">
-    <div class="modal-content">
-        <div class="modal-header">
-            <div class="modal-title" id="addModalTitle">ADD ITEM</div>
-            <button class="modal-close" onclick="closeModal('addModal')">✕</button>
-        </div>
-        
-        <div class="form-group">
-            <label class="form-label">Type</label>
-            <select id="formType" class="form-select" onchange="updateFormForType()">
-                <option value="">Select type...</option>
+    <div class="modal-box">
+        <div class="mhead"><div class="mtitle" id="addTitle">ADD ITEM</div><button class="mclose" onclick="closeModal('addModal')">✕</button></div>
+
+        <div class="fgrp">
+            <label class="flabel">Type</label>
+            <select id="fType" class="fselect" onchange="onTypeChange()">
+                <option value="">Select...</option>
                 <option value="box">📦 Unopened Box</option>
                 <option value="spool">🔴 Opened Spool</option>
             </select>
         </div>
-        
-        <div class="form-row">
-            <div class="form-group">
-                <label class="form-label">Brand <span id="aiBrand" class="ai-indicator"></span></label>
-                <input type="text" id="formBrand" class="form-input" placeholder="Prusament...">
+
+        <div class="frow">
+            <div class="fgrp">
+                <label class="flabel">Brand <span id="aiBrand" class="aibadge" style="display:none;"></span></label>
+                <input type="text" id="fBrand" class="finput" placeholder="Prusament...">
             </div>
-            <div class="form-group">
-                <label class="form-label">Material <span id="aiMaterial" class="ai-indicator"></span></label>
-                <select id="formMaterial" class="form-select">
+            <div class="fgrp">
+                <label class="flabel">Material <span id="aiMat" class="aibadge" style="display:none;"></span></label>
+                <select id="fMat" class="fselect">
                     <option value="">Select...</option>
                     <option>PLA</option><option>PLA+</option><option>PETG</option>
                     <option>ABS</option><option>TPU</option><option>Nylon</option>
@@ -350,65 +320,64 @@
                 </select>
             </div>
         </div>
-        
-        <div class="form-row">
-            <div class="form-group">
-                <label class="form-label">Color <span id="aiColor" class="ai-indicator"></span></label>
-                <input type="text" id="formColor" class="form-input" placeholder="Jet Black...">
+
+        <div class="frow">
+            <div class="fgrp">
+                <label class="flabel">Color <span id="aiCol" class="aibadge" style="display:none;"></span></label>
+                <input type="text" id="fColor" class="finput" placeholder="Jet Black...">
             </div>
-            <div class="form-group">
-                <label class="form-label">Weight (g)</label>
-                <input type="number" id="formWeight" class="form-input" placeholder="1000">
-            </div>
-        </div>
-        
-        <div class="form-group">
-            <label class="form-label">Serial / Barcode <span id="aiSerial" class="ai-indicator"></span></label>
-            <input type="text" id="formSerial" class="form-input" placeholder="13-char (XXXMXXXXXXXXX) or barcode...">
-        </div>
-        
-        <div class="form-row" id="spoolExtras" style="display:none;">
-            <div class="form-group">
-                <label class="form-label">Diameter (mm)</label>
-                <input type="number" id="formDiameter" class="form-input" placeholder="1.75" step="0.01">
-            </div>
-            <div class="form-group">
-                <label class="form-label">Remaining %</label>
-                <input type="number" id="formRemaining" class="form-input" placeholder="100" min="0" max="100" value="100">
+            <div class="fgrp">
+                <label class="flabel">Weight (g)</label>
+                <input type="number" id="fWeight" class="finput" placeholder="1000">
             </div>
         </div>
-        
-        <div class="form-group" id="batchGroup" style="display:none;">
-            <label class="form-label">Batch Quantity</label>
-            <input type="number" id="formQuantity" class="form-input" placeholder="1" min="1" value="1">
-            <div style="font-size:10px; color:var(--text-dim); margin-top:4px;">Will create multiple entries with sub-IDs (-01, -02...)</div>
+
+        <div class="fgrp">
+            <label class="flabel">Serial / Barcode <span id="aiSerial" class="aibadge" style="display:none;"></span></label>
+            <input type="text" id="fSerial" class="finput" placeholder="13-char XXXMXXXXXXXXX or barcode">
         </div>
-        
-        <input type="hidden" id="editingId" value="">
-        
-        <button class="btn-main" style="width:100%; margin-top:6px;" onclick="handleSave()">SAVE TO VAULT</button>
+
+        <div id="spoolFields" style="display:none;">
+            <div class="frow">
+                <div class="fgrp">
+                    <label class="flabel">Diameter (mm)</label>
+                    <input type="number" id="fDiam" class="finput" placeholder="1.75" step="0.01">
+                </div>
+                <div class="fgrp">
+                    <label class="flabel">Remaining %</label>
+                    <input type="number" id="fRem" class="finput" placeholder="100" min="0" max="100" value="100">
+                </div>
+            </div>
+        </div>
+
+        <div id="boxFields" style="display:none;">
+            <div class="fgrp">
+                <label class="flabel">Batch Quantity</label>
+                <input type="number" id="fQty" class="finput" placeholder="1" min="1" value="1">
+                <div style="font-size:10px;color:var(--text-dim);margin-top:4px;">Creates multiple entries with sub-IDs (-01, -02...)</div>
+            </div>
+        </div>
+
+        <input type="hidden" id="editId">
+        <button class="bmain" style="width:100%;margin-top:8px;" onclick="doSave()">SAVE TO VAULT</button>
     </div>
 </div>
 
-<!-- DELETE MODAL -->
-<div class="modal" id="deleteModal">
-    <div class="modal-content">
-        <div class="modal-header">
-            <div class="modal-title">🗑 DELETE ITEMS</div>
-            <button class="modal-close" onclick="closeModal('deleteModal')">✕</button>
-        </div>
-        <div id="deleteList" style="max-height:350px; overflow-y:auto;"></div>
+<!-- DELETE LIST -->
+<div class="modal" id="delModal">
+    <div class="modal-box">
+        <div class="mhead"><div class="mtitle">🗑 DELETE ITEMS</div><button class="mclose" onclick="closeModal('delModal')">✕</button></div>
+        <div id="delList" style="max-height:360px;overflow-y:auto;"></div>
     </div>
 </div>
 
-<!-- TOAST -->
 <div class="toast" id="toast"></div>
 
 <script>
-// ═══════════════════════════════════════
-// FIREBASE CONFIG
-// ═══════════════════════════════════════
-const firebaseConfig = {
+// ══════════════════════════════════════════════════════════
+// FIREBASE
+// ══════════════════════════════════════════════════════════
+const FB_CFG = {
     apiKey: "AIzaSyAvj9S0YpN3kXD860d4kCZ6VvVZoQnAYJU",
     authDomain: "inventory-90afa.firebaseapp.com",
     databaseURL: "https://inventory-90afa-default-rtdb.firebaseio.com",
@@ -417,537 +386,485 @@ const firebaseConfig = {
     messagingSenderId: "783579490124",
     appId: "1:783579490124:web:5392bc2ac0a813a37811e9"
 };
+firebase.initializeApp(FB_CFG);
+const DB = firebase.database();
 
-firebase.initializeApp(firebaseConfig);
-const db = firebase.database();
-
-// ═══════════════════════════════════════
+// ══════════════════════════════════════════════════════════
 // STATE
-// ═══════════════════════════════════════
-let currentUser = null;
-let inventory = [];
-let currentTab = 'all';
-let cameraStream = null;
-let barcodeInterval = null;
-let CLAUDE_API_KEY = localStorage.getItem('sv_claude_key') || '';
+// ══════════════════════════════════════════════════════════
+let user = null;
+let items = [];
+let tab = 'all';
+let camStream = null;
+let barcodeTimer = null;
+let barcodeDetector = null;
+let CLAUDE_KEY = localStorage.getItem('sv_ck') || '';
 
-// ═══════════════════════════════════════
+// ══════════════════════════════════════════════════════════
 // LOGIN / LOGOUT
-// ═══════════════════════════════════════
-function handleLogin() {
-    const name = document.getElementById('loginUsername').value;
-    if (!name) { showToast('Select your name', 'error'); return; }
-    
-    currentUser = { name, uid: name.toLowerCase() };
-    db.ref(`users/${currentUser.uid}`).set({ name, lastSeen: Date.now(), status: 'online' });
-    
-    document.getElementById('loginScreen').classList.add('hidden');
-    document.getElementById('mainApp').style.display = 'block';
-    document.getElementById('actions').style.display = 'flex';
-    document.getElementById('userDisplay').textContent = name;
-    
-    loadInventory();
-    showToast(`Welcome back, ${name}!`, 'success');
+// ══════════════════════════════════════════════════════════
+function doLogin() {
+    const name = document.getElementById('loginUser').value;
+    if (!name) { toast('Select your name', 'error'); return; }
+    user = { name, uid: name.toLowerCase() };
+    DB.ref('users/' + user.uid).set({ name, lastSeen: Date.now(), status: 'online' });
+    document.getElementById('loginScreen').classList.add('gone');
+    document.getElementById('app').style.display = 'block';
+    document.getElementById('actbar').style.display = 'flex';
+    document.getElementById('uName').textContent = name;
+    listenInventory();
+    toast('Welcome, ' + name + '!', 'success');
 }
 
-function logout() {
-    if (currentUser) db.ref(`users/${currentUser.uid}`).remove();
-    currentUser = null;
-    inventory = [];
-    document.getElementById('loginScreen').classList.remove('hidden');
-    document.getElementById('mainApp').style.display = 'none';
-    document.getElementById('actions').style.display = 'none';
-    showToast('Logged out', 'info');
+function doLogout() {
+    if (user) DB.ref('users/' + user.uid).remove();
+    user = null; items = [];
+    document.getElementById('loginScreen').classList.remove('gone');
+    document.getElementById('app').style.display = 'none';
+    document.getElementById('actbar').style.display = 'none';
+    toast('Logged out', 'info');
 }
 
-// ═══════════════════════════════════════
-// FIREBASE INVENTORY
-// ═══════════════════════════════════════
-function loadInventory() {
-    db.ref('inventory').on('value', snap => {
-        inventory = [];
-        snap.forEach(child => inventory.push({ id: child.key, ...child.val() }));
-        inventory.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
-        renderInventory();
+// ══════════════════════════════════════════════════════════
+// FIREBASE CRUD
+// ══════════════════════════════════════════════════════════
+function listenInventory() {
+    DB.ref('inventory').on('value', snap => {
+        items = [];
+        snap.forEach(c => items.push({ id: c.key, ...c.val() }));
+        items.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+        render();
         updateStats();
     });
 }
 
-function saveItem(id, data) {
-    return db.ref(`inventory/${id}`).set(data);
-}
+function dbSet(id, data) { return DB.ref('inventory/' + id).set(data); }
+function dbDel(id) { return DB.ref('inventory/' + id).remove(); }
 
-function removeItem(id) {
-    return db.ref(`inventory/${id}`).remove();
-}
-
-// ═══════════════════════════════════════
+// ══════════════════════════════════════════════════════════
 // RENDER
-// ═══════════════════════════════════════
-function renderInventory() {
-    const container = document.getElementById('inventoryView');
-    const search = document.getElementById('searchInput').value.toLowerCase();
+// ══════════════════════════════════════════════════════════
+function render() {
+    const el = document.getElementById('inv');
+    const q = document.getElementById('searchQ').value.toLowerCase();
+    let list = [...items];
+    if (tab === 'boxes') list = list.filter(i => i.type === 'box');
+    if (tab === 'spools') list = list.filter(i => i.type === 'spool');
+    if (q) list = list.filter(i => (i.brand + i.color + i.material + (i.serial||'')).toLowerCase().includes(q));
     
-    let filtered = [...inventory];
-    if (currentTab === 'boxes') filtered = filtered.filter(i => i.type === 'box');
-    if (currentTab === 'spools') filtered = filtered.filter(i => i.type === 'spool');
-    if (search) {
-        filtered = filtered.filter(i =>
-            `${i.brand} ${i.color} ${i.material} ${i.serial || ''}`.toLowerCase().includes(search)
-        );
-    }
-    
-    if (filtered.length === 0) {
-        container.innerHTML = `<div class="empty-state">
-            <div class="empty-icon">📭</div>
-            <div class="empty-title">No items found</div>
-            <div class="empty-sub">${search ? 'Try a different search' : 'Scan or add items'}</div>
-        </div>`;
+    if (!list.length) {
+        el.innerHTML = '<div class="empty"><div class="empty-icon">📭</div><div class="empty-title">No items found</div><div class="empty-sub">' + (q ? 'Try different search' : 'Scan or add filament') + '</div></div>';
         return;
     }
-    
-    container.innerHTML = filtered.map(item => {
-        const isBox = item.type === 'box';
-        const qtyDisplay = isBox
-            ? `${item.quantity || 1}<span style="font-size:10px;color:var(--text-dim);"> box</span>`
-            : `${item.remaining ?? 100}<span style="font-size:10px;color:var(--text-dim);">%</span>`;
-        
+
+    el.innerHTML = list.map(it => {
+        const box = it.type === 'box';
+        const qty = box
+            ? `${it.quantity||1}<span style="font-size:10px;color:var(--text-dim)"> box</span>`
+            : `${it.remaining??100}<span style="font-size:10px;color:var(--text-dim)">%</span>`;
         return `<div class="item">
-            <div class="item-badge ${isBox ? 'box-type' : ''}">${isBox ? '📦\nBOX' : '🔴\nSPOOL'}</div>
-            <div class="item-info">
-                <div class="item-brand">
-                    ${esc(item.brand || '—')}
-                    ${item.aiDetected ? '<span class="ai-tag">AI</span>' : ''}
-                </div>
-                <div class="item-meta">
-                    <span>${esc(item.color || '—')}</span>
-                    <span>·</span>
-                    <span>${esc(item.material || '—')}</span>
-                    <span>·</span>
-                    <span>${item.weight || '?'}g</span>
-                    ${item.serial ? `<span>·</span><span style="font-family:'Space Mono',monospace;font-size:9px;">${esc(item.serial.substring(0,13))}</span>` : ''}
-                    ${isBox && item.diameter ? `<span>·</span><span>${item.diameter}mm</span>` : ''}
+            <div class="ibadge ${box ? 'box' : ''}">${box ? '📦\nBOX' : '🔴\nSPOOL'}</div>
+            <div>
+                <div class="iname">${x(it.brand||'—')}${it.aiDetected?' <span class="ai-chip">AI</span>':''}</div>
+                <div class="imeta">
+                    <span>${x(it.color||'—')}</span><span>·</span>
+                    <span>${x(it.material||'—')}</span><span>·</span>
+                    <span>${it.weight||'?'}g</span>
+                    ${it.serial ? '<span>·</span><span style="font-family:Space Mono,monospace;font-size:9px;">'+x(it.serial.slice(0,13))+'</span>' : ''}
                 </div>
             </div>
-            <div class="item-qty">${qtyDisplay}</div>
-            <div class="item-actions">
-                <button class="action-btn" onclick="openEditModal('${item.id}')">✏️</button>
-                <button class="action-btn del" onclick="confirmDelete('${item.id}')">🗑️</button>
+            <div class="iqty">${qty}</div>
+            <div class="iacts">
+                <button class="iact" onclick="openEdit('${it.id}')">✏️</button>
+                <button class="iact del" onclick="delConfirm('${it.id}')">🗑️</button>
             </div>
         </div>`;
     }).join('');
 }
 
 function updateStats() {
-    const boxes = inventory.filter(i => i.type === 'box').length;
-    const spools = inventory.filter(i => i.type === 'spool').length;
-    const empty = inventory.filter(i => i.type === 'spool' && (i.remaining === 0 || i.remaining === '0')).length;
-    document.getElementById('statBoxes').textContent = boxes;
-    document.getElementById('statSpools').textContent = spools;
-    document.getElementById('statEmpty').textContent = empty;
-    document.getElementById('totalCount').textContent = boxes + spools;
+    const boxes = items.filter(i => i.type === 'box').length;
+    const spools = items.filter(i => i.type === 'spool').length;
+    const empty = items.filter(i => i.type === 'spool' && (i.remaining === 0 || i.remaining === '0')).length;
+    document.getElementById('sBoxes').textContent = boxes;
+    document.getElementById('sSpools').textContent = spools;
+    document.getElementById('sEmpty').textContent = empty;
+    document.getElementById('uCount').textContent = boxes + spools;
 }
 
-function switchTab(tab) {
-    currentTab = tab;
-    ['all','boxes','spools'].forEach(t => {
-        document.getElementById(`tab-${t}`)?.classList.toggle('active', t === tab);
-    });
-    renderInventory();
+function setTab(t) {
+    tab = t;
+    ['all','boxes','spools'].forEach(n => document.getElementById('tab-'+n)?.classList.toggle('active', n === t));
+    render();
 }
 
-function esc(str) {
-    return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-}
+function x(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 
-// ═══════════════════════════════════════
-// CAMERA & SCANNING
-// ═══════════════════════════════════════
+// ══════════════════════════════════════════════════════════
+// CAMERA
+// ══════════════════════════════════════════════════════════
 async function openCamera() {
-    const camera = document.getElementById('camera');
-    camera.classList.add('active');
-    
-    setCameraMsg('Requesting camera access...', 'Point at a barcode or spool label');
-    document.getElementById('captureBtn').disabled = true;
-    
+    document.getElementById('camera').classList.add('active');
+    setCamMsg('<span class="spinner-inline"></span>Starting camera...', '');
+    document.getElementById('shutterBtn').disabled = true;
+    stopBarcodeLoop();
+
     try {
-        cameraStream = await navigator.mediaDevices.getUserMedia({
-            video: { facingMode: { ideal: 'environment' }, width: { ideal: 1920 }, height: { ideal: 1080 } }
+        // Try rear camera first, fall back to any camera
+        let constraints = { video: { facingMode: { ideal: 'environment' }, width: { ideal: 1920 }, height: { ideal: 1080 } } };
+        try { camStream = await navigator.mediaDevices.getUserMedia(constraints); }
+        catch(e) { camStream = await navigator.mediaDevices.getUserMedia({ video: true }); }
+
+        const vid = document.getElementById('video');
+        vid.srcObject = camStream;
+
+        // Wait for video to actually be ready
+        await new Promise((res, rej) => {
+            vid.onloadedmetadata = () => res();
+            vid.onerror = rej;
+            setTimeout(rej, 8000);
         });
-        
-        const video = document.getElementById('video');
-        video.srcObject = cameraStream;
-        
-        await new Promise(res => { video.onloadedmetadata = res; });
-        await video.play();
-        
-        document.getElementById('captureBtn').disabled = false;
-        setCameraMsg('📷 Camera ready!', 'Barcode auto-detect active • Or press Capture for AI analysis');
-        
-        startBarcodeScanning(video);
-        
-    } catch (err) {
-        setCameraMsg('❌ Camera denied', err.message);
-        showToast('Camera access denied: ' + err.message, 'error');
+        await vid.play();
+
+        document.getElementById('shutterBtn').disabled = false;
+        setCamMsg('📷 Camera ready', 'Auto-detecting barcodes... or tap 📸 for AI scan');
+
+        // Start barcode detection if browser supports it
+        if ('BarcodeDetector' in window) {
+            startBarcodeLoop(vid);
+        } else {
+            setCamMsg('📷 Ready — tap 📸 to scan', 'BarcodeDetector not available in this browser');
+        }
+
+    } catch(err) {
+        setCamMsg('❌ Camera error', err.message || 'Permission denied?');
+        toast('Camera failed: ' + (err.message || err), 'error');
     }
 }
 
 function closeCamera() {
-    if (barcodeInterval) { clearInterval(barcodeInterval); barcodeInterval = null; }
-    if (cameraStream) { cameraStream.getTracks().forEach(t => t.stop()); cameraStream = null; }
+    stopBarcodeLoop();
+    if (camStream) { camStream.getTracks().forEach(t => t.stop()); camStream = null; }
+    document.getElementById('video').srcObject = null;
     document.getElementById('camera').classList.remove('active');
-    document.getElementById('captureBtn').disabled = true;
+    document.getElementById('camProcessing').classList.remove('show');
+    document.getElementById('shutterBtn').disabled = true;
 }
 
-function setCameraMsg(msg, sub) {
-    document.getElementById('cameraMsg').innerHTML = msg;
-    if (sub !== undefined) document.getElementById('cameraSub').textContent = sub;
+function setCamMsg(msg, sub) {
+    document.getElementById('camMsg').innerHTML = msg;
+    if (sub !== undefined) document.getElementById('camSub').textContent = sub;
 }
 
-// Barcode scanning using native BarcodeDetector API (modern browsers)
-function startBarcodeScanning(video) {
-    if (!('BarcodeDetector' in window)) {
-        setCameraMsg('📷 Ready — No barcode API', 'Press Capture for AI scanning');
-        return;
-    }
-    
-    const detector = new BarcodeDetector({ formats: ['ean_13','ean_8','code_128','code_39','upc_a','upc_e','qr_code','data_matrix'] });
-    
-    barcodeInterval = setInterval(async () => {
-        if (!cameraStream) return;
+// ── Barcode auto-detection loop ──
+function startBarcodeLoop(vid) {
+    if (!barcodeDetector) {
         try {
-            const barcodes = await detector.detect(video);
-            if (barcodes.length > 0) {
-                const code = barcodes[0].rawValue;
-                clearInterval(barcodeInterval);
-                barcodeInterval = null;
+            barcodeDetector = new BarcodeDetector({
+                formats: ['ean_13','ean_8','code_128','code_39','code_93','upc_a','upc_e','qr_code','data_matrix','itf']
+            });
+        } catch(e) { return; }
+    }
+
+    let scanning = true;
+    barcodeTimer = setInterval(async () => {
+        if (!scanning || !camStream || vid.readyState < 2) return;
+        scanning = false;
+        try {
+            const codes = await barcodeDetector.detect(vid);
+            if (codes.length > 0) {
+                stopBarcodeLoop();
+                const code = codes[0].rawValue;
                 closeCamera();
-                handleBarcodeResult(code);
+                onBarcodeFound(code);
+                return;
             }
         } catch(e) {}
-    }, 500);
+        finally { scanning = true; }
+        setCamMsg('🔍 Scanning for barcode...', 'Auto-detect active • tap 📸 for AI vision');
+    }, 400);
 }
 
-function handleBarcodeResult(code) {
-    setFormAi('formSerial', code, 'aiSerial', '✓ BARCODE');
-    document.getElementById('formType').value = 'box';
-    updateFormForType();
-    document.getElementById('addModalTitle').textContent = 'ADD BOX (Barcode Detected)';
-    openAddModal();
-    showToast('📦 Barcode: ' + code.substring(0, 16) + (code.length > 16 ? '...' : ''), 'success');
+function stopBarcodeLoop() {
+    if (barcodeTimer) { clearInterval(barcodeTimer); barcodeTimer = null; }
 }
 
-async function manualCapture() {
-    if (!CLAUDE_API_KEY) {
-        showToast('⚠ Add Claude API key in 🔑 API settings first', 'error');
+function onBarcodeFound(code) {
+    clearForm();
+    document.getElementById('fType').value = 'box';
+    onTypeChange();
+    document.getElementById('fSerial').value = code;
+    setAiBadge('aiSerial', '✓ BARCODE');
+    document.getElementById('addTitle').textContent = '📦 BOX DETECTED';
+    openModal('addModal');
+    toast('📦 Barcode: ' + code.slice(0, 18) + (code.length > 18 ? '...' : ''), 'success');
+}
+
+// ── Manual AI capture ──
+async function captureForAI() {
+    if (!CLAUDE_KEY) {
+        toast('⚠ Add Claude API key in 🔑 API settings', 'error');
         return;
     }
-    
-    const video = document.getElementById('video');
+
+    const vid = document.getElementById('video');
+    if (!camStream || vid.readyState < 2) {
+        toast('Camera not ready yet', 'error');
+        return;
+    }
+
+    stopBarcodeLoop();
+    document.getElementById('shutterBtn').disabled = true;
+
+    // Capture frame
     const canvas = document.getElementById('canvas');
-    
-    canvas.width = video.videoWidth || 1280;
-    canvas.height = video.videoHeight || 720;
-    
-    const ctx = canvas.getContext('2d');
-    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-    
-    const imageData = canvas.toDataURL('image/jpeg', 0.92);
-    
-    setCameraMsg('<span class="scanning-spinner"></span> Sending to Claude AI...', 'Analyzing label with vision model');
-    document.getElementById('captureBtn').disabled = true;
-    
-    if (barcodeInterval) { clearInterval(barcodeInterval); barcodeInterval = null; }
-    
-    await analyzeWithClaude(imageData);
+    canvas.width = vid.videoWidth || 1280;
+    canvas.height = vid.videoHeight || 720;
+    canvas.getContext('2d').drawImage(vid, 0, 0, canvas.width, canvas.height);
+    const imageB64 = canvas.toDataURL('image/jpeg', 0.92).split(',')[1];
+
+    // Show processing
+    document.getElementById('camProcessing').classList.add('show');
+    document.getElementById('camProcText').textContent = 'Sending to Claude AI...';
+
+    try {
+        const result = await callClaude(imageB64);
+        closeCamera();
+        populateFromAI(result);
+        openModal('addModal');
+        toast('✅ AI: ' + (result.brand||'?') + ' ' + (result.material||'') + ' (' + (result.confidence||'?') + ')', 'success');
+    } catch(err) {
+        document.getElementById('camProcessing').classList.remove('show');
+        document.getElementById('shutterBtn').disabled = false;
+        // Resume barcode scan
+        if ('BarcodeDetector' in window) startBarcodeLoop(vid);
+        toast('AI scan failed: ' + err.message, 'error');
+    }
 }
 
-async function analyzeWithClaude(imageData) {
-    try {
-        const base64 = imageData.split(',')[1];
-        
-        const prompt = `You are an expert at reading 3D printer filament labels, including Prusament dot-matrix printed labels.
+async function callClaude(b64) {
+    const prompt = `You are an expert at reading 3D printer filament labels including Prusament dot-matrix labels.
 
-CRITICAL DOT-MATRIX READING RULES:
-- "0" (zero) has a DIAGONAL SLASH through it
-- "O" (letter O) has NO slash
-- "8" (eight) has TWO loops
-- Serial format: EXACTLY 13 characters where position 4 must be 'M'
-  Example: 123M456789012 (3 digits, then M, then 9 digits)
-- NEVER guess — if unclear, return null for that field
+CRITICAL DOT-MATRIX RULES:
+- Zero "0" has a DIAGONAL SLASH through the middle
+- Letter "O" has NO slash
+- "8" has TWO closed loops
+- Serial number format: EXACTLY 13 characters, position 4 MUST be capital letter M
+  Pattern: [3 chars][M][9 chars]  Example: 123M456789012
+- If you cannot confidently read a character, return null for that field
 
-TASK: Extract all visible data from this filament label/box.
+Determine if this is:
+- "box" = sealed/unopened packaging with product label
+- "spool" = an actual filament spool (with or without shrink wrap, has a sticker/printed label)
 
-Respond with ONLY valid JSON, no markdown, no explanation:
+Return ONLY valid JSON with no markdown fences:
 {
   "type": "box" or "spool",
-  "brand": "brand name or null",
+  "brand": "brand name" or null,
   "material": "PLA" or "PLA+" or "PETG" or "ABS" or "TPU" or "Nylon" or "ASA" or "PC" or null,
-  "color": "color name or null",
-  "weight": number_in_grams or null,
+  "color": "color name" or null,
+  "weight": weight_as_integer_grams or null,
   "diameter": 1.75 or 2.85 or null,
-  "serial": "13-char code or barcode or null",
+  "serial": "13-char code" or null,
   "confidence": "high" or "medium" or "low"
 }`;
 
-        const response = await fetch('https://api.anthropic.com/v1/messages', {
-            method: 'POST',
-            headers: {
-                'x-api-key': CLAUDE_API_KEY,
-                'anthropic-version': '2023-06-01',
-                'content-type': 'application/json',
-                'anthropic-dangerous-direct-browser-access': 'true'
-            },
-            body: JSON.stringify({
-                model: 'claude-opus-4-5',
-                max_tokens: 512,
-                messages: [{
-                    role: 'user',
-                    content: [
-                        { type: 'image', source: { type: 'base64', media_type: 'image/jpeg', data: base64 } },
-                        { type: 'text', text: prompt }
-                    ]
-                }]
-            })
-        });
-        
-        if (!response.ok) {
-            const err = await response.json();
-            throw new Error(err.error?.message || `HTTP ${response.status}`);
-        }
-        
-        const data = await response.json();
-        let raw = data.content?.find(b => b.type === 'text')?.text?.trim() || '';
-        
-        // Strip markdown if present
-        raw = raw.replace(/^```json\s*/i, '').replace(/^```\s*/i, '').replace(/\s*```$/i, '').trim();
-        
-        const result = JSON.parse(raw);
-        
-        closeCamera();
-        populateFormFromAI(result);
-        openAddModal();
-        showToast(`✅ AI detected: ${result.brand || '?'} ${result.material || ''} (${result.confidence})`, 'success');
-        
-    } catch (err) {
-        closeCamera();
-        document.getElementById('captureBtn').disabled = false;
-        showToast('AI scan failed: ' + err.message, 'error');
-        openAddModal(); // Open blank form as fallback
+    const resp = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: {
+            'x-api-key': CLAUDE_KEY,
+            'anthropic-version': '2023-06-01',
+            'content-type': 'application/json',
+            'anthropic-dangerous-direct-browser-access': 'true'
+        },
+        body: JSON.stringify({
+            model: 'claude-opus-4-5',
+            max_tokens: 400,
+            messages: [{ role: 'user', content: [
+                { type: 'image', source: { type: 'base64', media_type: 'image/jpeg', data: b64 } },
+                { type: 'text', text: prompt }
+            ]}]
+        })
+    });
+
+    if (!resp.ok) {
+        const e = await resp.json().catch(() => ({}));
+        throw new Error(e.error?.message || 'HTTP ' + resp.status);
     }
+
+    const data = await resp.json();
+    let raw = (data.content?.find(b => b.type === 'text')?.text || '').trim();
+    // Strip any accidental markdown fences
+    raw = raw.replace(/^```(?:json)?\s*/i, '').replace(/\s*```\s*$/i, '').trim();
+    return JSON.parse(raw);
 }
 
-function populateFormFromAI(result) {
-    const conf = result.confidence || 'medium';
-    const confLabel = conf === 'high' ? '✓ HIGH' : conf === 'medium' ? '~ MED' : '? LOW';
-    
-    if (result.type) document.getElementById('formType').value = result.type;
-    updateFormForType();
-    
-    if (result.brand) setFormAi('formBrand', result.brand, 'aiBrand', confLabel);
-    if (result.material) {
-        document.getElementById('formMaterial').value = result.material;
-        document.getElementById('aiMaterial').innerHTML = `<span class="ai-tag">${confLabel}</span>`;
-    }
-    if (result.color) setFormAi('formColor', result.color, 'aiColor', confLabel);
-    if (result.weight) document.getElementById('formWeight').value = result.weight;
-    if (result.serial) setFormAi('formSerial', result.serial, 'aiSerial', confLabel);
-    if (result.diameter) document.getElementById('formDiameter').value = result.diameter;
-    
-    document.getElementById('addModalTitle').textContent = `AI SCAN — ${(result.type || 'item').toUpperCase()}`;
+function populateFromAI(r) {
+    clearForm();
+    const c = r.confidence || 'medium';
+    const label = c === 'high' ? '✓ HIGH' : c === 'medium' ? '~ MED' : '? LOW';
+    if (r.type) { document.getElementById('fType').value = r.type; onTypeChange(); }
+    if (r.brand) { document.getElementById('fBrand').value = r.brand; setAiBadge('aiBrand', label); }
+    if (r.material) { document.getElementById('fMat').value = r.material; setAiBadge('aiMat', label); }
+    if (r.color) { document.getElementById('fColor').value = r.color; setAiBadge('aiCol', label); }
+    if (r.weight) document.getElementById('fWeight').value = r.weight;
+    if (r.serial) { document.getElementById('fSerial').value = r.serial; setAiBadge('aiSerial', label); }
+    if (r.diameter) document.getElementById('fDiam').value = r.diameter;
+    document.getElementById('addTitle').textContent = 'AI SCAN — ' + (r.type||'ITEM').toUpperCase();
 }
 
-function setFormAi(inputId, value, badgeId, label) {
-    document.getElementById(inputId).value = value;
-    const badge = document.getElementById(badgeId);
-    if (badge) badge.innerHTML = `<span class="ai-tag">${label}</span>`;
+function setAiBadge(id, text) {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.textContent = text;
+    el.style.display = 'inline-flex';
 }
 
-// ═══════════════════════════════════════
-// ADD / EDIT FORM
-// ═══════════════════════════════════════
-function updateFormForType() {
-    const type = document.getElementById('formType').value;
-    document.getElementById('spoolExtras').style.display = type === 'spool' ? 'grid' : 'none';
-    document.getElementById('batchGroup').style.display = type === 'box' ? 'block' : 'none';
+// ══════════════════════════════════════════════════════════
+// FORM
+// ══════════════════════════════════════════════════════════
+function onTypeChange() {
+    const t = document.getElementById('fType').value;
+    document.getElementById('spoolFields').style.display = t === 'spool' ? 'block' : 'none';
+    document.getElementById('boxFields').style.display = t === 'box' ? 'block' : 'none';
 }
 
 function clearForm() {
-    ['formBrand','formColor','formSerial','formWeight','formDiameter'].forEach(id => {
-        document.getElementById(id).value = '';
+    ['fBrand','fColor','fSerial','fWeight','fDiam'].forEach(id => { const e = document.getElementById(id); if(e) e.value = ''; });
+    const fType = document.getElementById('fType'); if(fType) fType.value = '';
+    const fMat = document.getElementById('fMat'); if(fMat) fMat.value = '';
+    const fRem = document.getElementById('fRem'); if(fRem) fRem.value = '100';
+    const fQty = document.getElementById('fQty'); if(fQty) fQty.value = '1';
+    const eId = document.getElementById('editId'); if(eId) eId.value = '';
+    ['aiBrand','aiMat','aiCol','aiSerial'].forEach(id => {
+        const e = document.getElementById(id);
+        if(e) { e.textContent = ''; e.style.display = 'none'; }
     });
-    document.getElementById('formType').value = '';
-    document.getElementById('formMaterial').value = '';
-    document.getElementById('formRemaining').value = '100';
-    document.getElementById('formQuantity').value = '1';
-    document.getElementById('editingId').value = '';
-    ['aiBrand','aiMaterial','aiColor','aiSerial'].forEach(id => {
-        const el = document.getElementById(id);
-        if (el) el.innerHTML = '';
-    });
-    document.getElementById('addModalTitle').textContent = 'ADD ITEM';
-    updateFormForType();
+    document.getElementById('addTitle').textContent = 'ADD ITEM';
+    onTypeChange();
 }
 
-function openAddModal() {
-    clearForm();
-    document.getElementById('addModal').classList.add('open');
-}
+function openAddModal() { clearForm(); openModal('addModal'); }
 
-function openEditModal(id) {
-    const item = inventory.find(i => i.id === id);
-    if (!item) return;
-    
+function openEdit(id) {
+    const it = items.find(i => i.id === id); if (!it) return;
     clearForm();
-    document.getElementById('editingId').value = id;
-    document.getElementById('addModalTitle').textContent = 'EDIT ITEM';
-    document.getElementById('formType').value = item.type;
-    updateFormForType();
-    document.getElementById('formBrand').value = item.brand || '';
-    document.getElementById('formMaterial').value = item.material || '';
-    document.getElementById('formColor').value = item.color || '';
-    document.getElementById('formSerial').value = item.serial || '';
-    document.getElementById('formWeight').value = item.weight || '';
-    if (item.type === 'spool') {
-        document.getElementById('formDiameter').value = item.diameter || '';
-        document.getElementById('formRemaining').value = item.remaining ?? 100;
+    document.getElementById('editId').value = id;
+    document.getElementById('addTitle').textContent = 'EDIT ITEM';
+    document.getElementById('fType').value = it.type; onTypeChange();
+    document.getElementById('fBrand').value = it.brand || '';
+    document.getElementById('fMat').value = it.material || '';
+    document.getElementById('fColor').value = it.color || '';
+    document.getElementById('fSerial').value = it.serial || '';
+    document.getElementById('fWeight').value = it.weight || '';
+    if (it.type === 'spool') {
+        document.getElementById('fDiam').value = it.diameter || '';
+        document.getElementById('fRem').value = it.remaining ?? 100;
     }
-    document.getElementById('addModal').classList.add('open');
+    openModal('addModal');
 }
 
-function handleSave() {
-    const type = document.getElementById('formType').value;
-    const brand = document.getElementById('formBrand').value.trim();
-    const material = document.getElementById('formMaterial').value;
-    const color = document.getElementById('formColor').value.trim();
-    const serial = document.getElementById('formSerial').value.trim();
-    const weight = parseInt(document.getElementById('formWeight').value) || 0;
-    const editId = document.getElementById('editingId').value;
-    
-    if (!type) { showToast('Select item type', 'error'); return; }
-    if (!brand) { showToast('Enter brand name', 'error'); return; }
-    if (!material) { showToast('Select material', 'error'); return; }
-    if (!color) { showToast('Enter color', 'error'); return; }
-    
-    const base = {
-        type, brand, material, color, serial, weight,
-        createdBy: currentUser.name,
-        updatedAt: Date.now()
-    };
-    
+function doSave() {
+    const type = document.getElementById('fType').value;
+    const brand = document.getElementById('fBrand').value.trim();
+    const material = document.getElementById('fMat').value;
+    const color = document.getElementById('fColor').value.trim();
+    const serial = document.getElementById('fSerial').value.trim();
+    const weight = parseInt(document.getElementById('fWeight').value) || 0;
+    const editId = document.getElementById('editId').value;
+    const aiDetected = ['aiBrand','aiMat','aiCol','aiSerial'].some(id => document.getElementById(id)?.style.display !== 'none');
+
+    if (!type) { toast('Select item type', 'error'); return; }
+    if (!brand) { toast('Enter brand', 'error'); return; }
+    if (!material) { toast('Select material', 'error'); return; }
+    if (!color) { toast('Enter color', 'error'); return; }
+
+    const base = { type, brand, material, color, serial, weight, aiDetected, createdBy: user?.name || '?', updatedAt: Date.now() };
+
     if (editId) {
-        // Editing existing
-        const existing = inventory.find(i => i.id === editId) || {};
-        const updated = { ...existing, ...base };
+        const existing = items.find(i => i.id === editId) || {};
+        const upd = { ...existing, ...base };
         if (type === 'spool') {
-            updated.diameter = parseFloat(document.getElementById('formDiameter').value) || 1.75;
-            updated.remaining = parseInt(document.getElementById('formRemaining').value) ?? 100;
+            upd.diameter = parseFloat(document.getElementById('fDiam').value) || 1.75;
+            upd.remaining = parseInt(document.getElementById('fRem').value) ?? 100;
         }
-        saveItem(editId, updated).then(() => {
-            showToast('✅ Item updated', 'success');
-            closeModal('addModal');
-        });
+        dbSet(editId, upd).then(() => { toast('✅ Updated', 'success'); closeModal('addModal'); });
     } else {
-        // New item
         if (type === 'box') {
-            const qty = Math.max(1, parseInt(document.getElementById('formQuantity').value) || 1);
+            const qty = Math.max(1, parseInt(document.getElementById('fQty').value) || 1);
             const baseId = serial || Date.now().toString();
             const saves = [];
             for (let i = 1; i <= qty; i++) {
-                const id = qty > 1 ? `${baseId}-${String(i).padStart(2,'0')}` : baseId;
-                saves.push(saveItem(id, { ...base, quantity: 1, createdAt: Date.now() }));
+                const id = qty > 1 ? `${baseId}-${String(i).padStart(2,'0')}` : baseId + '-01';
+                saves.push(dbSet(id, { ...base, quantity: 1, createdAt: Date.now() }));
             }
-            Promise.all(saves).then(() => {
-                showToast(`✅ Added ${qty} box${qty > 1 ? 'es' : ''}`, 'success');
-                closeModal('addModal');
-            });
+            Promise.all(saves).then(() => { toast(`✅ Added ${qty} box${qty>1?'es':''}`, 'success'); closeModal('addModal'); });
         } else {
             const id = serial || Date.now().toString();
-            const diameter = parseFloat(document.getElementById('formDiameter').value) || 1.75;
-            const remaining = parseInt(document.getElementById('formRemaining').value) ?? 100;
-            saveItem(id, { ...base, diameter, remaining, createdAt: Date.now() }).then(() => {
-                showToast('✅ Spool added', 'success');
-                closeModal('addModal');
-            });
+            dbSet(id, {
+                ...base,
+                diameter: parseFloat(document.getElementById('fDiam').value) || 1.75,
+                remaining: parseInt(document.getElementById('fRem').value) ?? 100,
+                createdAt: Date.now()
+            }).then(() => { toast('✅ Spool added', 'success'); closeModal('addModal'); });
         }
     }
 }
 
-// ═══════════════════════════════════════
+// ══════════════════════════════════════════════════════════
 // DELETE
-// ═══════════════════════════════════════
-function confirmDelete(id) {
-    const item = inventory.find(i => i.id === id);
-    if (!item) return;
-    if (confirm(`Delete ${item.brand} ${item.color} (${item.material})?`)) {
-        removeItem(id).then(() => showToast('Deleted', 'info'));
+// ══════════════════════════════════════════════════════════
+function delConfirm(id) {
+    const it = items.find(i => i.id === id); if(!it) return;
+    if (confirm(`Delete ${it.brand} ${it.color} (${it.material})?`)) {
+        dbDel(id).then(() => toast('Deleted', 'info'));
     }
 }
 
-function openDeleteModal() {
-    const list = document.getElementById('deleteList');
-    if (inventory.length === 0) {
-        list.innerHTML = '<div style="text-align:center;padding:30px;color:var(--text-dim);">Vault is empty</div>';
+function openDelModal() {
+    const el = document.getElementById('delList');
+    if (!items.length) {
+        el.innerHTML = '<div style="text-align:center;padding:30px;color:var(--text-dim)">Vault is empty</div>';
     } else {
-        list.innerHTML = inventory.map(item => `
-            <div style="background:var(--surface-hover);border:1px solid var(--border);border-radius:8px;padding:12px;margin-bottom:8px;cursor:pointer;transition:0.2s;" 
-                 onmouseover="this.style.borderColor='var(--error)'" 
-                 onmouseout="this.style.borderColor='var(--border)'" 
-                 onclick="removeItem('${item.id}').then(() => { showToast('Deleted','info'); loadDeleteList(); })">
-                <div style="font-weight:700;font-size:13px;">${item.type === 'box' ? '📦' : '🔴'} ${esc(item.brand)} — ${esc(item.color)}</div>
-                <div style="font-size:10px;color:var(--text-dim);margin-top:3px;">${esc(item.material)} · ${item.weight || '?'}g ${item.serial ? '· ' + item.serial.substring(0,13) : ''}</div>
-            </div>
-        `).join('');
+        el.innerHTML = items.map(it => `
+            <div style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:12px;margin-bottom:8px;cursor:pointer;transition:0.2s"
+                 onmouseover="this.style.borderColor='var(--red)'" onmouseout="this.style.borderColor='var(--border)'"
+                 onclick="dbDel('${it.id}').then(()=>{toast('Deleted','info');openDelModal()})">
+                <div style="font-weight:700;font-size:13px;">${it.type==='box'?'📦':'🔴'} ${x(it.brand)} — ${x(it.color)}</div>
+                <div style="font-size:10px;color:var(--text-dim);margin-top:3px;">${x(it.material)} · ${it.weight||'?'}g${it.serial?' · '+x(it.serial.slice(0,13)):''}</div>
+            </div>`).join('');
     }
-    document.getElementById('deleteModal').classList.add('open');
+    openModal('delModal');
 }
 
-function loadDeleteList() {
-    // Re-render delete list after deletion
-    if (document.getElementById('deleteModal').classList.contains('open')) {
-        openDeleteModal();
-    }
-}
-
-// ═══════════════════════════════════════
+// ══════════════════════════════════════════════════════════
 // API MODAL
-// ═══════════════════════════════════════
-function showApiModal() {
-    document.getElementById('apiKeyInput').value = CLAUDE_API_KEY;
-    document.getElementById('apiModal').classList.add('open');
-}
-
+// ══════════════════════════════════════════════════════════
+function openApiModal() { document.getElementById('apiInput').value = CLAUDE_KEY; openModal('apiModal'); }
 function saveApiKey() {
-    CLAUDE_API_KEY = document.getElementById('apiKeyInput').value.trim();
-    localStorage.setItem('sv_claude_key', CLAUDE_API_KEY);
+    CLAUDE_KEY = document.getElementById('apiInput').value.trim();
+    localStorage.setItem('sv_ck', CLAUDE_KEY);
     closeModal('apiModal');
-    showToast('✅ API key saved', 'success');
+    toast('✅ API key saved', 'success');
 }
 
-// ═══════════════════════════════════════
-// MODAL HELPERS
-// ═══════════════════════════════════════
-function closeModal(id) {
-    document.getElementById(id).classList.remove('open');
-}
+// ══════════════════════════════════════════════════════════
+// MODAL / TOAST HELPERS
+// ══════════════════════════════════════════════════════════
+function openModal(id) { document.getElementById(id).classList.add('open'); }
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
 
-// Close modals on backdrop click
-document.querySelectorAll('.modal').forEach(modal => {
-    modal.addEventListener('click', e => {
-        if (e.target === modal) modal.classList.remove('open');
-    });
+document.querySelectorAll('.modal').forEach(m => {
+    m.addEventListener('click', e => { if (e.target === m) m.classList.remove('open'); });
 });
 
-// ═══════════════════════════════════════
-// TOAST
-// ═══════════════════════════════════════
-let toastTimer = null;
-function showToast(msg, type = 'info') {
+let _toastT = null;
+function toast(msg, type = 'info') {
     const el = document.getElementById('toast');
     el.textContent = msg;
-    el.className = `toast ${type} show`;
-    if (toastTimer) clearTimeout(toastTimer);
-    toastTimer = setTimeout(() => el.classList.remove('show'), 3200);
+    el.className = 'toast ' + type + ' show';
+    if (_toastT) clearTimeout(_toastT);
+    _toastT = setTimeout(() => el.classList.remove('show'), 3300);
 }
 </script>
 </body>
