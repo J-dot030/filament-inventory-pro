@@ -1,204 +1,615 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>SpoolVault — Filament Inventory System</title>
-    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
-    <script src="https://unpkg.com/@zxing/library@0.20.0"></script>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700;800&display=swap" rel="stylesheet">
-    <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        
-        :root {
-            --bg: #0a0a0a;
-            --surface: #141414;
-            --surface-hover: #1f1f1f;
-            --yellow: #FFD700;
-            --yellow-dim: rgba(255, 215, 0, 0.2);
-            --border: #333333;
-            --text: #ffffff;
-            --text-dim: #888888;
-            --red: #FF4444;
-            --green: #00FF88;
-            --blue: #4A9EFF;
-            --purple: #9D4EDD;
-        }
-        
-        body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
-        
-        body::before {
-            content: ''; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: repeating-linear-gradient(0deg, rgba(0,0,0,0.15), rgba(0,0,0,0.15) 1px, transparent 1px, transparent 2px);
-            pointer-events: none; z-index: 999;
-        }
-        
-        .container { max-width: 600px; margin: 0 auto; position: relative; padding-bottom: 120px; }
-        
-        header { background: var(--surface); border-bottom: 2px solid var(--yellow); padding: 16px 20px; position: sticky; top: 0; z-index: 100; box-shadow: 0 4px 20px rgba(255, 215, 0, 0.1); }
-        .header-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
-        .logo-container { display: flex; align-items: center; gap: 12px; }
-        .logo-icon { width: 36px; height: 36px; background: linear-gradient(135deg, var(--yellow) 0%, #FFA500 100%); border-radius: 8px; display: flex; align-items: center; justify-content: center; box-shadow: 0 0 20px rgba(255, 215, 0, 0.3); position: relative; overflow: hidden; }
-        .logo-icon::before { content: ''; position: absolute; inset: 0; background: linear-gradient(45deg, transparent 30%, rgba(255,255,255,0.3) 50%, transparent 70%); }
-        .logo-icon svg { width: 22px; height: 22px; position: relative; z-index: 1; }
-        .logo-text { font-family: 'JetBrains Mono', monospace; font-size: 18px; font-weight: 800; color: var(--yellow); letter-spacing: 0.5px; }
-        .logo-subtext { font-size: 9px; color: var(--text-dim); font-weight: 600; letter-spacing: 2px; margin-top: -2px; }
-        .sync-status { display: flex; align-items: center; gap: 6px; font-size: 11px; color: var(--green); font-weight: 700; font-family: 'JetBrains Mono', monospace; }
-        .sync-dot { width: 8px; height: 8px; background: var(--green); border-radius: 50%; animation: pulse 1.5s infinite; }
-        @keyframes pulse { 0%, 100% { opacity: 1; transform: scale(1); box-shadow: 0 0 8px var(--green); } 50% { opacity: 0.5; transform: scale(0.8); } }
-        
-        .user-bar { display: flex; justify-content: space-between; align-items: center; }
-        .user-info { font-family: 'JetBrains Mono', monospace; font-size: 12px; color: var(--text-dim); display: flex; align-items: center; gap: 8px; cursor: pointer; padding: 6px 10px; border-radius: 4px; transition: 0.2s; }
-        .user-info:hover { background: var(--surface-hover); color: var(--yellow); }
-        .user-count { background: var(--yellow); color: var(--bg); padding: 2px 8px; border-radius: 10px; font-size: 10px; font-weight: 800; }
-        .btn-group { display: flex; gap: 8px; }
-        .header-btn { background: transparent; border: 1px solid var(--border); color: var(--text-dim); padding: 6px 12px; border-radius: 4px; font-size: 11px; font-weight: 700; cursor: pointer; transition: 0.2s; font-family: 'JetBrains Mono', monospace; text-transform: uppercase; }
-        .header-btn:hover { border-color: var(--yellow); color: var(--yellow); }
-        
-        .stats { padding: 20px; display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-        .stat-card { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 16px; border-left: 3px solid var(--yellow); }
-        .stat-label { font-size: 10px; color: var(--text-dim); text-transform: uppercase; font-weight: 700; letter-spacing: 1px; margin-bottom: 4px; }
-        .stat-value { font-family: 'JetBrains Mono', monospace; font-size: 28px; font-weight: 800; color: var(--text); }
-        
-        .tabs { display: flex; padding: 0 20px; gap: 8px; margin-bottom: 20px; }
-        .tab { flex: 1; padding: 12px; background: var(--surface); border: 1px solid var(--border); border-radius: 6px; text-align: center; font-weight: 700; font-size: 12px; cursor: pointer; color: var(--text-dim); text-transform: uppercase; letter-spacing: 1px; }
-        .tab.active { background: var(--yellow-dim); color: var(--yellow); border-color: var(--yellow); }
-        
-        .search { padding: 0 20px; margin-bottom: 24px; }
-        .search-input { width: 100%; background: var(--surface); border: 1px solid var(--border); border-radius: 6px; padding: 14px 16px; color: var(--text); font-size: 14px; outline: none; font-family: 'JetBrains Mono', monospace; }
-        .search-input:focus { border-color: var(--yellow); box-shadow: 0 0 15px var(--yellow-dim); }
-        
-        .inventory { padding: 0 20px; }
-        .item { background: var(--surface); border: 1px solid var(--border); border-radius: 6px; padding: 16px; display: grid; grid-template-columns: 70px 1fr 60px auto auto; gap: 12px; align-items: center; margin-bottom: 12px; }
-        .item:hover { border-color: var(--yellow); }
-        .item-id { font-family: 'JetBrains Mono', monospace; font-size: 11px; font-weight: 800; color: var(--bg); background: var(--yellow); padding: 6px 8px; border-radius: 4px; text-align: center; word-break: break-all; }
-        .item.box .item-id { background: var(--green); }
-        .item-info { display: flex; flex-direction: column; }
-        .item-brand { font-weight: 700; font-size: 14px; margin-bottom: 2px; }
-        .item-meta { font-size: 11px; color: var(--text-dim); }
-        .item-qty { font-family: 'JetBrains Mono', monospace; font-size: 16px; font-weight: 800; color: var(--yellow); text-align: center; }
-        
-        .item-actions { display: flex; gap: 6px; }
-        .action-btn { width: 32px; height: 32px; background: var(--surface-hover); border: 1px solid var(--border); border-radius: 4px; cursor: pointer; font-size: 14px; display: flex; align-items: center; justify-content: center; transition: 0.2s; }
-        .action-btn:hover { border-color: var(--yellow); }
-        .action-btn.delete:hover { border-color: var(--red); color: var(--red); }
-        
-        .actions { position: fixed; bottom: 0; left: 50%; transform: translateX(-50%); width: 100%; max-width: 600px; background: var(--bg); border-top: 2px solid var(--yellow); padding: 12px 20px; display: flex; gap: 10px; z-index: 50; }
-        .btn-main { flex: 2; padding: 14px; border-radius: 6px; border: none; background: var(--yellow); color: var(--bg); font-weight: 800; font-size: 12px; cursor: pointer; text-transform: uppercase; font-family: 'JetBrains Mono', monospace; }
-        .btn-secondary { flex: 1; padding: 14px; border-radius: 6px; border: 1px solid var(--border); background: transparent; color: var(--text-dim); font-weight: 700; font-size: 11px; cursor: pointer; text-transform: uppercase; font-family: 'JetBrains Mono', monospace; }
-        .btn-secondary:hover { border-color: var(--yellow); color: var(--yellow); }
-        .btn-danger { border-color: var(--red); color: var(--red); }
-        .btn-danger:hover { background: rgba(255, 68, 68, 0.1); border-color: var(--red); }
-        
-        .camera { position: fixed; inset: 0; background: #000; z-index: 400; display: none; flex-direction: column; }
-        .camera.active { display: flex; }
-        .camera-header { padding: 20px; display: flex; justify-content: space-between; position: absolute; width: 100%; z-index: 20; }
-        .camera-badge { background: var(--yellow); color: var(--bg); padding: 6px 12px; border-radius: 4px; font-weight: 800; font-size: 11px; font-family: 'JetBrains Mono', monospace; }
-        .camera-badge.delete { background: var(--red); }
-        .camera-badge.empty { background: var(--blue); }
-        .camera-close { background: rgba(0,0,0,0.5); border: 1px solid var(--yellow); color: var(--yellow); width: 36px; height: 36px; border-radius: 4px; font-size: 18px; cursor: pointer; }
-        #video { flex: 1; object-fit: cover; width: 100%; height: 100%; }
-        
-        .camera-controls { position: absolute; bottom: 60px; left: 50%; transform: translateX(-50%); text-align: center; width: 100%; }
-        .shutter { width: 72px; height: 72px; border: 4px solid var(--yellow); background: var(--yellow-dim); border-radius: 50%; cursor: pointer; box-shadow: 0 0 20px rgba(255,215,0,0.4); }
-        .shutter:active { background: var(--yellow); transform: scale(0.95); }
-        .shutter.delete { border-color: var(--red); background: rgba(255,68,68,0.2); box-shadow: 0 0 20px rgba(255,68,68,0.4); }
-        .shutter.delete:active { background: var(--red); }
-        .shutter.empty { border-color: var(--blue); background: rgba(74,158,255,0.2); box-shadow: 0 0 20px rgba(74,158,255,0.4); }
-        .shutter.empty:active { background: var(--blue); }
-        #canvas { display: none; }
-        
-        .processing { position: absolute; inset: 0; background: rgba(0, 0, 0, 0.85); display: none; flex-direction: column; align-items: center; justify-content: center; z-index: 20; }
-        .processing.active { display: flex; }
-        .spinner { width: 40px; height: 40px; border: 4px solid var(--surface); border-top: 4px solid var(--yellow); border-radius: 50%; animation: spin 1s linear infinite; margin-bottom: 16px; }
-        @keyframes spin { to { transform: rotate(360deg); } }
-        .process-text { font-family: 'JetBrains Mono', monospace; font-size: 14px; font-weight: 700; color: var(--yellow); }
-        
-        /* BARCODE SCANNER - OVERLAY MODE */
-        .barcode-scanner { position: absolute; inset: 0; background: transparent; display: none; flex-direction: column; align-items: center; justify-content: center; z-index: 15; padding: 20px; }
-        .barcode-scanner.active { display: flex; }
-        .scanner-overlay { display: flex; flex-direction: column; align-items: center; width: 100%; }
-        .barcode-frame { position: relative; width: 90%; max-width: 500px; height: 250px; border: 4px solid var(--yellow); border-radius: 12px; margin-bottom: 24px; overflow: visible; background: transparent; box-shadow: 0 0 30px rgba(255, 215, 0, 0.4); }
-        .barcode-line { position: absolute; width: 100%; height: 4px; background: var(--yellow); box-shadow: 0 0 25px var(--yellow), 0 0 50px var(--yellow); animation: scan 1s linear infinite; z-index: 20; }
-        @keyframes scan { 0%, 100% { top: 10%; opacity: 0.6; } 50% { top: 80%; opacity: 1; } }
-        .barcode-hint { font-family: 'JetBrains Mono', monospace; font-size: 16px; font-weight: 800; color: var(--yellow); text-align: center; margin-bottom: 20px; background: rgba(0, 0, 0, 0.9); padding: 12px 24px; border-radius: 8px; border: 2px solid var(--yellow); box-shadow: 0 0 25px rgba(255, 215, 0, 0.4); }
-        .barcode-result { font-family: 'JetBrains Mono', monospace; font-size: 18px; color: var(--green); font-weight: 800; margin-top: 20px; background: rgba(0, 0, 0, 0.9); padding: 12px 24px; border-radius: 8px; border: 2px solid var(--green); box-shadow: 0 0 25px rgba(0, 255, 136, 0.4); min-height: 24px; }
-        
-        .qr-prompt { position: absolute; inset: 0; background: rgba(0, 0, 0, 0.95); display: none; flex-direction: column; align-items: center; justify-content: center; z-index: 30; padding: 40px; }
-        .qr-prompt.active { display: flex; }
-        .qr-icon { width: 80px; height: 80px; border: 3px solid var(--purple); border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 48px; margin-bottom: 24px; background: rgba(157, 78, 221, 0.1); animation: pulse-qr 2s infinite; }
-        @keyframes pulse-qr { 0%, 100% { box-shadow: 0 0 20px rgba(157, 78, 221, 0.4); } 50% { box-shadow: 0 0 40px rgba(157, 78, 221, 0.8); } }
-        .qr-title { font-family: 'JetBrains Mono', monospace; font-size: 18px; font-weight: 800; color: var(--purple); margin-bottom: 12px; text-align: center; }
-        .qr-message { font-size: 14px; color: var(--text-dim); text-align: center; margin-bottom: 32px; max-width: 400px; line-height: 1.6; }
-        .qr-buttons { display: flex; gap: 12px; }
-        .qr-btn { padding: 14px 24px; border-radius: 6px; font-family: 'JetBrains Mono', monospace; font-weight: 800; font-size: 12px; cursor: pointer; text-transform: uppercase; transition: 0.2s; }
-        .qr-btn-primary { background: var(--purple); color: white; border: none; }
-        .qr-btn-primary:hover { background: #8B3FC9; }
-        .qr-btn-secondary { background: transparent; color: var(--text-dim); border: 1px solid var(--border); }
-        .qr-btn-secondary:hover { border-color: var(--purple); color: var(--purple); }
-        
-        .modal { position: fixed; inset: 0; background: rgba(0, 0, 0, 0.85); z-index: 450; display: none; align-items: center; justify-content: center; padding: 20px; }
-        .modal.open { display: flex; }
-        .modal-content { background: var(--surface); border: 2px solid var(--yellow); border-radius: 8px; padding: 24px; width: 100%; max-width: 400px; max-height: 90vh; overflow-y: auto; }
-        .modal-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); padding-bottom: 16px; margin-bottom: 20px; }
-        .modal-title { font-family: 'JetBrains Mono', monospace; font-weight: 800; color: var(--yellow); font-size: 16px; }
-        
-        .form-group { margin-bottom: 16px; }
-        .form-label { display: block; font-size: 10px; font-weight: 700; color: var(--text-dim); text-transform: uppercase; margin-bottom: 8px; letter-spacing: 1px; }
-        .form-input, .form-select { width: 100%; background: var(--bg); border: 1px solid var(--border); border-radius: 4px; padding: 12px; color: var(--text); font-size: 14px; outline: none; font-family: 'Inter', sans-serif; }
-        .form-input:focus, .form-select:focus { border-color: var(--yellow); }
-        .form-input[readonly] { color: var(--yellow); font-family: 'JetBrains Mono', monospace; font-weight: 700; background: var(--surface-hover); }
-        
-        .toast { position: fixed; top: 20px; left: 50%; transform: translateX(-50%); background: var(--yellow); color: var(--bg); padding: 12px 24px; border-radius: 4px; font-family: 'JetBrains Mono', monospace; font-weight: 800; font-size: 12px; z-index: 600; display: none; text-align: center; }
-        .toast.error { background: var(--red); color: white; }
-        
-        .login-screen { position: fixed; inset: 0; background: var(--bg); z-index: 500; display: flex; align-items: center; justify-content: center; padding: 20px; }
-        .login-screen.hidden { display: none; }
-        .login-box { background: var(--surface); border: 2px solid var(--border); border-left: 4px solid var(--yellow); border-radius: 8px; padding: 32px; width: 100%; max-width: 360px; }
-        .login-logo-big { display: flex; flex-direction: column; align-items: center; margin-bottom: 32px; }
-        .login-logo-icon { width: 64px; height: 64px; background: linear-gradient(135deg, var(--yellow) 0%, #FFA500 100%); border-radius: 16px; display: flex; align-items: center; justify-content: center; font-size: 36px; box-shadow: 0 0 30px rgba(255, 215, 0, 0.4); margin-bottom: 16px; }
-        .login-logo-text { font-family: 'JetBrains Mono', monospace; font-size: 24px; font-weight: 900; color: var(--yellow); letter-spacing: 1px; }
-        .login-logo-sub { font-size: 11px; color: var(--text-dim); font-weight: 600; letter-spacing: 3px; margin-top: 4px; }
-        
-        .empty-state { text-align: center; padding: 40px 20px; color: var(--text-dim); }
-        
-        .category-grid { padding: 0 20px; display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 12px; margin-bottom: 24px; }
-        .category-card { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 16px; cursor: pointer; transition: 0.2s; position: relative; overflow: hidden; }
-        .category-card:hover { border-color: var(--yellow); transform: translateY(-2px); box-shadow: 0 4px 12px rgba(255, 215, 0, 0.2); }
-        .category-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px; background: var(--yellow); }
-        .category-type { font-family: 'JetBrains Mono', monospace; font-size: 13px; font-weight: 800; color: var(--yellow); margin-bottom: 4px; }
-        .category-color { font-size: 12px; color: var(--text); font-weight: 600; margin-bottom: 8px; }
-        .category-count { font-family: 'JetBrains Mono', monospace; font-size: 20px; font-weight: 800; color: var(--text); }
-        .category-label { font-size: 9px; color: var(--text-dim); text-transform: uppercase; letter-spacing: 1px; }
-        
-        .back-btn { background: var(--surface); border: 1px solid var(--border); color: var(--text-dim); padding: 10px 16px; border-radius: 6px; font-size: 12px; font-weight: 700; cursor: pointer; margin: 0 20px 16px 20px; display: inline-flex; align-items: center; gap: 8px; font-family: 'JetBrains Mono', monospace; }
-        .back-btn:hover { border-color: var(--yellow); color: var(--yellow); }
-        
-        .inventory.detail-view .item { grid-template-columns: 100px 1fr auto; }
-        .inventory.detail-view .item-qty { display: none; }
-        
-        .user-list { max-height: 300px; overflow-y: auto; }
-        .user-item { background: var(--surface-hover); border: 1px solid var(--border); border-radius: 6px; padding: 12px 16px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; }
-        .user-item-info { display: flex; flex-direction: column; }
-        .user-item-name { font-weight: 700; font-size: 14px; color: var(--text); margin-bottom: 2px; }
-        .user-item-time { font-size: 11px; color: var(--text-dim); font-family: 'JetBrains Mono', monospace; }
-        .user-badge { background: var(--green); color: var(--bg); padding: 4px 8px; border-radius: 4px; font-size: 9px; font-weight: 800; font-family: 'JetBrains Mono', monospace; }
-        .user-badge.you { background: var(--yellow); }
-        
-        .delete-list { max-height: 400px; overflow-y: auto; }
-        .delete-item { background: var(--surface-hover); border: 1px solid var(--border); border-radius: 6px; padding: 12px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; cursor: pointer; transition: 0.2s; }
-        .delete-item:hover { border-color: var(--red); background: rgba(255, 68, 68, 0.05); }
-        .delete-item-info { display: flex; flex-direction: column; }
-        .delete-item-id { font-family: 'JetBrains Mono', monospace; font-weight: 800; font-size: 13px; color: var(--yellow); margin-bottom: 2px; }
-        .delete-item-desc { font-size: 11px; color: var(--text-dim); }
-        .delete-icon { color: var(--red); font-size: 18px; }
-    </style>
-</head>
-<body>
+ <!DOCTYPE html>
+ <html lang="en">
+ <head>
+-    <meta charset="UTF-8">
+-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+-    <title>SpoolVault — Filament Inventory System</title>
+-    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+-    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
+-    <script src="https://unpkg.com/@zxing/library@0.20.0"></script>
+-    <link rel="preconnect" href="https://fonts.googleapis.com">
+-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700;800&display=swap" rel="stylesheet">
+-    <style>
+-        * { margin: 0; padding: 0; box-sizing: border-box; }
+-        
+-        :root {
+-            --bg: #0a0a0a;
+-            --surface: #141414;
+-            --surface-hover: #1f1f1f;
+-            --yellow: #FFD700;
+-            --yellow-dim: rgba(255, 215, 0, 0.2);
+-            --border: #333333;
+-            --text: #ffffff;
+-            --text-dim: #888888;
+-            --red: #FF4444;
+-            --green: #00FF88;
+-            --blue: #4A9EFF;
+-            --purple: #9D4EDD;
+-        }
+-        
+-        body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+-        
+-        body::before {
+-            content: ''; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+-            background: repeating-linear-gradient(0deg, rgba(0,0,0,0.15), rgba(0,0,0,0.15) 1px, transparent 1px, transparent 2px);
+-            pointer-events: none; z-index: 999;
+-        }
+-        
+-        .container { max-width: 600px; margin: 0 auto; position: relative; padding-bottom: 120px; }
+-        
+-        header { background: var(--surface); border-bottom: 2px solid var(--yellow); padding: 16px 20px; position: sticky; top: 0; z-index: 100; box-shadow: 0 4px 20px rgba(255, 215, 0, 0.1); }
+-        .header-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+-        .logo-container { display: flex; align-items: center; gap: 12px; }
+-        .logo-icon { width: 36px; height: 36px; background: linear-gradient(135deg, var(--yellow) 0%, #FFA500 100%); border-radius: 8px; display: flex; align-items: center; justify-content: center; box-shadow: 0 0 20px rgba(255, 215, 0, 0.3); position: relative; overflow: hidden; }
+-        .logo-icon::before { content: ''; position: absolute; inset: 0; background: linear-gradient(45deg, transparent 30%, rgba(255,255,255,0.3) 50%, transparent 70%); }
+-        .logo-icon svg { width: 22px; height: 22px; position: relative; z-index: 1; }
+-        .logo-text { font-family: 'JetBrains Mono', monospace; font-size: 18px; font-weight: 800; color: var(--yellow); letter-spacing: 0.5px; }
+-        .logo-subtext { font-size: 9px; color: var(--text-dim); font-weight: 600; letter-spacing: 2px; margin-top: -2px; }
+-        .sync-status { display: flex; align-items: center; gap: 6px; font-size: 11px; color: var(--green); font-weight: 700; font-family: 'JetBrains Mono', monospace; }
+-        .sync-dot { width: 8px; height: 8px; background: var(--green); border-radius: 50%; animation: pulse 1.5s infinite; }
+-        @keyframes pulse { 0%, 100% { opacity: 1; transform: scale(1); box-shadow: 0 0 8px var(--green); } 50% { opacity: 0.5; transform: scale(0.8); } }
+-        
+-        .user-bar { display: flex; justify-content: space-between; align-items: center; }
+-        .user-info { font-family: 'JetBrains Mono', monospace; font-size: 12px; color: var(--text-dim); display: flex; align-items: center; gap: 8px; cursor: pointer; padding: 6px 10px; border-radius: 4px; transition: 0.2s; }
+-        .user-info:hover { background: var(--surface-hover); color: var(--yellow); }
+-        .user-count { background: var(--yellow); color: var(--bg); padding: 2px 8px; border-radius: 10px; font-size: 10px; font-weight: 800; }
+-        .btn-group { display: flex; gap: 8px; }
+-        .header-btn { background: transparent; border: 1px solid var(--border); color: var(--text-dim); padding: 6px 12px; border-radius: 4px; font-size: 11px; font-weight: 700; cursor: pointer; transition: 0.2s; font-family: 'JetBrains Mono', monospace; text-transform: uppercase; }
+-        .header-btn:hover { border-color: var(--yellow); color: var(--yellow); }
+-        
+-        .stats { padding: 20px; display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+-        .stat-card { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 16px; border-left: 3px solid var(--yellow); }
+-        .stat-label { font-size: 10px; color: var(--text-dim); text-transform: uppercase; font-weight: 700; letter-spacing: 1px; margin-bottom: 4px; }
+-        .stat-value { font-family: 'JetBrains Mono', monospace; font-size: 28px; font-weight: 800; color: var(--text); }
+-        
+-        .tabs { display: flex; padding: 0 20px; gap: 8px; margin-bottom: 20px; }
+-        .tab { flex: 1; padding: 12px; background: var(--surface); border: 1px solid var(--border); border-radius: 6px; text-align: center; font-weight: 700; font-size: 12px; cursor: pointer; color: var(--text-dim); text-transform: uppercase; letter-spacing: 1px; }
+-        .tab.active { background: var(--yellow-dim); color: var(--yellow); border-color: var(--yellow); }
+-        
+-        .search { padding: 0 20px; margin-bottom: 24px; }
+-        .search-input { width: 100%; background: var(--surface); border: 1px solid var(--border); border-radius: 6px; padding: 14px 16px; color: var(--text); font-size: 14px; outline: none; font-family: 'JetBrains Mono', monospace; }
+-        .search-input:focus { border-color: var(--yellow); box-shadow: 0 0 15px var(--yellow-dim); }
+-        
+-        .inventory { padding: 0 20px; }
+-        .item { background: var(--surface); border: 1px solid var(--border); border-radius: 6px; padding: 16px; display: grid; grid-template-columns: 70px 1fr 60px auto auto; gap: 12px; align-items: center; margin-bottom: 12px; }
+-        .item:hover { border-color: var(--yellow); }
+-        .item-id { font-family: 'JetBrains Mono', monospace; font-size: 11px; font-weight: 800; color: var(--bg); background: var(--yellow); padding: 6px 8px; border-radius: 4px; text-align: center; word-break: break-all; }
+-        .item.box .item-id { background: var(--green); }
+-        .item-info { display: flex; flex-direction: column; }
+-        .item-brand { font-weight: 700; font-size: 14px; margin-bottom: 2px; }
+-        .item-meta { font-size: 11px; color: var(--text-dim); }
+-        .item-qty { font-family: 'JetBrains Mono', monospace; font-size: 16px; font-weight: 800; color: var(--yellow); text-align: center; }
+-        
+-        .item-actions { display: flex; gap: 6px; }
+-        .action-btn { width: 32px; height: 32px; background: var(--surface-hover); border: 1px solid var(--border); border-radius: 4px; cursor: pointer; font-size: 14px; display: flex; align-items: center; justify-content: center; transition: 0.2s; }
+-        .action-btn:hover { border-color: var(--yellow); }
+-        .action-btn.delete:hover { border-color: var(--red); color: var(--red); }
+-        
+-        .actions { position: fixed; bottom: 0; left: 50%; transform: translateX(-50%); width: 100%; max-width: 600px; background: var(--bg); border-top: 2px solid var(--yellow); padding: 12px 20px; display: flex; gap: 10px; z-index: 50; }
+-        .btn-main { flex: 2; padding: 14px; border-radius: 6px; border: none; background: var(--yellow); color: var(--bg); font-weight: 800; font-size: 12px; cursor: pointer; text-transform: uppercase; font-family: 'JetBrains Mono', monospace; }
+-        .btn-secondary { flex: 1; padding: 14px; border-radius: 6px; border: 1px solid var(--border); background: transparent; color: var(--text-dim); font-weight: 700; font-size: 11px; cursor: pointer; text-transform: uppercase; font-family: 'JetBrains Mono', monospace; }
+-        .btn-secondary:hover { border-color: var(--yellow); color: var(--yellow); }
+-        .btn-danger { border-color: var(--red); color: var(--red); }
+-        .btn-danger:hover { background: rgba(255, 68, 68, 0.1); border-color: var(--red); }
+-        
+-        .camera { position: fixed; inset: 0; background: #000; z-index: 400; display: none; flex-direction: column; }
+-        .camera.active { display: flex; }
+-        .camera-header { padding: 20px; display: flex; justify-content: space-between; position: absolute; width: 100%; z-index: 20; }
+-        .camera-badge { background: var(--yellow); color: var(--bg); padding: 6px 12px; border-radius: 4px; font-weight: 800; font-size: 11px; font-family: 'JetBrains Mono', monospace; }
+-        .camera-badge.delete { background: var(--red); }
+-        .camera-badge.empty { background: var(--blue); }
+-        .camera-close { background: rgba(0,0,0,0.5); border: 1px solid var(--yellow); color: var(--yellow); width: 36px; height: 36px; border-radius: 4px; font-size: 18px; cursor: pointer; }
+-        #video { flex: 1; object-fit: cover; width: 100%; height: 100%; }
+-        
+-        .camera-controls { position: absolute; bottom: 60px; left: 50%; transform: translateX(-50%); text-align: center; width: 100%; }
+-        .shutter { width: 72px; height: 72px; border: 4px solid var(--yellow); background: var(--yellow-dim); border-radius: 50%; cursor: pointer; box-shadow: 0 0 20px rgba(255,215,0,0.4); }
+-        .shutter:active { background: var(--yellow); transform: scale(0.95); }
+-        .shutter.delete { border-color: var(--red); background: rgba(255,68,68,0.2); box-shadow: 0 0 20px rgba(255,68,68,0.4); }
+-        .shutter.delete:active { background: var(--red); }
+-        .shutter.empty { border-color: var(--blue); background: rgba(74,158,255,0.2); box-shadow: 0 0 20px rgba(74,158,255,0.4); }
+-        .shutter.empty:active { background: var(--blue); }
+-        #canvas { display: none; }
+-        
+-        .processing { position: absolute; inset: 0; background: rgba(0, 0, 0, 0.85); display: none; flex-direction: column; align-items: center; justify-content: center; z-index: 20; }
+-        .processing.active { display: flex; }
+-        .spinner { width: 40px; height: 40px; border: 4px solid var(--surface); border-top: 4px solid var(--yellow); border-radius: 50%; animation: spin 1s linear infinite; margin-bottom: 16px; }
+-        @keyframes spin { to { transform: rotate(360deg); } }
+-        .process-text { font-family: 'JetBrains Mono', monospace; font-size: 14px; font-weight: 700; color: var(--yellow); }
+-        
+-        /* BARCODE SCANNER - OVERLAY MODE */
+-        .barcode-scanner { position: absolute; inset: 0; background: transparent; display: none; flex-direction: column; align-items: center; justify-content: center; z-index: 15; padding: 20px; }
+-        .barcode-scanner.active { display: flex; }
+-        .scanner-overlay { display: flex; flex-direction: column; align-items: center; width: 100%; }
+-        .barcode-frame { position: relative; width: 90%; max-width: 500px; height: 250px; border: 4px solid var(--yellow); border-radius: 12px; margin-bottom: 24px; overflow: visible; background: transparent; box-shadow: 0 0 30px rgba(255, 215, 0, 0.4); }
+-        .barcode-line { position: absolute; width: 100%; height: 4px; background: var(--yellow); box-shadow: 0 0 25px var(--yellow), 0 0 50px var(--yellow); animation: scan 1s linear infinite; z-index: 20; }
+-        @keyframes scan { 0%, 100% { top: 10%; opacity: 0.6; } 50% { top: 80%; opacity: 1; } }
+-        .barcode-hint { font-family: 'JetBrains Mono', monospace; font-size: 16px; font-weight: 800; color: var(--yellow); text-align: center; margin-bottom: 20px; background: rgba(0, 0, 0, 0.9); padding: 12px 24px; border-radius: 8px; border: 2px solid var(--yellow); box-shadow: 0 0 25px rgba(255, 215, 0, 0.4); }
+-        .barcode-result { font-family: 'JetBrains Mono', monospace; font-size: 18px; color: var(--green); font-weight: 800; margin-top: 20px; background: rgba(0, 0, 0, 0.9); padding: 12px 24px; border-radius: 8px; border: 2px solid var(--green); box-shadow: 0 0 25px rgba(0, 255, 136, 0.4); min-height: 24px; }
+-        
+-        .qr-prompt { position: absolute; inset: 0; background: rgba(0, 0, 0, 0.95); display: none; flex-direction: column; align-items: center; justify-content: center; z-index: 30; padding: 40px; }
+-        .qr-prompt.active { display: flex; }
+-        .qr-icon { width: 80px; height: 80px; border: 3px solid var(--purple); border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 48px; margin-bottom: 24px; background: rgba(157, 78, 221, 0.1); animation: pulse-qr 2s infinite; }
+-        @keyframes pulse-qr { 0%, 100% { box-shadow: 0 0 20px rgba(157, 78, 221, 0.4); } 50% { box-shadow: 0 0 40px rgba(157, 78, 221, 0.8); } }
+-        .qr-title { font-family: 'JetBrains Mono', monospace; font-size: 18px; font-weight: 800; color: var(--purple); margin-bottom: 12px; text-align: center; }
+-        .qr-message { font-size: 14px; color: var(--text-dim); text-align: center; margin-bottom: 32px; max-width: 400px; line-height: 1.6; }
+-        .qr-buttons { display: flex; gap: 12px; }
+-        .qr-btn { padding: 14px 24px; border-radius: 6px; font-family: 'JetBrains Mono', monospace; font-weight: 800; font-size: 12px; cursor: pointer; text-transform: uppercase; transition: 0.2s; }
+-        .qr-btn-primary { background: var(--purple); color: white; border: none; }
+-        .qr-btn-primary:hover { background: #8B3FC9; }
+-        .qr-btn-secondary { background: transparent; color: var(--text-dim); border: 1px solid var(--border); }
+-        .qr-btn-secondary:hover { border-color: var(--purple); color: var(--purple); }
+-        
+-        .modal { position: fixed; inset: 0; background: rgba(0, 0, 0, 0.85); z-index: 450; display: none; align-items: center; justify-content: center; padding: 20px; }
+-        .modal.open { display: flex; }
+-        .modal-content { background: var(--surface); border: 2px solid var(--yellow); border-radius: 8px; padding: 24px; width: 100%; max-width: 400px; max-height: 90vh; overflow-y: auto; }
+-        .modal-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); padding-bottom: 16px; margin-bottom: 20px; }
+-        .modal-title { font-family: 'JetBrains Mono', monospace; font-weight: 800; color: var(--yellow); font-size: 16px; }
+-        
+-        .form-group { margin-bottom: 16px; }
+-        .form-label { display: block; font-size: 10px; font-weight: 700; color: var(--text-dim); text-transform: uppercase; margin-bottom: 8px; letter-spacing: 1px; }
+-        .form-input, .form-select { width: 100%; background: var(--bg); border: 1px solid var(--border); border-radius: 4px; padding: 12px; color: var(--text); font-size: 14px; outline: none; font-family: 'Inter', sans-serif; }
+-        .form-input:focus, .form-select:focus { border-color: var(--yellow); }
+-        .form-input[readonly] { color: var(--yellow); font-family: 'JetBrains Mono', monospace; font-weight: 700; background: var(--surface-hover); }
+-        
+-        .toast { position: fixed; top: 20px; left: 50%; transform: translateX(-50%); background: var(--yellow); color: var(--bg); padding: 12px 24px; border-radius: 4px; font-family: 'JetBrains Mono', monospace; font-weight: 800; font-size: 12px; z-index: 600; display: none; text-align: center; }
+-        .toast.error { background: var(--red); color: white; }
+-        
+-        .login-screen { position: fixed; inset: 0; background: var(--bg); z-index: 500; display: flex; align-items: center; justify-content: center; padding: 20px; }
+-        .login-screen.hidden { display: none; }
+-        .login-box { background: var(--surface); border: 2px solid var(--border); border-left: 4px solid var(--yellow); border-radius: 8px; padding: 32px; width: 100%; max-width: 360px; }
+-        .login-logo-big { display: flex; flex-direction: column; align-items: center; margin-bottom: 32px; }
+-        .login-logo-icon { width: 64px; height: 64px; background: linear-gradient(135deg, var(--yellow) 0%, #FFA500 100%); border-radius: 16px; display: flex; align-items: center; justify-content: center; font-size: 36px; box-shadow: 0 0 30px rgba(255, 215, 0, 0.4); margin-bottom: 16px; }
+-        .login-logo-text { font-family: 'JetBrains Mono', monospace; font-size: 24px; font-weight: 900; color: var(--yellow); letter-spacing: 1px; }
+-        .login-logo-sub { font-size: 11px; color: var(--text-dim); font-weight: 600; letter-spacing: 3px; margin-top: 4px; }
+-        
+-        .empty-state { text-align: center; padding: 40px 20px; color: var(--text-dim); }
+-        
+-        .category-grid { padding: 0 20px; display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 12px; margin-bottom: 24px; }
+-        .category-card { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 16px; cursor: pointer; transition: 0.2s; position: relative; overflow: hidden; }
+-        .category-card:hover { border-color: var(--yellow); transform: translateY(-2px); box-shadow: 0 4px 12px rgba(255, 215, 0, 0.2); }
+-        .category-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px; background: var(--yellow); }
+-        .category-type { font-family: 'JetBrains Mono', monospace; font-size: 13px; font-weight: 800; color: var(--yellow); margin-bottom: 4px; }
+-        .category-color { font-size: 12px; color: var(--text); font-weight: 600; margin-bottom: 8px; }
+-        .category-count { font-family: 'JetBrains Mono', monospace; font-size: 20px; font-weight: 800; color: var(--text); }
+-        .category-label { font-size: 9px; color: var(--text-dim); text-transform: uppercase; letter-spacing: 1px; }
+-        
+-        .back-btn { background: var(--surface); border: 1px solid var(--border); color: var(--text-dim); padding: 10px 16px; border-radius: 6px; font-size: 12px; font-weight: 700; cursor: pointer; margin: 0 20px 16px 20px; display: inline-flex; align-items: center; gap: 8px; font-family: 'JetBrains Mono', monospace; }
+-        .back-btn:hover { border-color: var(--yellow); color: var(--yellow); }
+-        
+-        .inventory.detail-view .item { grid-template-columns: 100px 1fr auto; }
+-        .inventory.detail-view .item-qty { display: none; }
+-        
+-        .user-list { max-height: 300px; overflow-y: auto; }
+-        .user-item { background: var(--surface-hover); border: 1px solid var(--border); border-radius: 6px; padding: 12px 16px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; }
+-        .user-item-info { display: flex; flex-direction: column; }
+-        .user-item-name { font-weight: 700; font-size: 14px; color: var(--text); margin-bottom: 2px; }
+-        .user-item-time { font-size: 11px; color: var(--text-dim); font-family: 'JetBrains Mono', monospace; }
+-        .user-badge { background: var(--green); color: var(--bg); padding: 4px 8px; border-radius: 4px; font-size: 9px; font-weight: 800; font-family: 'JetBrains Mono', monospace; }
+-        .user-badge.you { background: var(--yellow); }
+-        
+-        .delete-list { max-height: 400px; overflow-y: auto; }
+-        .delete-item { background: var(--surface-hover); border: 1px solid var(--border); border-radius: 6px; padding: 12px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; cursor: pointer; transition: 0.2s; }
+-        .delete-item:hover { border-color: var(--red); background: rgba(255, 68, 68, 0.05); }
+-        .delete-item-info { display: flex; flex-direction: column; }
+-        .delete-item-id { font-family: 'JetBrains Mono', monospace; font-weight: 800; font-size: 13px; color: var(--yellow); margin-bottom: 2px; }
+-        .delete-item-desc { font-size: 11px; color: var(--text-dim); }
+-        .delete-icon { color: var(--red); font-size: 18px; }
+-    </style>
++  <meta charset="UTF-8" />
++  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
++  <title>SpoolVault — Intelligent Filament Inventory</title>
++  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
++  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
++  <script src="https://unpkg.com/@zxing/library@0.20.0"></script>
++  <style>
++    :root {
++      --bg:#0c0c0c; --panel:#171717; --panel2:#1f1f1f; --line:#333;
++      --text:#fff; --muted:#aaa; --yellow:#ffd700; --green:#00d084; --red:#ff4d4f; --blue:#4da3ff;
++    }
++    * { box-sizing: border-box; }
++    body { margin:0; background:var(--bg); color:var(--text); font-family:Inter,system-ui,sans-serif; }
++    .app { max-width: 980px; margin:0 auto; padding:16px; }
++    .card { background:var(--panel); border:1px solid var(--line); border-radius:10px; padding:14px; margin-bottom:12px; }
++    .header { display:flex; justify-content:space-between; gap:10px; flex-wrap:wrap; align-items:center; }
++    .title { font-size:1.2rem; color:var(--yellow); font-weight:800; }
++    .muted { color:var(--muted); font-size:.9rem; }
++    .row { display:flex; gap:8px; flex-wrap:wrap; align-items:center; }
++    .grid { display:grid; grid-template-columns: repeat(auto-fit, minmax(170px,1fr)); gap:8px; }
++    .btn { background:#222; border:1px solid var(--line); color:var(--text); border-radius:8px; padding:10px 12px; cursor:pointer; font-weight:700; }
++    .btn:hover { border-color:var(--yellow); }
++    .btn.primary { background:var(--yellow); color:#111; border-color:var(--yellow); }
++    .btn.danger { border-color:var(--red); color:var(--red); }
++    .btn.blue { border-color:var(--blue); color:var(--blue); }
++    .badge { border:1px solid var(--line); border-radius:999px; padding:4px 10px; font-size:.8rem; }
++    .badge.active { border-color:var(--yellow); color:var(--yellow); }
++    .kpi { background:var(--panel2); border:1px solid var(--line); border-radius:10px; padding:10px; }
++    .kpi .n { font-size:1.4rem; font-weight:800; }
++    .kpi .l { color:var(--muted); font-size:.8rem; text-transform:uppercase; letter-spacing:.07em; }
++    input, select { width:100%; background:#111; color:var(--text); border:1px solid var(--line); border-radius:8px; padding:10px; }
++    table { width:100%; border-collapse:collapse; }
++    th,td { padding:9px 6px; border-bottom:1px solid var(--line); font-size:.9rem; text-align:left; }
++    th { color:var(--muted); }
++    video { width:100%; max-height:280px; object-fit:cover; border:1px solid var(--line); border-radius:8px; background:#000; }
++    .status { min-height:20px; margin-top:8px; color:var(--muted); }
++    .ok { color:var(--green); }
++    .err { color:var(--red); }
++    .hidden { display:none !important; }
++    .tabs .btn.active { border-color:var(--yellow); color:var(--yellow); }
++    .mono { font-family: ui-monospace, Menlo, monospace; }
++    .pill-admin { color:#111; background:var(--green); padding:2px 8px; border-radius:999px; font-weight:700; font-size:.7rem; }
++  </style>
+ </head>
+ <body>
++  <div class="app">
++    <div class="card header">
++      <div>
++        <div class="title">SpoolVault</div>
++        <div class="muted">AI + barcode + QR assisted filament inventory for team collaboration.</div>
++      </div>
++      <div class="row">
++        <span id="userBadge" class="badge"></span>
++        <button id="activeUsersBtn" class="btn blue">Active Users</button>
++      </div>
++    </div>
++
++    <div class="card">
++      <div class="grid">
++        <div class="kpi"><div id="kTotal" class="n">0</div><div class="l">Total Assets</div></div>
++        <div class="kpi"><div id="kBoxes" class="n">0</div><div class="l">Unopened Boxes</div></div>
++        <div class="kpi"><div id="kSpools" class="n">0</div><div class="l">Opened Spools</div></div>
++        <div class="kpi"><div id="kEmpty" class="n">0</div><div class="l">Empty Spools Alert</div></div>
++      </div>
++    </div>
++
++    <div class="card">
++      <div class="row tabs" style="margin-bottom:8px;">
++        <button id="tabInventory" class="btn active">Inventory (Boxes)</button>
++        <button id="tabSpools" class="btn">Opened Spools</button>
++      </div>
++      <div class="row" style="margin-bottom:8px;">
++        <button id="scanAi" class="btn primary">AI Scan Label</button>
++        <button id="scanBox" class="btn">Scan Box Barcode</button>
++        <button id="scanSpool" class="btn">Scan Spool Serial</button>
++        <button id="stopScan" class="btn danger">Stop Camera</button>
++        <span id="modeAi" class="badge">AI MODE</span>
++        <span id="modeBox" class="badge">BOX BARCODE</span>
++        <span id="modeSpool" class="badge">SPOOL DOT-MATRIX</span>
++      </div>
++      <video id="video" muted playsinline></video>
++      <div id="status" class="status">Ready.</div>
++    </div>
++
++    <div class="card">
++      <div class="grid">
++        <div><label>Barcode</label><input id="barcode" class="mono" /></div>
++        <div><label>Spool Serial / QR</label><input id="serial" class="mono" /></div>
++        <div><label>Brand</label><input id="brand" /></div>
++        <div><label>Material</label><input id="material" /></div>
++        <div><label>Color</label><input id="color" /></div>
++        <div><label>Remaining %</label><input id="remaining" type="number" min="0" max="100" value="100" /></div>
++      </div>
++      <div class="row" style="margin-top:8px;">
++        <input id="batchQty" type="number" min="1" value="1" style="max-width:150px;" />
++        <button id="saveItem" class="btn primary">Save Item</button>
++        <button id="batchAdd" class="btn">Batch Add Boxes</button>
++      </div>
++    </div>
++
++    <div class="card">
++      <div class="row" style="justify-content:space-between; margin-bottom:6px;">
++        <strong id="tableTitle">Inventory (Boxes)</strong>
++        <div class="row"><input id="search" placeholder="Search by ID / brand / material / color" /><button id="purgeEmpty" class="btn danger">Purge Empty</button></div>
++      </div>
++      <table>
++        <thead>
++          <tr><th>Type</th><th>ID</th><th>Brand</th><th>Material</th><th>Color</th><th>Remain</th><th>Actions</th></tr>
++        </thead>
++        <tbody id="body"></tbody>
++      </table>
++    </div>
++  </div>
++
++  <script>
++    const ALLOWED_USERS = ["Benjamin", "Christian", "Rahul"];
++    const KNOWN_BARCODES = {
++      "900000000001": { brand: "Extrudr", material: "PLA NX2", color: "Black" },
++      "900000000002": { brand: "Extrudr", material: "PETG", color: "White" },
++      "900000000003": { brand: "Extrudr", material: "ASA", color: "Grey" }
++    };
++
++    const st = {
++      db: null,
++      user: null,
++      mode: null,
++      tab: "inventory",
++      items: [],
++      reader: null,
++      streamOn: false,
++      localPresence: {}
++    };
++
++    const $ = (id) => document.getElementById(id);
++    const statusEl = $("status");
++
++    function setStatus(msg, type = "") {
++      statusEl.textContent = msg;
++      statusEl.className = `status ${type}`.trim();
++    }
++
++    function setMode(mode) {
++      st.mode = mode;
++      $("modeAi").classList.toggle("active", mode === "ai");
++      $("modeBox").classList.toggle("active", mode === "box");
++      $("modeSpool").classList.toggle("active", mode === "spool");
++    }
++
++    function applyKnownBarcode(barcode) {
++      $("barcode").value = barcode;
++      const known = KNOWN_BARCODES[barcode];
++      if (known) {
++        $("brand").value = known.brand;
++        $("material").value = known.material;
++        $("color").value = known.color;
++        setStatus(`Known barcode detected: ${barcode}`, "ok");
++      } else {
++        setStatus(`Unknown barcode ${barcode}. Fill values manually.`, "err");
++      }
++    }
++
++    async function aiVisionExtract() {
++      setMode("ai");
++      setStatus("AI scan active. Taking best-effort extraction...", "ok");
++      const groqKey = window.GROQ_API_KEY || null;
++      if (!groqKey) {
++        const kind = prompt("AI fallback: Type 'box' or 'spool' based on what camera sees:", "box");
++        if ((kind || "").toLowerCase().includes("box")) {
++          setStatus("AI detected unopened box -> switching to barcode scanner.", "ok");
++          return scanBoxMode();
++        }
++        setStatus("AI detected opened spool -> switching to spool serial flow.", "ok");
++        return scanSpoolMode();
++      }
++
++      // Optional integration hook (image upload not implemented in this static page):
++      // If you provide a key and implement image capture/upload, call Groq vision here.
++      setStatus("Groq key present, but static demo uses fallback classifier path.", "err");
++      return scanSpoolMode();
++    }
++
++    async function startCamera() {
++      if (st.streamOn) return;
++      st.reader = new ZXing.BrowserMultiFormatReader();
++      await st.reader.decodeFromVideoDevice(undefined, "video", () => {});
++      st.streamOn = true;
++    }
++
++    function stopCamera() {
++      if (st.reader) st.reader.reset();
++      st.streamOn = false;
++      setMode(null);
++      setStatus("Camera stopped.");
++    }
++
++    async function scanBoxMode() {
++      setMode("box");
++      setStatus("Scanning 1D barcode for unopened box...", "ok");
++      await startCamera();
++      st.reader.decodeFromVideoDevice(undefined, "video", (res) => {
++        if (!res || st.mode !== "box") return;
++        applyKnownBarcode(res.getText());
++        stopCamera();
++      });
++    }
++
++    async function scanSpoolMode() {
++      setMode("spool");
++      setStatus("Opened spool mode. Ignoring barcodes; looking for dot-matrix serial.", "ok");
++      await startCamera();
++      setTimeout(() => {
++        if (st.mode !== "spool") return;
++        stopCamera();
++        const serial = prompt("Enter dot-matrix serial. If unavailable, attach & scan custom QR ID:", "SP-EXTR-0001");
++        if (!serial) return setStatus("No serial provided.", "err");
++        const clean = serial.trim();
++        $("serial").value = clean;
++        if (clean.length < 13) setStatus("Short serial detected; treat as custom QR sticker ID.", "ok");
++        if (!$("brand").value) $("brand").value = "Extrudr";
++        setStatus(`Spool serial captured: ${clean}`, "ok");
++      }, 1300);
++    }
++
++    function currentType() { return st.tab === "inventory" ? "box" : "spool"; }
++
++    function buildItem(overrides = {}) {
++      const type = overrides.type || currentType();
++      const barcode = $("barcode").value.trim();
++      const serial = $("serial").value.trim();
++      const id = overrides.id || (type === "spool" ? serial : barcode);
++      const remaining = Math.max(0, Math.min(100, Number($("remaining").value || 100)));
++      if (!id) throw new Error(`Missing ${type === "spool" ? "serial/QR ID" : "barcode"}`);
++      return {
++        id, type, barcode, serial,
++        brand: $("brand").value.trim(),
++        material: $("material").value.trim(),
++        color: $("color").value.trim(),
++        remaining,
++        updatedBy: st.user,
++        time: Date.now(),
++        ...overrides
++      };
++    }
++
++    function persist(item) {
++      if (st.db) st.db.ref("inventory").push(item);
++      else { st.items.push(item); render(); }
++    }
++
++    function saveItem() {
++      try {
++        const item = buildItem();
++        persist(item);
++        setStatus(`Saved ${item.type}: ${item.id}`, "ok");
++      } catch (e) { setStatus(e.message, "err"); }
++    }
++
++    function batchAdd() {
++      try {
++        if (currentType() !== "box") return setStatus("Batch add is for unopened boxes only.", "err");
++        const qty = Math.max(1, Number($("batchQty").value || 1));
++        const base = buildItem({ type: "box" });
++        for (let i = 1; i <= qty; i++) {
++          persist({ ...base, id: `${base.id}-${String(i).padStart(2, "0")}`, parentBarcode: base.id });
++        }
++        setStatus(`Batch added ${qty} boxes from barcode ${base.id}.`, "ok");
++      } catch (e) { setStatus(e.message, "err"); }
++    }
++
++    function setTab(tab) {
++      st.tab = tab;
++      $("tabInventory").classList.toggle("active", tab === "inventory");
++      $("tabSpools").classList.toggle("active", tab === "spools");
++      $("tableTitle").textContent = tab === "inventory" ? "Inventory (Boxes)" : "Opened Spools";
++      render();
++    }
++
++    function kpis(items) {
++      const boxes = items.filter(i => i.type === "box").length;
++      const spools = items.filter(i => i.type === "spool").length;
++      const empty = items.filter(i => i.type === "spool" && Number(i.remaining) <= 0).length;
++      $("kTotal").textContent = items.length;
++      $("kBoxes").textContent = boxes;
++      $("kSpools").textContent = spools;
++      $("kEmpty").textContent = empty;
++    }
++
++    function updateRemaining(key, val) {
++      val = Math.max(0, Math.min(100, Number(val || 0)));
++      if (st.db) st.db.ref(`inventory/${key}/remaining`).set(val);
++      else {
++        const it = st.items.find(x => x.__k === key);
++        if (it) it.remaining = val;
++        render();
++      }
++    }
++
++    function deleteItem(key) {
++      if (!confirm("Delete this item?")) return;
++      if (st.db) st.db.ref(`inventory/${key}`).remove();
++      else {
++        st.items = st.items.filter(x => x.__k !== key);
++        render();
++      }
++    }
++
++    function purgeEmpty() {
++      const dead = st.items.filter(i => i.type === "spool" && Number(i.remaining) <= 0);
++      if (!dead.length) return setStatus("No empty spools to purge.");
++      if (!confirm(`Purge ${dead.length} empty spools?`)) return;
++      if (st.db) {
++        dead.forEach(i => st.db.ref(`inventory/${i.__k}`).remove());
++      } else {
++        st.items = st.items.filter(i => !(i.type === "spool" && Number(i.remaining) <= 0));
++        render();
++      }
++      setStatus(`Purged ${dead.length} empty spools.`, "ok");
++    }
++
++    function render() {
++      const q = $("search").value.trim().toLowerCase();
++      const type = st.tab === "inventory" ? "box" : "spool";
++      const filtered = st.items
++        .filter(i => i.type === type)
++        .filter(i => !q || [i.id, i.brand, i.material, i.color].join(" ").toLowerCase().includes(q))
++        .sort((a,b) => b.time - a.time);
++      kpis(st.items);
++
++      const tbody = $("body");
++      tbody.innerHTML = "";
++      filtered.forEach(i => {
++        const tr = document.createElement("tr");
++        tr.innerHTML = `
++          <td>${i.type}</td>
++          <td class="mono">${i.id || ""}</td>
++          <td>${i.brand || ""}</td>
++          <td>${i.material || ""}</td>
++          <td>${i.color || ""}</td>
++          <td><input type="number" min="0" max="100" value="${Number(i.remaining ?? 100)}" style="max-width:86px;"/></td>
++          <td><button class="btn danger">Delete</button></td>`;
++        tr.querySelector("input").addEventListener("change", (e) => updateRemaining(i.__k, e.target.value));
++        tr.querySelector("button").addEventListener("click", () => deleteItem(i.__k));
++        tbody.appendChild(tr);
++      });
++    }
++
++    function attachRealtime() {
++      if (!st.db) return;
++      st.db.ref("inventory").on("value", (snap) => {
++        const v = snap.val() || {};
++        st.items = Object.entries(v).map(([k, it]) => ({ __k:k, ...it }));
++        render();
++      });
++      st.db.ref("presence").on("value", (snap) => {
++        st.localPresence = snap.val() || {};
++      });
++    }
++
++    function activeUsersDialog() {
++      const users = Object.values(st.localPresence || {}).filter(x => x && x.active);
++      alert(users.length ? `Active users:\n- ${users.map(u => `${u.name} (${new Date(u.lastSeen).toLocaleTimeString()})`).join("\n- ")}` : "No active users visible.");
++    }
++
++    function presenceHeartbeat() {
++      if (!st.db || !st.user) return;
++      st.db.ref(`presence/${st.user}`).set({ name: st.user, active: true, lastSeen: Date.now() });
++      setInterval(() => st.db.ref(`presence/${st.user}`).update({ active: true, lastSeen: Date.now() }), 20000);
++      window.addEventListener("beforeunload", () => st.db.ref(`presence/${st.user}`).update({ active: false, lastSeen: Date.now() }));
++    }
++
++    function bootAuthAndDb() {
++      const name = prompt("Enter username (Benjamin, Christian, Rahul):", "Benjamin");
++      if (!name || !ALLOWED_USERS.includes(name.trim())) {
++        document.body.innerHTML = '<div style="padding:30px;color:#fff;background:#111;font-family:sans-serif;">Access denied. Allowed users: Benjamin, Christian, Rahul.</div>';
++        throw new Error("Unauthorized user");
++      }
++      st.user = name.trim();
++      $("userBadge").textContent = `User: ${st.user}`;
++
++      const cfg = window.FIREBASE_CONFIG || null;
++      if (cfg) {
++        firebase.initializeApp(cfg);
++        st.db = firebase.database();
++        setStatus("Connected to Firebase realtime database.", "ok");
++      } else {
++        setStatus("No Firebase config: local-only mode.");
++      }
++    }
++
++    $("scanAi").addEventListener("click", () => aiVisionExtract().catch(e => setStatus(e.message, "err")));
++    $("scanBox").addEventListener("click", () => scanBoxMode().catch(e => setStatus(e.message, "err")));
++    $("scanSpool").addEventListener("click", () => scanSpoolMode().catch(e => setStatus(e.message, "err")));
++    $("stopScan").addEventListener("click", stopCamera);
++    $("saveItem").addEventListener("click", saveItem);
++    $("batchAdd").addEventListener("click", batchAdd);
++    $("tabInventory").addEventListener("click", () => setTab("inventory"));
++    $("tabSpools").addEventListener("click", () => setTab("spools"));
++    $("search").addEventListener("input", render);
++    $("purgeEmpty").addEventListener("click", purgeEmpty);
++    $("activeUsersBtn").addEventListener("click", activeUsersDialog);
+ 
+-<div class="login-screen" id="login-screen">
+-    <div class="login-box">
+-        <div class="login-logo-big">
+-            <div clas
++    try {
++      bootAuthAndDb();
++      attachRealtime();
++      render();
++      presenceHeartbeat();
++    } catch (e) {
++      console.error(e);
++    }
++  </script>
++</body>
++</html>
 
-<div class="login-screen" id="login-screen">
-    <div class="login-box">
-        <div class="login-logo-big">
-            <div clas
+)
