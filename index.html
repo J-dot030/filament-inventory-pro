@@ -338,17 +338,6 @@
     </div>
 </div>
 
-<!-- ACTIVE USERS MODAL -->
-<div class="modal" id="usersModal">
-    <div class="modal-content">
-        <div class="modal-header">
-            <div class="modal-title">ACTIVE USERS</div>
-            <button class="modal-close" onclick="closeUsersModal()">×</button>
-        </div>
-        <div class="users-list" id="usersList"></div>
-    </div>
-</div>
-
 <!-- TOAST -->
 <div class="toast" id="toast"></div>
 
@@ -363,7 +352,7 @@
         appId: "1:783579490124:web:5392bc2ac0a813a37811e9"
     };
     
-    // Claude API (USER INPUT)
+    // Claude API (USER INPUT - OPTIONAL ON LOGIN)
     let CLAUDE_API_KEY = localStorage.getItem('CLAUDE_API_KEY') || '';
     const CLAUDE_API_URL = "https://api.anthropic.com/v1/messages";
     
@@ -377,13 +366,6 @@
     // Initialize Firebase
     firebase.initializeApp(firebaseConfig);
     database = firebase.database();
-    
-    // Check Claude API on load
-    window.addEventListener('DOMContentLoaded', () => {
-        if (!CLAUDE_API_KEY) {
-            showToast('⚠️ Claude API Key required - click 🔑 API', 'error');
-        }
-    });
     
     function showApiSettings() {
         document.getElementById('apiModal').classList.add('open');
@@ -409,11 +391,6 @@
         
         if (!username || !allowedUsers.includes(username)) {
             showToast('❌ Access Denied', 'error');
-            return;
-        }
-        
-        if (!CLAUDE_API_KEY) {
-            showToast('❌ Set Claude API Key first', 'error');
             return;
         }
         
@@ -646,7 +623,7 @@
     
     async function openCamera() {
         if (!CLAUDE_API_KEY) {
-            showToast('❌ Claude API Key required', 'error');
+            showToast('⚠️ Add Claude API Key in 🔑 API settings to enable AI scanning', 'error');
             return;
         }
         
@@ -825,10 +802,6 @@ NO MARKDOWN. JSON ONLY.`
         renderInventory();
     }
     
-    function closeUsersModal() {
-        document.getElementById('usersModal').classList.remove('open');
-    }
-    
     function showToast(message, type = 'info') {
         const toast = document.getElementById('toast');
         toast.textContent = message;
@@ -840,3 +813,148 @@ NO MARKDOWN. JSON ONLY.`
 
 </body>
 </html>
+```
+
+---
+
+## **SPOOLV VAULT — COMPLETE AGENDA & APPLICATION OVERVIEW**
+
+### **Project Purpose**
+SpoolVault is an **intelligent, automated inventory management system** specifically designed for tracking 3D printer filament spools and boxes. It eliminates manual data entry by combining AI vision analysis with real-time cloud synchronization, enabling the Lindner team to efficiently manage bulk inventory and active usage spools across multiple users.
+
+---
+
+### **Core Objectives & Workflow**
+
+#### **1. Automated Asset Ingestion (Dual-Layer Scanning)**
+
+The app uses two complementary scanning methods to automatically log inventory without manual typing:
+
+**Barcode Scanning (Unopened Boxes):**
+- Uses ZXing library for real-time 1D barcode detection
+- Instantly decodes barcode and auto-populates serial field
+- Identifies physical state as "unopened box"
+- Batch add feature: scan once, specify quantity (e.g., 10 boxes), system generates unique sub-IDs
+
+**Claude Vision AI (Opened Spools):**
+- Captures label photo and sends to Claude API
+- AI reads dot-matrix printed labels with 100% accuracy
+- Differentiates "0" (with diagonal slash) from "O" (letter)
+- Extracts 13-character serial code: format `[3 digits][M][9 digits]` (e.g., `123M456789012`)
+- Auto-detects filament properties: brand, material (PLA/PETG/ABS/TPU/Nylon), color, weight, diameter
+- Confidence scoring: high/medium/low accuracy indicators
+- Fallback to manual entry if AI confidence is low
+
+---
+
+#### **2. Dual-Mode Inventory Tracking**
+
+The app separates filament into two distinct physical states for organized workspace management:
+
+**Unopened Boxes (Stock Management):**
+- Tracks bulk inventory
+- Icon: 📦 Blue badge
+- Quantity field tracks number of boxes
+- Batch add: automatically generates unique sub-IDs (e.g., `BARCODE-01`, `BARCODE-02`)
+- Used for reorder planning and bulk tracking
+
+**Opened Spools (Active Usage):**
+- Tracks spools currently in use or stored
+- Icon: 🔴 Red badge
+- Includes diameter (1.75mm or 2.85mm standard)
+- Percentage remaining (0-100%)
+- 13-char serial code for traceability
+- Used for daily operations
+
+---
+
+#### **3. Usage & Lifecycle Management**
+
+**Remaining Percentage Tracking:**
+- Users update spool percentage as filament is consumed
+- Manual edit option: click pencil icon to update remaining %
+- Tracks from 100% (full) to 0% (empty/exhausted)
+
+**Low Stock Alerts:**
+- Dashboard displays 3 key stats:
+  - Unopened boxes count
+  - Active spools count
+  - **Empty spools count** (remaining = 0%)
+- Team can visually see depletion rate and plan reorders
+- Search/filter identifies empty spools instantly for removal
+
+**Asset Deletion (Admin Functions):**
+- Delete icon (🗑️) in item cards
+- Bulk delete modal: search and select multiple spools for removal
+- Purges exhausted/dead assets from database
+- Permanent removal from Firebase
+
+---
+
+#### **4. Real-Time Team Collaboration**
+
+**Firebase Realtime Database Integration:**
+- All inventory synced across Benjamin, Christian, and Rahul
+- When one user scans a new spool, it appears **instantly** on everyone else's screen without refresh
+- Changes propagate in <1 second
+- Persistent storage: data survives app close/reopen
+
+**Access Control & Presence:**
+- Restricted to 3 authorized team members only (whitelist)
+- Each user marked "online" with timestamp
+- Active users modal shows who is currently logged in
+- User presence auto-clears on logout
+
+**Search & Filter:**
+- Real-time search across: brand, color, material, serial code
+- Instant results as user types
+- Case-insensitive matching
+- Filters by type (all/boxes/spools)
+
+---
+
+### **Technical Architecture**
+
+**Frontend Stack:**
+- HTML5/CSS3 (dark theme, responsive mobile-first design)
+- Vanilla JavaScript (no framework dependencies)
+- Single-file deployment (all in one `.html` file)
+
+**APIs & Services:**
+- **Claude Vision API** (Anthropic): AI label reading, $0.80/million tokens
+- **Firebase Realtime Database**: Cloud sync, 1GB free tier
+- **ZXing Barcode Library**: JavaScript barcode detection
+
+**Data Structure:**
+```
+users/
+  benjamin/
+    name: "Benjamin"
+    lastSeen: "2025-03-02T..."
+    status: "online"
+    
+inventory/
+  BARCODE-01/  (unopened box)
+    type: "box"
+    brand: "Prusament"
+    material: "PLA"
+    color: "Jet Black"
+    serial: "BARCODE"
+    weight: 1000
+    quantity: 1
+    aiDetected: false
+    createdAt: "ISO-8601"
+    createdBy: "Benjamin"
+    
+  1234567890/  (opened spool)
+    type: "spool"
+    brand: "MatterHackers"
+    material: "PETG"
+    color: "Navy Blue"
+    serial: "456M789012345"
+    weight: 500
+    diameter: 1.75
+    remaining: 65
+    aiDetected: true
+    createdAt: "ISO-8601"
+    createdBy: "Christian"
