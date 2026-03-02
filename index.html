@@ -7,7 +7,7 @@
     
     <script src="https://www.gstatic.com/firebasejs/11.1.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/11.1.0/firebase-database-compat.js"></script>
-    <script src="https://unpkg.com/@zxing/library@0.20.0"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@zxing/library@0.20.0"></script>
     
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
@@ -85,19 +85,11 @@
         .camera.active { display: flex; }
         .camera-header { padding: 20px; display: flex; justify-content: space-between; position: absolute; width: 100%; z-index: 20; }
         .camera-badge { background: var(--accent); color: var(--bg); padding: 8px 16px; border-radius: 6px; font-weight: 800; font-size: 12px; }
+        .camera-status { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: rgba(0,0,0,0.8); color: var(--accent); padding: 20px; border-radius: 8px; border: 2px solid var(--accent); text-align: center; font-family: 'Space Mono', monospace; z-index: 30; }
         .camera-close { background: rgba(255, 215, 0, 0.1); border: 2px solid var(--accent); color: var(--accent); width: 44px; height: 44px; border-radius: 8px; font-size: 20px; cursor: pointer; transition: 0.2s; }
         .camera-close:hover { background: var(--accent); color: var(--bg); }
         #video { flex: 1; object-fit: cover; width: 100%; height: 100%; }
-        .camera-controls { position: absolute; bottom: 60px; left: 50%; transform: translateX(-50%); text-align: center; }
-        .shutter { width: 80px; height: 80px; border: 4px solid var(--accent); background: rgba(255, 215, 0, 0.1); border-radius: 50%; cursor: pointer; box-shadow: 0 0 25px rgba(255, 215, 0, 0.5); transition: 0.1s; }
-        .shutter:active { background: var(--accent); transform: scale(0.95); }
         #canvas { display: none; }
-        
-        .processing { position: absolute; inset: 0; background: rgba(0, 0, 0, 0.95); display: none; flex-direction: column; align-items: center; justify-content: center; z-index: 20; }
-        .processing.active { display: flex; }
-        .spinner { width: 50px; height: 50px; border: 4px solid var(--surface); border-top: 4px solid var(--accent); border-radius: 50%; animation: spin 1s linear infinite; margin-bottom: 16px; }
-        @keyframes spin { to { transform: rotate(360deg); } }
-        .process-text { font-family: 'Space Mono', monospace; font-size: 14px; font-weight: 700; color: var(--accent); text-align: center; }
         
         .modal { position: fixed; inset: 0; background: rgba(0, 0, 0, 0.9); z-index: 450; display: none; align-items: center; justify-content: center; padding: 20px; }
         .modal.open { display: flex; }
@@ -137,23 +129,74 @@
         .user-item-name { font-weight: 700; font-size: 13px; }
         .user-item-time { font-size: 10px; color: var(--text-dim); }
         .user-online { background: var(--success); width: 8px; height: 8px; border-radius: 50%; }
+        
+        .api-section { margin-top: 20px; padding-top: 20px; border-top: 1px solid var(--border); }
+        .api-info { font-size: 11px; color: var(--text-dim); margin-bottom: 16px; }
+        .setup-link { color: var(--accent); text-decoration: none; font-weight: 700; }
+        .setup-link:hover { text-decoration: underline; }
     </style>
 </head>
 <body>
 
-<!-- CAMERA -->
+<!-- CAMERA WITH DUAL SCANNER -->
 <div class="camera" id="camera">
     <div class="camera-header">
-        <div class="camera-badge">📷 SCANNING</div>
+        <div class="camera-badge" id="cameraBadge">📷 DUAL SCAN</div>
         <button class="camera-close" onclick="closeCamera()">×</button>
     </div>
     <video id="video" autoplay playsinline></video>
-    <div class="camera-controls">
-        <button class="shutter" onclick="captureImage()"></button>
+    <div class="camera-status" id="cameraStatus">
+        <div id="cameraMsg">Initializing dual scanner...</div>
     </div>
-    <div class="processing" id="processing">
-        <div class="spinner"></div>
-        <div class="process-text" id="processText">Claude Vision Analyzing...</div>
+    <canvas id="canvas"></canvas>
+</div>
+
+<!-- API SETUP SCREEN -->
+<div class="login-screen" id="apiSetupScreen">
+    <div class="login-box">
+        <div class="login-logo-big">
+            <div class="login-logo-icon">🔑</div>
+            <div class="login-logo-text">API SETUP</div>
+            <div class="login-logo-sub">CONFIGURATION</div>
+        </div>
+        
+        <form onsubmit="handleApiSetup(event)">
+            <div class="form-group">
+                <label class="form-label">Claude API Key</label>
+                <input type="password" id="claudeApiKey" class="form-input" placeholder="sk-ant-api03-..." required>
+            </div>
+            
+            <div class="form-group">
+                <label class="form-label">Firebase API Key</label>
+                <input type="text" id="firebaseApiKey" class="form-input" placeholder="AIza..." required>
+            </div>
+            
+            <div class="form-group">
+                <label class="form-label">Firebase Auth Domain</label>
+                <input type="text" id="firebaseAuthDomain" class="form-input" placeholder="project.firebaseapp.com" required>
+            </div>
+            
+            <div class="form-group">
+                <label class="form-label">Firebase Project ID</label>
+                <input type="text" id="firebaseProjectId" class="form-input" placeholder="project-id" required>
+            </div>
+            
+            <div class="form-group">
+                <label class="form-label">Firebase Storage Bucket</label>
+                <input type="text" id="firebaseStorageBucket" class="form-input" placeholder="project.appspot.com" required>
+            </div>
+            
+            <button type="submit" class="btn-main" style="width: 100%;">SAVE & LOGIN</button>
+        </form>
+        
+        <div class="api-section">
+            <div class="api-info">
+                Get your API keys from:
+                <a href="https://console.cloud.google.com/apis/credentials" target="_blank" class="setup-link">Google Cloud Console</a> (Firebase)
+                and
+                <a href="https://console.anthropic.com/account/keys" target="_blank" class="setup-link">Anthropic Console</a> (Claude)
+            </div>
+        </div>
     </div>
 </div>
 
@@ -176,11 +219,11 @@
                     <option value="Rahul">Rahul</option>
                 </select>
             </div>
-            <button type="submit" class="btn-main" style="width: 100%;">ACCESS</button>
+            <button type="submit" class="btn-main" style="width: 100%;">LOGIN</button>
         </form>
         
-        <div style="margin-top: 20px; text-align: center; color: var(--text-dim); font-size: 11px;">
-            Lindner Team • Real-Time Inventory
+        <div style="margin-top: 20px; text-align: center;">
+            <button class="header-btn" onclick="showApiSetup()" style="width: 100%;">⚙️ API SETTINGS</button>
         </div>
     </div>
 </div>
@@ -294,8 +337,8 @@
             </div>
             
             <div class="form-group">
-                <label class="form-label">Serial/QR Code</label>
-                <input type="text" id="formSerial" class="form-input" placeholder="13-char or QR code">
+                <label class="form-label">Serial/Barcode <span class="ai-badge" id="aiSerial"></span></label>
+                <input type="text" id="formSerial" class="form-input" placeholder="13-char or barcode">
             </div>
             
             <div class="form-group">
@@ -349,30 +392,76 @@
 <div class="toast" id="toast"></div>
 
 <script>
-    // Firebase Config - UPDATE WITH YOUR CREDENTIALS
-    const firebaseConfig = {
-        apiKey: "AIzaSyBzH4Cqv6h_5m0-2K1L9pQr_wX8yZ3aB4c",
-        authDomain: "spoolv-lindner.firebaseapp.com",
-        projectId: "spoolv-lindner",
-        storageBucket: "spoolv-lindner.appspot.com",
-        messagingSenderId: "123456789012",
-        appId: "1:123456789012:web:abcdefghijklmnop"
-    };
-    
-    // Claude API
-    const CLAUDE_API_KEY = "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";
+    let CLAUDE_API_KEY = localStorage.getItem('CLAUDE_API_KEY') || '';
+    let FIREBASE_CONFIG = JSON.parse(localStorage.getItem('FIREBASE_CONFIG') || '{}');
     const CLAUDE_API_URL = "https://api.anthropic.com/v1/messages";
     
-    // Initialize Firebase
-    firebase.initializeApp(firebaseConfig);
-    const database = firebase.database();
-    
-    // State
+    let codeReader = null;
+    let scanActive = false;
     let currentUser = null;
     let inventory = [];
     let currentTab = 'inventory';
+    let database = null;
     
-    // Login
+    // Initialize app
+    window.addEventListener('DOMContentLoaded', initApp);
+    
+    function initApp() {
+        // Check if API keys exist
+        if (!CLAUDE_API_KEY || !FIREBASE_CONFIG.apiKey) {
+            document.getElementById('apiSetupScreen').style.display = 'flex';
+            document.getElementById('loginScreen').classList.add('hidden');
+        } else {
+            initializeFirebase();
+            document.getElementById('apiSetupScreen').style.display = 'none';
+            document.getElementById('loginScreen').style.display = 'flex';
+        }
+    }
+    
+    function showApiSetup() {
+        document.getElementById('apiSetupScreen').style.display = 'flex';
+        document.getElementById('loginScreen').classList.add('hidden');
+    }
+    
+    function handleApiSetup(event) {
+        event.preventDefault();
+        
+        CLAUDE_API_KEY = document.getElementById('claudeApiKey').value;
+        
+        FIREBASE_CONFIG = {
+            apiKey: document.getElementById('firebaseApiKey').value,
+            authDomain: document.getElementById('firebaseAuthDomain').value,
+            projectId: document.getElementById('firebaseProjectId').value,
+            storageBucket: document.getElementById('firebaseStorageBucket').value,
+            messagingSenderId: Math.random().toString().split('.')[1].substring(0, 12),
+            appId: "1:123456789012:web:abcdefghijklmnop"
+        };
+        
+        localStorage.setItem('CLAUDE_API_KEY', CLAUDE_API_KEY);
+        localStorage.setItem('FIREBASE_CONFIG', JSON.stringify(FIREBASE_CONFIG));
+        
+        initializeFirebase();
+        
+        document.getElementById('apiSetupScreen').style.display = 'none';
+        document.getElementById('loginScreen').style.display = 'flex';
+        
+        showToast('✅ API Keys saved', 'success');
+    }
+    
+    function initializeFirebase() {
+        if (!firebase.apps.length) {
+            firebase.initializeApp(FIREBASE_CONFIG);
+        }
+        database = firebase.database();
+    }
+    
+    function initBarcodeScan() {
+        if (!codeReader) {
+            const ZXing = window.ZXing;
+            codeReader = new ZXing.BrowserMultiFormatReader();
+        }
+    }
+    
     function handleLogin(event) {
         event.preventDefault();
         const username = document.getElementById('loginUsername').value;
@@ -385,7 +474,6 @@
         
         currentUser = { name: username, uid: username.toLowerCase() };
         
-        // Set user presence
         const userRef = database.ref(`users/${currentUser.uid}`);
         userRef.set({
             name: username,
@@ -415,7 +503,6 @@
         showToast('Logged out', 'success');
     }
     
-    // Inventory - Real-time sync
     function loadInventory() {
         const ref = database.ref('inventory');
         ref.on('value', (snapshot) => {
@@ -458,7 +545,7 @@
                     <div class="item-meta">
                         <span>${item.color}</span>
                         <span>${item.material}</span>
-                        ${item.serial ? `<span>ID: ${item.serial.substring(0, 8)}</span>` : ''}
+                        ${item.serial ? `<span>${item.serial.substring(0, 8)}</span>` : ''}
                     </div>
                 </div>
                 <div class="item-qty">${item.type === 'box' ? item.quantity : item.remaining}${item.type === 'box' ? '📦' : '%'}</div>
@@ -470,9 +557,7 @@
         `).join('');
     }
     
-    function filterInventory() {
-        renderInventory();
-    }
+    function filterInventory() { renderInventory(); }
     
     function updateStats() {
         const boxes = inventory.filter(i => i.type === 'box').length;
@@ -520,6 +605,7 @@
         document.getElementById('aiBrand').textContent = '';
         document.getElementById('aiMaterial').textContent = '';
         document.getElementById('aiColor').textContent = '';
+        document.getElementById('aiSerial').textContent = '';
     }
     
     function handleAddItem(event) {
@@ -534,7 +620,6 @@
         
         if (type === 'box') {
             const quantity = parseInt(document.getElementById('formQuantity').value);
-            // Batch add - create sub-IDs
             for (let i = 1; i <= quantity; i++) {
                 const id = `${serial}-${String(i).padStart(2, '0')}`;
                 database.ref(`inventory/${id}`).set({
@@ -608,44 +693,78 @@
         document.getElementById('deleteModal').classList.remove('open');
     }
     
-    // Camera
     async function openCamera() {
+        initBarcodeScan();
         document.getElementById('camera').classList.add('active');
+        
         try {
             const stream = await navigator.mediaDevices.getUserMedia({
                 video: { facingMode: 'environment' }
             });
-            document.getElementById('video').srcObject = stream;
+            const video = document.getElementById('video');
+            video.srcObject = stream;
+            
+            scanActive = true;
+            document.getElementById('cameraMsg').textContent = 'Detecting format...';
+            
+            startDualScanning(video);
+            
         } catch (err) {
             showToast('Camera access denied', 'error');
         }
     }
     
     function closeCamera() {
+        scanActive = false;
         const video = document.getElementById('video');
         if (video.srcObject) {
             video.srcObject.getTracks().forEach(track => track.stop());
         }
         document.getElementById('camera').classList.remove('active');
+        
+        if (codeReader) {
+            codeReader.reset();
+        }
     }
     
-    function captureImage() {
-        const video = document.getElementById('video');
-        const canvas = document.getElementById('canvas');
-        const ctx = canvas.getContext('2d');
-        
-        canvas.width = video.videoWidth;
-        canvas.height = video.videoHeight;
-        ctx.drawImage(video, 0, 0);
-        
-        showProcessing(true);
-        processImageWithAI(canvas.toDataURL('image/jpeg', 0.9));
-    }
-    
-    async function processImageWithAI(imageData) {
+    async function startDualScanning(video) {
         try {
-            document.getElementById('processText').textContent = 'Claude analyzing label...';
+            const result = await codeReader.decodeFromVideoElement(video);
+            if (result && scanActive) {
+                document.getElementById('cameraMsg').textContent = '✅ Barcode found!';
+                handleBarcodeDetected(result.text);
+                return;
+            }
+        } catch (err) {}
+        
+        if (scanActive) {
+            document.getElementById('cameraMsg').textContent = 'Reading label...';
+            const canvas = document.getElementById('canvas');
+            const ctx = canvas.getContext('2d');
             
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            ctx.drawImage(video, 0, 0);
+            
+            const imageData = canvas.toDataURL('image/jpeg', 0.95);
+            await analyzeWithClaude(imageData);
+        }
+    }
+    
+    function handleBarcodeDetected(barcode) {
+        closeCamera();
+        
+        document.getElementById('formType').value = 'box';
+        updateFormForType();
+        document.getElementById('formSerial').value = barcode;
+        document.getElementById('aiSerial').textContent = '✓ High';
+        
+        showToast(`✅ Box barcode: ${barcode.substring(0, 12)}...`, 'success');
+        openAddModal();
+    }
+    
+    async function analyzeWithClaude(imageData) {
+        try {
             const base64Image = imageData.split(',')[1];
             
             const response = await fetch(CLAUDE_API_URL, {
@@ -667,18 +786,29 @@
                             },
                             {
                                 type: 'text',
-                                text: `Read this filament label. Extract EXACT information in JSON:
+                                text: `FAST & ACCURATE: Is this BOX or SPOOL? Extract data FAST.
+
+Unopened box = sealed packaging, product info label
+Opened spool = loose spool with sticker label
+
+DOT MATRIX on spools:
+- "0" (zero) = diagonal slash through it
+- "O" (letter) = no slash
+- Serial: exactly 13 chars, 4th char is 'M'
+- Format: XXX M XXXXXXXXX (example: 123M456789012)
+
+Extract JSON:
 {
+    "type": "box or spool",
     "brand": "brand name",
-    "material": "PLA|PLA+|PETG|ABS|TPU|Nylon|Other",
-    "color": "color description",
-    "weight": "number (grams)",
-    "serial": "13-char code or null",
-    "is_unopened_box": true/false,
+    "material": "PLA|PLA+|PETG|ABS|TPU|Nylon",
+    "color": "color",
+    "weight": "number grams",
+    "serial": "13-char M-code or barcode",
     "confidence": "high|medium|low"
 }
 
-Return ONLY JSON, no markdown.`
+NO MARKDOWN. JSON ONLY.`
                             }
                         ]
                     }]
@@ -688,52 +818,50 @@ Return ONLY JSON, no markdown.`
             const data = await response.json();
             if (!response.ok) throw new Error(data.error?.message);
             
-            let jsonStr = data.content[0].text;
+            let jsonStr = data.content[0].text.trim();
             if (jsonStr.includes('```')) {
                 jsonStr = jsonStr.split('```')[1] || jsonStr.split('```')[0];
             }
             
-            const extracted = JSON.parse(jsonStr.trim());
+            const extracted = JSON.parse(jsonStr);
             
-            if (extracted.brand) document.getElementById('formBrand').value = extracted.brand;
-            if (extracted.material) document.getElementById('formMaterial').value = extracted.material;
-            if (extracted.color) document.getElementById('formColor').value = extracted.color;
-            if (extracted.weight) document.getElementById('formWeight').value = extracted.weight;
-            if (extracted.serial) document.getElementById('formSerial').value = extracted.serial;
+            closeCamera();
             
-            const type = extracted.is_unopened_box ? 'box' : 'spool';
-            document.getElementById('formType').value = type;
+            document.getElementById('formType').value = extracted.type;
             updateFormForType();
             
-            const badge = `✓ ${extracted.confidence}`;
-            if (extracted.brand) document.getElementById('aiBrand').textContent = badge;
-            if (extracted.material) document.getElementById('aiMaterial').textContent = badge;
-            if (extracted.color) document.getElementById('aiColor').textContent = badge;
+            if (extracted.brand) {
+                document.getElementById('formBrand').value = extracted.brand;
+                document.getElementById('aiBrand').textContent = `✓ ${extracted.confidence}`;
+            }
+            if (extracted.material) {
+                document.getElementById('formMaterial').value = extracted.material;
+                document.getElementById('aiMaterial').textContent = `✓ ${extracted.confidence}`;
+            }
+            if (extracted.color) {
+                document.getElementById('formColor').value = extracted.color;
+                document.getElementById('aiColor').textContent = `✓ ${extracted.confidence}`;
+            }
+            if (extracted.weight) {
+                document.getElementById('formWeight').value = extracted.weight;
+            }
+            if (extracted.serial) {
+                document.getElementById('formSerial').value = extracted.serial;
+                document.getElementById('aiSerial').textContent = `✓ ${extracted.confidence}`;
+            }
             
-            showProcessing(false);
-            closeCamera();
             openAddModal();
-            showToast(`✅ ${extracted.brand} detected (${extracted.confidence})`, 'success');
+            showToast(`✅ ${extracted.type.toUpperCase()}: ${extracted.brand}`, 'success');
             
         } catch (err) {
-            showProcessing(false);
-            showToast('Analysis failed: ' + err.message, 'error');
+            closeCamera();
+            showToast('Scan failed: ' + err.message, 'error');
         }
     }
     
-    function showProcessing(show) {
-        document.getElementById('processing').classList.toggle('active', show);
-    }
-    
-    // Users
     function loadActiveUsers() {
         const ref = database.ref('users');
-        ref.on('value', (snapshot) => {
-            const users = [];
-            snapshot.forEach((child) => {
-                users.push({ name: child.val().name, lastSeen: child.val().lastSeen });
-            });
-        });
+        ref.on('value', (snapshot) => {});
     }
     
     function showActiveUsers() {
