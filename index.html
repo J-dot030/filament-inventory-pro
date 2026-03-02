@@ -7,7 +7,6 @@
     
     <script src="https://www.gstatic.com/firebasejs/11.1.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/11.1.0/firebase-database-compat.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@zxing/library@0.20.0"></script>
     
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
@@ -19,187 +18,252 @@
             --surface: #141414;
             --surface-hover: #1f1f1f;
             --accent: #FFD700;
-            --accent-dim: rgba(255, 215, 0, 0.2);
-            --border: #333333;
+            --accent-dim: rgba(255, 215, 0, 0.15);
+            --border: #2a2a2a;
             --text: #ffffff;
-            --text-dim: #888888;
+            --text-dim: #666666;
             --error: #FF4444;
             --success: #00FF88;
             --info: #4A9EFF;
         }
-        body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
-        body::before { content: ''; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: repeating-linear-gradient(0deg, rgba(0,0,0,0.15), rgba(0,0,0,0.15) 1px, transparent 1px, transparent 2px); pointer-events: none; z-index: 999; }
-        .container { max-width: 600px; margin: 0 auto; position: relative; padding-bottom: 120px; }
+        body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; overflow-x: hidden; }
         
-        header { background: var(--surface); border-bottom: 3px solid var(--accent); padding: 16px 20px; position: sticky; top: 0; z-index: 100; box-shadow: 0 8px 32px rgba(255, 215, 0, 0.15); }
-        .header-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
-        .logo-container { display: flex; align-items: center; gap: 12px; }
-        .logo-icon { width: 40px; height: 40px; background: linear-gradient(135deg, var(--accent) 0%, #FFA500 100%); border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 24px; box-shadow: 0 0 20px rgba(255, 215, 0, 0.4); }
-        .logo-text { font-family: 'Space Mono', monospace; font-size: 18px; font-weight: 700; color: var(--accent); }
-        .logo-badge { font-size: 8px; color: var(--success); font-weight: 700; letter-spacing: 2px; margin-top: -2px; }
-        .sync-status { display: flex; align-items: center; gap: 6px; font-size: 11px; color: var(--success); font-weight: 700; }
-        .sync-dot { width: 8px; height: 8px; background: var(--success); border-radius: 50%; animation: pulse 1.5s infinite; }
-        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+        .container { max-width: 600px; margin: 0 auto; position: relative; padding-bottom: 100px; }
         
+        /* HEADER */
+        header { background: var(--surface); border-bottom: 2px solid var(--accent); padding: 14px 20px; position: sticky; top: 0; z-index: 100; box-shadow: 0 4px 30px rgba(255,215,0,0.1); }
+        .header-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+        .logo-container { display: flex; align-items: center; gap: 10px; }
+        .logo-icon { width: 36px; height: 36px; background: linear-gradient(135deg, var(--accent), #FFA500); border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 20px; }
+        .logo-text { font-family: 'Space Mono', monospace; font-size: 16px; font-weight: 700; color: var(--accent); line-height: 1; }
+        .logo-sub { font-size: 8px; color: var(--success); font-weight: 700; letter-spacing: 2px; }
+        .sync-status { display: flex; align-items: center; gap: 6px; font-size: 10px; color: var(--success); font-weight: 700; }
+        .sync-dot { width: 7px; height: 7px; background: var(--success); border-radius: 50%; animation: pulse 1.5s infinite; }
+        @keyframes pulse { 0%,100%{opacity:1;} 50%{opacity:0.3;} }
         .user-bar { display: flex; justify-content: space-between; align-items: center; }
-        .user-info { font-family: 'Space Mono', monospace; font-size: 11px; color: var(--text-dim); display: flex; align-items: center; gap: 8px; }
-        .user-badge { background: var(--accent); color: var(--bg); padding: 3px 8px; border-radius: 12px; font-size: 10px; font-weight: 700; }
-        .header-btn { background: transparent; border: 1px solid var(--border); color: var(--text-dim); padding: 6px 12px; border-radius: 6px; font-size: 11px; cursor: pointer; transition: 0.2s; }
+        .user-info { font-family: 'Space Mono', monospace; font-size: 10px; color: var(--text-dim); display: flex; align-items: center; gap: 8px; }
+        .user-badge { background: var(--accent); color: var(--bg); padding: 2px 8px; border-radius: 10px; font-size: 9px; font-weight: 800; }
+        .header-btns { display: flex; gap: 6px; }
+        .header-btn { background: transparent; border: 1px solid var(--border); color: var(--text-dim); padding: 5px 10px; border-radius: 6px; font-size: 10px; cursor: pointer; transition: 0.2s; font-family: 'Space Mono', monospace; }
         .header-btn:hover { border-color: var(--accent); color: var(--accent); }
         
-        .stats { padding: 20px; display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; }
-        .stat-card { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 16px; border-left: 4px solid var(--accent); }
-        .stat-label { font-size: 9px; color: var(--text-dim); text-transform: uppercase; font-weight: 700; margin-bottom: 4px; }
-        .stat-value { font-family: 'Space Mono', monospace; font-size: 24px; font-weight: 700; color: var(--accent); }
+        /* STATS */
+        .stats { padding: 16px 20px 0; display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; }
+        .stat-card { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 14px; border-left: 3px solid var(--accent); }
+        .stat-label { font-size: 9px; color: var(--text-dim); text-transform: uppercase; font-weight: 700; margin-bottom: 4px; letter-spacing: 1px; }
+        .stat-value { font-family: 'Space Mono', monospace; font-size: 28px; font-weight: 700; color: var(--accent); line-height: 1; }
         
-        .tabs { display: flex; padding: 0 20px; gap: 8px; margin-bottom: 20px; }
-        .tab { flex: 1; padding: 12px; background: var(--surface); border: 1px solid var(--border); border-radius: 8px; text-align: center; font-weight: 700; font-size: 11px; cursor: pointer; color: var(--text-dim); text-transform: uppercase; transition: 0.2s; }
-        .tab:hover { border-color: var(--accent); }
+        /* TABS */
+        .tabs { display: flex; padding: 16px 20px 0; gap: 8px; }
+        .tab { flex: 1; padding: 10px; background: var(--surface); border: 1px solid var(--border); border-radius: 8px; text-align: center; font-weight: 700; font-size: 10px; cursor: pointer; color: var(--text-dim); text-transform: uppercase; transition: 0.2s; font-family: 'Space Mono', monospace; }
+        .tab:hover { border-color: var(--accent); color: var(--accent); }
         .tab.active { background: var(--accent-dim); color: var(--accent); border-color: var(--accent); }
         
-        .search { padding: 0 20px; margin-bottom: 24px; }
-        .search-input { width: 100%; background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 14px 16px; color: var(--text); font-size: 14px; outline: none; transition: 0.2s; }
-        .search-input:focus { border-color: var(--accent); box-shadow: 0 0 15px var(--accent-dim); }
+        /* SEARCH */
+        .search { padding: 14px 20px 0; }
+        .search-input { width: 100%; background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 12px 16px; color: var(--text); font-size: 14px; outline: none; transition: 0.2s; font-family: 'Inter', sans-serif; }
+        .search-input::placeholder { color: var(--text-dim); }
+        .search-input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-dim); }
         
-        .inventory { padding: 0 20px; }
-        .item { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 16px; display: grid; grid-template-columns: 60px 1fr 50px auto auto; gap: 12px; align-items: center; margin-bottom: 12px; transition: 0.2s; }
-        .item:hover { border-color: var(--accent); background: var(--surface-hover); }
-        .item-type { font-family: 'Space Mono', monospace; font-size: 9px; font-weight: 700; color: var(--bg); background: var(--accent); padding: 4px 8px; border-radius: 4px; text-align: center; }
-        .item-type.box { background: var(--info); }
-        .item-info { display: flex; flex-direction: column; }
-        .item-brand { font-weight: 700; font-size: 14px; margin-bottom: 2px; }
-        .item-meta { font-size: 10px; color: var(--text-dim); display: flex; gap: 8px; flex-wrap: wrap; }
-        .item-qty { font-family: 'Space Mono', monospace; font-size: 16px; font-weight: 700; color: var(--success); text-align: center; }
+        /* INVENTORY */
+        .inventory { padding: 14px 20px 0; }
+        .item { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 14px; display: grid; grid-template-columns: 52px 1fr auto auto; gap: 12px; align-items: center; margin-bottom: 10px; transition: 0.2s; }
+        .item:hover { border-color: rgba(255,215,0,0.3); background: var(--surface-hover); }
+        .item-badge { font-family: 'Space Mono', monospace; font-size: 8px; font-weight: 700; color: var(--bg); background: var(--accent); padding: 4px 6px; border-radius: 6px; text-align: center; line-height: 1.4; }
+        .item-badge.box-type { background: var(--info); }
+        .item-info .item-brand { font-weight: 700; font-size: 14px; margin-bottom: 3px; display: flex; align-items: center; gap: 6px; }
+        .item-info .item-meta { font-size: 10px; color: var(--text-dim); display: flex; gap: 8px; flex-wrap: wrap; }
+        .item-qty { font-family: 'Space Mono', monospace; font-size: 18px; font-weight: 700; color: var(--success); text-align: right; white-space: nowrap; }
         .item-actions { display: flex; gap: 6px; }
-        .action-btn { width: 32px; height: 32px; background: var(--surface-hover); border: 1px solid var(--border); border-radius: 6px; cursor: pointer; font-size: 14px; display: flex; align-items: center; justify-content: center; transition: 0.2s; }
-        .action-btn:hover { border-color: var(--accent); }
-        .action-btn.delete:hover { border-color: var(--error); color: var(--error); }
+        .action-btn { width: 32px; height: 32px; background: transparent; border: 1px solid var(--border); border-radius: 6px; cursor: pointer; font-size: 13px; display: flex; align-items: center; justify-content: center; transition: 0.2s; color: var(--text-dim); }
+        .action-btn:hover { border-color: var(--accent); color: var(--text); }
+        .action-btn.del:hover { border-color: var(--error); color: var(--error); }
         
-        .actions { position: fixed; bottom: 0; left: 50%; transform: translateX(-50%); width: 100%; max-width: 600px; background: var(--bg); border-top: 2px solid var(--accent); padding: 12px 20px; display: flex; gap: 10px; z-index: 50; }
-        .btn-main { flex: 2; padding: 14px; border-radius: 8px; border: none; background: linear-gradient(135deg, var(--accent) 0%, #FFA500 100%); color: var(--bg); font-weight: 800; font-size: 12px; cursor: pointer; text-transform: uppercase; font-family: 'Space Mono', monospace; transition: 0.2s; }
-        .btn-main:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(255, 215, 0, 0.4); }
+        /* AI BADGE */
+        .ai-tag { display: inline-flex; align-items: center; background: rgba(0,255,136,0.1); color: var(--success); padding: 2px 6px; border-radius: 4px; font-size: 8px; font-weight: 700; border: 1px solid rgba(0,255,136,0.25); font-family: 'Space Mono', monospace; }
+        
+        /* BOTTOM ACTIONS */
+        .actions { position: fixed; bottom: 0; left: 50%; transform: translateX(-50%); width: 100%; max-width: 600px; background: rgba(10,10,10,0.97); border-top: 2px solid var(--accent); padding: 12px 20px; display: flex; gap: 10px; z-index: 50; backdrop-filter: blur(10px); }
+        .btn-main { flex: 2; padding: 14px; border-radius: 8px; border: none; background: linear-gradient(135deg, var(--accent), #FFA500); color: var(--bg); font-weight: 800; font-size: 12px; cursor: pointer; text-transform: uppercase; font-family: 'Space Mono', monospace; transition: 0.2s; letter-spacing: 1px; }
+        .btn-main:hover { transform: translateY(-1px); box-shadow: 0 6px 20px rgba(255,215,0,0.35); }
+        .btn-main:active { transform: translateY(0); }
         .btn-secondary { flex: 1; padding: 14px; border-radius: 8px; border: 1px solid var(--border); background: transparent; color: var(--text-dim); font-weight: 700; font-size: 11px; cursor: pointer; text-transform: uppercase; font-family: 'Space Mono', monospace; transition: 0.2s; }
         .btn-secondary:hover { border-color: var(--accent); color: var(--accent); }
         
-        .camera { position: fixed; inset: 0; background: #000; z-index: 400; display: none; flex-direction: column; }
+        /* CAMERA */
+        .camera { position: fixed; inset: 0; background: #000; z-index: 400; display: none; flex-direction: column; align-items: center; justify-content: center; }
         .camera.active { display: flex; }
-        .camera-header { padding: 20px; display: flex; justify-content: space-between; position: absolute; width: 100%; z-index: 20; }
-        .camera-badge { background: var(--accent); color: var(--bg); padding: 8px 16px; border-radius: 6px; font-weight: 800; font-size: 12px; }
-        .camera-status { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: rgba(0,0,0,0.8); color: var(--accent); padding: 20px; border-radius: 8px; border: 2px solid var(--accent); text-align: center; font-family: 'Space Mono', monospace; z-index: 30; }
-        .camera-close { background: rgba(255, 215, 0, 0.1); border: 2px solid var(--accent); color: var(--accent); width: 44px; height: 44px; border-radius: 8px; font-size: 20px; cursor: pointer; transition: 0.2s; }
-        .camera-close:hover { background: var(--accent); color: var(--bg); }
-        #video { flex: 1; object-fit: cover; width: 100%; height: 100%; }
+        .camera-header { position: absolute; top: 0; left: 0; right: 0; padding: 20px; display: flex; justify-content: space-between; align-items: center; z-index: 10; background: linear-gradient(to bottom, rgba(0,0,0,0.8), transparent); }
+        .camera-title { font-family: 'Space Mono', monospace; color: var(--accent); font-weight: 700; font-size: 14px; }
+        .camera-close-btn { background: rgba(255,215,0,0.1); border: 2px solid var(--accent); color: var(--accent); width: 44px; height: 44px; border-radius: 8px; font-size: 22px; cursor: pointer; transition: 0.2s; display: flex; align-items: center; justify-content: center; }
+        .camera-close-btn:hover { background: var(--accent); color: var(--bg); }
+        #video { width: 100%; height: 100%; object-fit: cover; }
         #canvas { display: none; }
         
-        .modal { position: fixed; inset: 0; background: rgba(0, 0, 0, 0.9); z-index: 450; display: none; align-items: center; justify-content: center; padding: 20px; }
+        /* SCAN OVERLAY */
+        .scan-overlay { position: absolute; inset: 0; z-index: 5; pointer-events: none; }
+        .scan-frame { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 280px; height: 180px; border: 2px solid var(--accent); border-radius: 12px; box-shadow: 0 0 0 9999px rgba(0,0,0,0.5); }
+        .scan-line { position: absolute; left: 0; right: 0; height: 2px; background: linear-gradient(90deg, transparent, var(--accent), transparent); animation: scan 2s linear infinite; top: 0; }
+        @keyframes scan { 0%{top:0%;} 100%{top:100%;} }
+        .scan-corners { position: absolute; inset: -2px; }
+        .scan-corner { position: absolute; width: 20px; height: 20px; border-color: var(--accent); border-style: solid; }
+        .scan-corner.tl { top: 0; left: 0; border-width: 3px 0 0 3px; border-radius: 4px 0 0 0; }
+        .scan-corner.tr { top: 0; right: 0; border-width: 3px 3px 0 0; border-radius: 0 4px 0 0; }
+        .scan-corner.bl { bottom: 0; left: 0; border-width: 0 0 3px 3px; border-radius: 0 0 0 4px; }
+        .scan-corner.br { bottom: 0; right: 0; border-width: 0 3px 3px 0; border-radius: 0 0 4px 0; }
+        
+        .camera-status { position: absolute; bottom: 120px; left: 20px; right: 20px; z-index: 10; }
+        .camera-status-inner { background: rgba(0,0,0,0.85); border: 1px solid var(--accent); border-radius: 10px; padding: 14px 20px; text-align: center; font-family: 'Space Mono', monospace; }
+        .camera-msg { font-size: 12px; color: var(--accent); font-weight: 700; margin-bottom: 4px; }
+        .camera-sub { font-size: 10px; color: var(--text-dim); }
+        .camera-bottom { position: absolute; bottom: 30px; left: 0; right: 0; display: flex; justify-content: center; gap: 20px; z-index: 10; }
+        .capture-btn { background: var(--accent); color: var(--bg); border: none; border-radius: 50px; padding: 14px 30px; font-family: 'Space Mono', monospace; font-weight: 800; font-size: 12px; cursor: pointer; transition: 0.2s; display: flex; align-items: center; gap: 8px; }
+        .capture-btn:hover { transform: scale(1.05); box-shadow: 0 0 25px rgba(255,215,0,0.5); }
+        .capture-btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+        
+        /* MODAL */
+        .modal { position: fixed; inset: 0; background: rgba(0,0,0,0.88); z-index: 450; display: none; align-items: flex-end; justify-content: center; }
         .modal.open { display: flex; }
-        .modal-content { background: var(--surface); border: 2px solid var(--accent); border-radius: 12px; padding: 28px; width: 100%; max-width: 420px; max-height: 90vh; overflow-y: auto; }
-        .modal-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid var(--border); padding-bottom: 16px; margin-bottom: 20px; }
-        .modal-title { font-family: 'Space Mono', monospace; font-weight: 800; color: var(--accent); font-size: 16px; }
-        .modal-close { background: transparent; border: none; color: var(--accent); font-size: 24px; cursor: pointer; transition: 0.2s; }
-        .modal-close:hover { transform: rotate(90deg); }
+        .modal-content { background: var(--surface); border: 1px solid var(--border); border-top: 2px solid var(--accent); border-radius: 16px 16px 0 0; padding: 24px; width: 100%; max-width: 600px; max-height: 90vh; overflow-y: auto; animation: slide-up 0.3s ease; }
+        @keyframes slide-up { from{transform:translateY(100%);} to{transform:translateY(0);} }
+        .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+        .modal-title { font-family: 'Space Mono', monospace; font-weight: 800; color: var(--accent); font-size: 14px; letter-spacing: 1px; }
+        .modal-close { background: transparent; border: none; color: var(--text-dim); font-size: 22px; cursor: pointer; padding: 0 4px; transition: 0.2s; }
+        .modal-close:hover { color: var(--accent); transform: rotate(90deg); }
         
-        .form-group { margin-bottom: 16px; }
-        .form-label { display: block; font-size: 10px; font-weight: 700; color: var(--text-dim); text-transform: uppercase; margin-bottom: 8px; letter-spacing: 1px; }
-        .form-input, .form-select { width: 100%; background: var(--bg); border: 1px solid var(--border); border-radius: 8px; padding: 12px; color: var(--text); font-size: 14px; outline: none; font-family: 'Inter', sans-serif; transition: 0.2s; }
-        .form-input:focus, .form-select:focus { border-color: var(--accent); box-shadow: 0 0 15px var(--accent-dim); }
+        .form-group { margin-bottom: 14px; }
+        .form-label { display: block; font-size: 9px; font-weight: 700; color: var(--text-dim); text-transform: uppercase; margin-bottom: 6px; letter-spacing: 1px; font-family: 'Space Mono', monospace; }
+        .form-input, .form-select { width: 100%; background: var(--bg); border: 1px solid var(--border); border-radius: 8px; padding: 11px 14px; color: var(--text); font-size: 14px; outline: none; font-family: 'Inter', sans-serif; transition: 0.2s; appearance: none; }
+        .form-input:focus, .form-select:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-dim); }
+        .form-select option { background: var(--surface); color: var(--text); }
         
-        .ai-badge { display: inline-block; background: rgba(0, 255, 136, 0.15); color: var(--success); padding: 4px 8px; border-radius: 4px; font-size: 9px; font-weight: 700; text-transform: uppercase; border: 1px solid rgba(0, 255, 136, 0.3); }
+        .ai-indicator { display: inline-flex; align-items: center; gap: 4px; font-size: 9px; color: var(--success); font-family: 'Space Mono', monospace; margin-left: 6px; }
         
-        .toast { position: fixed; top: 20px; left: 50%; transform: translateX(-50%); background: var(--accent); color: var(--bg); padding: 14px 28px; border-radius: 8px; font-family: 'Space Mono', monospace; font-weight: 800; font-size: 12px; z-index: 600; display: none; text-align: center; box-shadow: 0 8px 25px rgba(255, 215, 0, 0.4); animation: slide-down 0.3s ease-out; }
-        @keyframes slide-down { from { transform: translateX(-50%) translateY(-100%); opacity: 0; } to { transform: translateX(-50%) translateY(0); opacity: 1; } }
-        .toast.error { background: var(--error); }
-        .toast.success { background: var(--success); color: var(--bg); }
+        .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
         
+        /* LOGIN */
         .login-screen { position: fixed; inset: 0; background: var(--bg); z-index: 500; display: flex; align-items: center; justify-content: center; padding: 20px; }
         .login-screen.hidden { display: none; }
-        .login-box { background: var(--surface); border: 2px solid var(--border); border-left: 4px solid var(--accent); border-radius: 12px; padding: 40px; width: 100%; max-width: 380px; }
-        .login-logo-big { display: flex; flex-direction: column; align-items: center; margin-bottom: 32px; }
-        .login-logo-icon { width: 72px; height: 72px; background: linear-gradient(135deg, var(--accent) 0%, #FFA500 100%); border-radius: 16px; display: flex; align-items: center; justify-content: center; font-size: 40px; box-shadow: 0 0 30px rgba(255, 215, 0, 0.4); margin-bottom: 20px; }
-        .login-logo-text { font-family: 'Space Mono', monospace; font-size: 26px; font-weight: 800; color: var(--accent); }
-        .login-logo-sub { font-size: 11px; color: var(--text-dim); font-weight: 600; letter-spacing: 3px; margin-top: 6px; }
+        .login-box { background: var(--surface); border: 1px solid var(--border); border-top: 3px solid var(--accent); border-radius: 16px; padding: 40px 32px; width: 100%; max-width: 360px; }
+        .login-logo { display: flex; flex-direction: column; align-items: center; margin-bottom: 36px; gap: 12px; }
+        .login-icon { width: 70px; height: 70px; background: linear-gradient(135deg, var(--accent), #FFA500); border-radius: 16px; display: flex; align-items: center; justify-content: center; font-size: 38px; box-shadow: 0 0 40px rgba(255,215,0,0.3); }
+        .login-name { font-family: 'Space Mono', monospace; font-size: 24px; font-weight: 800; color: var(--accent); }
+        .login-tagline { font-size: 10px; color: var(--text-dim); letter-spacing: 3px; text-transform: uppercase; }
         
-        .empty-state { text-align: center; padding: 60px 20px; color: var(--text-dim); }
-        .empty-icon { font-size: 48px; margin-bottom: 16px; }
-        .empty-title { font-size: 16px; font-weight: 700; color: var(--text); margin-bottom: 8px; }
+        /* EMPTY STATE */
+        .empty-state { text-align: center; padding: 50px 20px; color: var(--text-dim); }
+        .empty-icon { font-size: 44px; margin-bottom: 14px; opacity: 0.5; }
+        .empty-title { font-size: 15px; font-weight: 600; color: var(--text); margin-bottom: 6px; }
+        .empty-sub { font-size: 12px; }
         
-        .users-list { max-height: 300px; overflow-y: auto; }
-        .user-item { background: var(--surface-hover); border: 1px solid var(--border); border-radius: 6px; padding: 12px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; }
-        .user-item-info { display: flex; flex-direction: column; }
-        .user-item-name { font-weight: 700; font-size: 13px; }
-        .user-item-time { font-size: 10px; color: var(--text-dim); }
-        .user-online { background: var(--success); width: 8px; height: 8px; border-radius: 50%; }
+        /* TOAST */
+        .toast { position: fixed; top: 16px; left: 50%; transform: translateX(-50%) translateY(-100px); background: var(--surface); color: var(--text); padding: 12px 24px; border-radius: 10px; font-family: 'Space Mono', monospace; font-weight: 700; font-size: 12px; z-index: 600; transition: transform 0.3s ease; border: 1px solid var(--border); box-shadow: 0 8px 30px rgba(0,0,0,0.5); white-space: nowrap; max-width: 90vw; text-align: center; }
+        .toast.show { transform: translateX(-50%) translateY(0); }
+        .toast.success { border-color: var(--success); color: var(--success); }
+        .toast.error { border-color: var(--error); color: var(--error); }
+        .toast.info { border-color: var(--accent); color: var(--accent); }
+        
+        /* SCANNING INDICATOR */
+        .scanning-spinner { display: inline-block; width: 14px; height: 14px; border: 2px solid rgba(255,215,0,0.3); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.8s linear infinite; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        
+        /* PROGRESS BAR */
+        .progress-bar { width: 100%; height: 4px; background: var(--border); border-radius: 2px; overflow: hidden; margin-top: 8px; }
+        .progress-fill { height: 100%; background: linear-gradient(90deg, var(--accent), var(--success)); transition: width 0.3s; }
     </style>
 </head>
 <body>
 
-<!-- CAMERA WITH DUAL SCANNER -->
+<!-- CAMERA UI -->
 <div class="camera" id="camera">
     <div class="camera-header">
-        <div class="camera-badge" id="cameraBadge">📷 DUAL SCAN</div>
-        <button class="camera-close" onclick="closeCamera()">×</button>
+        <div class="camera-title">📷 DUAL-SCAN ENGINE</div>
+        <button class="camera-close-btn" onclick="closeCamera()">✕</button>
     </div>
-    <video id="video" autoplay playsinline></video>
-    <div class="camera-status" id="cameraStatus">
-        <div id="cameraMsg">Initializing dual scanner...</div>
-    </div>
+    
+    <video id="video" autoplay playsinline muted></video>
     <canvas id="canvas"></canvas>
+    
+    <div class="scan-overlay">
+        <div class="scan-frame">
+            <div class="scan-line"></div>
+            <div class="scan-corners">
+                <div class="scan-corner tl"></div>
+                <div class="scan-corner tr"></div>
+                <div class="scan-corner bl"></div>
+                <div class="scan-corner br"></div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="camera-status">
+        <div class="camera-status-inner">
+            <div class="camera-msg" id="cameraMsg">
+                <span class="scanning-spinner"></span> Initializing camera...
+            </div>
+            <div class="camera-sub" id="cameraSub">Point at barcode or spool label</div>
+        </div>
+    </div>
+    
+    <div class="camera-bottom">
+        <button class="capture-btn" id="captureBtn" onclick="manualCapture()" disabled>
+            📸 CAPTURE & ANALYZE
+        </button>
+    </div>
 </div>
 
 <!-- LOGIN SCREEN -->
 <div class="login-screen" id="loginScreen">
     <div class="login-box">
-        <div class="login-logo-big">
-            <div class="login-logo-icon">📦</div>
-            <div class="login-logo-text">SPOOLV</div>
-            <div class="login-logo-sub">VAULT</div>
+        <div class="login-logo">
+            <div class="login-icon">🧵</div>
+            <div class="login-name">SPOOLVAULT</div>
+            <div class="login-tagline">Lindner Team Inventory</div>
         </div>
-        
-        <form onsubmit="handleLogin(event)">
-            <div class="form-group">
-                <label class="form-label">Lindner Team</label>
-                <select id="loginUsername" class="form-select" required>
-                    <option value="">Select name...</option>
-                    <option value="Benjamin">Benjamin</option>
-                    <option value="Christian">Christian</option>
-                    <option value="Rahul">Rahul</option>
-                </select>
-            </div>
-            <button type="submit" class="btn-main" style="width: 100%;">LOGIN</button>
-        </form>
+        <div class="form-group">
+            <label class="form-label">Team Member</label>
+            <select id="loginUsername" class="form-select">
+                <option value="">Select name...</option>
+                <option value="Benjamin">Benjamin</option>
+                <option value="Christian">Christian</option>
+                <option value="Rahul">Rahul</option>
+            </select>
+        </div>
+        <button class="btn-main" style="width:100%; margin-top:8px;" onclick="handleLogin()">ENTER VAULT</button>
     </div>
 </div>
 
 <!-- MAIN APP -->
-<div class="container" id="mainApp" style="display: none;">
+<div class="container" id="mainApp" style="display:none;">
     <header>
         <div class="header-row">
             <div class="logo-container">
-                <div class="logo-icon">📦</div>
+                <div class="logo-icon">🧵</div>
                 <div>
-                    <div class="logo-text">SPOOLV</div>
-                    <div class="logo-badge">LIVE SYNC</div>
+                    <div class="logo-text">SPOOLVAULT</div>
+                    <div class="logo-sub">LIVE SYNC</div>
                 </div>
             </div>
             <div class="sync-status">
                 <div class="sync-dot"></div>
-                <span>CONNECTED</span>
+                <span id="syncText">CONNECTED</span>
             </div>
         </div>
-        
         <div class="user-bar">
             <div class="user-info">
-                👤 <span id="userDisplay">User</span>
-                <span class="user-badge" id="activeCount">0</span>
+                👤 <span id="userDisplay">—</span>
+                <span class="user-badge" id="totalCount">0</span>
             </div>
-            <button class="header-btn" onclick="showApiSettings()">🔑 API</button>
-            <button class="header-btn" onclick="logout()">Logout</button>
+            <div class="header-btns">
+                <button class="header-btn" onclick="showApiModal()">🔑 API</button>
+                <button class="header-btn" onclick="logout()">↩ OUT</button>
+            </div>
         </div>
     </header>
     
     <div class="stats">
         <div class="stat-card">
-            <div class="stat-label">Unopened</div>
+            <div class="stat-label">Boxes</div>
             <div class="stat-value" id="statBoxes">0</div>
         </div>
         <div class="stat-card">
@@ -213,117 +277,116 @@
     </div>
     
     <div class="tabs">
-        <button class="tab active" onclick="switchTab('inventory')">📋 All</button>
-        <button class="tab" onclick="switchTab('boxes')">📦 Boxes</button>
-        <button class="tab" onclick="switchTab('spools')">🔴 Spools</button>
+        <button class="tab active" id="tab-all" onclick="switchTab('all')">All</button>
+        <button class="tab" id="tab-boxes" onclick="switchTab('boxes')">📦 Boxes</button>
+        <button class="tab" id="tab-spools" onclick="switchTab('spools')">🔴 Spools</button>
     </div>
     
     <div class="search">
-        <input type="text" class="search-input" id="searchInput" placeholder="Search brand, color, serial..." oninput="filterInventory()">
+        <input type="text" class="search-input" id="searchInput" placeholder="🔍  Search brand, color, material, serial..." oninput="renderInventory()">
     </div>
     
     <div class="inventory" id="inventoryView">
         <div class="empty-state">
             <div class="empty-icon">📭</div>
-            <div class="empty-title">No Inventory</div>
+            <div class="empty-title">Vault is empty</div>
+            <div class="empty-sub">Scan or add filament to get started</div>
         </div>
     </div>
 </div>
 
-<!-- ACTIONS -->
-<div class="actions" id="actions" style="display: none;">
+<!-- ACTIONS BAR -->
+<div class="actions" id="actions" style="display:none;">
     <button class="btn-main" onclick="openCamera()">📷 SCAN</button>
-    <button class="btn-secondary" onclick="openAddModal()">➕ ADD</button>
-    <button class="btn-secondary" onclick="openDeleteModal()">🗑️</button>
+    <button class="btn-secondary" onclick="openAddModal()">＋ ADD</button>
+    <button class="btn-secondary" onclick="openDeleteModal()">🗑</button>
 </div>
 
-<!-- API SETTINGS MODAL -->
+<!-- API MODAL -->
 <div class="modal" id="apiModal">
     <div class="modal-content">
         <div class="modal-header">
-            <div class="modal-title">API SETTINGS</div>
-            <button class="modal-close" onclick="closeApiModal()">×</button>
+            <div class="modal-title">🔑 CLAUDE API KEY</div>
+            <button class="modal-close" onclick="closeModal('apiModal')">✕</button>
         </div>
-        
-        <form onsubmit="handleApiSettings(event)">
-            <div class="form-group">
-                <label class="form-label">Claude API Key</label>
-                <input type="password" id="claudeApiKey" class="form-input" placeholder="sk-ant-api03-..." required>
-            </div>
-            
-            <button type="submit" class="btn-main" style="width: 100%;">SAVE API KEY</button>
-        </form>
+        <div class="form-group">
+            <label class="form-label">API Key (stored locally)</label>
+            <input type="password" id="apiKeyInput" class="form-input" placeholder="sk-ant-api03-...">
+        </div>
+        <div style="font-size:11px; color:var(--text-dim); margin-bottom:16px;">Required for AI label scanning. Never sent to any server except Anthropic.</div>
+        <button class="btn-main" style="width:100%;" onclick="saveApiKey()">SAVE KEY</button>
     </div>
 </div>
 
-<!-- ADD MODAL -->
+<!-- ADD / EDIT MODAL -->
 <div class="modal" id="addModal">
     <div class="modal-content">
         <div class="modal-header">
-            <div class="modal-title">ADD ITEM</div>
-            <button class="modal-close" onclick="closeAddModal()">×</button>
+            <div class="modal-title" id="addModalTitle">ADD ITEM</div>
+            <button class="modal-close" onclick="closeModal('addModal')">✕</button>
         </div>
         
-        <form onsubmit="handleAddItem(event)">
+        <div class="form-group">
+            <label class="form-label">Type</label>
+            <select id="formType" class="form-select" onchange="updateFormForType()">
+                <option value="">Select type...</option>
+                <option value="box">📦 Unopened Box</option>
+                <option value="spool">🔴 Opened Spool</option>
+            </select>
+        </div>
+        
+        <div class="form-row">
             <div class="form-group">
-                <label class="form-label">Type</label>
-                <select id="formType" class="form-select" onchange="updateFormForType()" required>
+                <label class="form-label">Brand <span id="aiBrand" class="ai-indicator"></span></label>
+                <input type="text" id="formBrand" class="form-input" placeholder="Prusament...">
+            </div>
+            <div class="form-group">
+                <label class="form-label">Material <span id="aiMaterial" class="ai-indicator"></span></label>
+                <select id="formMaterial" class="form-select">
                     <option value="">Select...</option>
-                    <option value="box">📦 Unopened Box</option>
-                    <option value="spool">🔴 Opened Spool</option>
+                    <option>PLA</option><option>PLA+</option><option>PETG</option>
+                    <option>ABS</option><option>TPU</option><option>Nylon</option>
+                    <option>ASA</option><option>PC</option>
                 </select>
             </div>
-            
+        </div>
+        
+        <div class="form-row">
             <div class="form-group">
-                <label class="form-label">Brand <span class="ai-badge" id="aiBrand"></span></label>
-                <input type="text" id="formBrand" class="form-input" placeholder="Prusament..." required>
+                <label class="form-label">Color <span id="aiColor" class="ai-indicator"></span></label>
+                <input type="text" id="formColor" class="form-input" placeholder="Jet Black...">
             </div>
-            
-            <div class="form-group">
-                <label class="form-label">Material <span class="ai-badge" id="aiMaterial"></span></label>
-                <select id="formMaterial" class="form-select" required>
-                    <option value="">Select...</option>
-                    <option value="PLA">PLA</option>
-                    <option value="PLA+">PLA+</option>
-                    <option value="PETG">PETG</option>
-                    <option value="ABS">ABS</option>
-                    <option value="TPU">TPU</option>
-                    <option value="Nylon">Nylon</option>
-                </select>
-            </div>
-            
-            <div class="form-group">
-                <label class="form-label">Color <span class="ai-badge" id="aiColor"></span></label>
-                <input type="text" id="formColor" class="form-input" placeholder="Red..." required>
-            </div>
-            
-            <div class="form-group">
-                <label class="form-label">Serial/Barcode <span class="ai-badge" id="aiSerial"></span></label>
-                <input type="text" id="formSerial" class="form-input" placeholder="13-char or barcode">
-            </div>
-            
             <div class="form-group">
                 <label class="form-label">Weight (g)</label>
-                <input type="number" id="formWeight" class="form-input" placeholder="1000" required>
+                <input type="number" id="formWeight" class="form-input" placeholder="1000">
             </div>
-            
-            <div class="form-group" id="diameterGroup">
+        </div>
+        
+        <div class="form-group">
+            <label class="form-label">Serial / Barcode <span id="aiSerial" class="ai-indicator"></span></label>
+            <input type="text" id="formSerial" class="form-input" placeholder="13-char (XXXMXXXXXXXXX) or barcode...">
+        </div>
+        
+        <div class="form-row" id="spoolExtras" style="display:none;">
+            <div class="form-group">
                 <label class="form-label">Diameter (mm)</label>
                 <input type="number" id="formDiameter" class="form-input" placeholder="1.75" step="0.01">
             </div>
-            
-            <div class="form-group" id="remainingGroup" style="display: none;">
+            <div class="form-group">
                 <label class="form-label">Remaining %</label>
                 <input type="number" id="formRemaining" class="form-input" placeholder="100" min="0" max="100" value="100">
             </div>
-            
-            <div class="form-group" id="quantityGroup" style="display: none;">
-                <label class="form-label">Batch Quantity</label>
-                <input type="number" id="formQuantity" class="form-input" placeholder="How many boxes?" min="1" value="1">
-            </div>
-            
-            <button type="submit" class="btn-main" style="width: 100%;">SAVE</button>
-        </form>
+        </div>
+        
+        <div class="form-group" id="batchGroup" style="display:none;">
+            <label class="form-label">Batch Quantity</label>
+            <input type="number" id="formQuantity" class="form-input" placeholder="1" min="1" value="1">
+            <div style="font-size:10px; color:var(--text-dim); margin-top:4px;">Will create multiple entries with sub-IDs (-01, -02...)</div>
+        </div>
+        
+        <input type="hidden" id="editingId" value="">
+        
+        <button class="btn-main" style="width:100%; margin-top:6px;" onclick="handleSave()">SAVE TO VAULT</button>
     </div>
 </div>
 
@@ -331,10 +394,10 @@
 <div class="modal" id="deleteModal">
     <div class="modal-content">
         <div class="modal-header">
-            <div class="modal-title">DELETE ITEM</div>
-            <button class="modal-close" onclick="closeDeleteModal()">×</button>
+            <div class="modal-title">🗑 DELETE ITEMS</div>
+            <button class="modal-close" onclick="closeModal('deleteModal')">✕</button>
         </div>
-        <div id="deleteList" style="max-height: 400px; overflow-y: auto;"></div>
+        <div id="deleteList" style="max-height:350px; overflow-y:auto;"></div>
     </div>
 </div>
 
@@ -342,619 +405,550 @@
 <div class="toast" id="toast"></div>
 
 <script>
-    // Firebase Config (HARDCODED)
-    const firebaseConfig = {
-        apiKey: "AIzaSyAvj9S0YpN3kXD860d4kCZ6VvVZoQnAYJU",
-        authDomain: "inventory-90afa.firebaseapp.com",
-        projectId: "inventory-90afa",
-        storageBucket: "inventory-90afa.firebasestorage.app",
-        messagingSenderId: "783579490124",
-        appId: "1:783579490124:web:5392bc2ac0a813a37811e9"
+// ═══════════════════════════════════════
+// FIREBASE CONFIG
+// ═══════════════════════════════════════
+const firebaseConfig = {
+    apiKey: "AIzaSyAvj9S0YpN3kXD860d4kCZ6VvVZoQnAYJU",
+    authDomain: "inventory-90afa.firebaseapp.com",
+    databaseURL: "https://inventory-90afa-default-rtdb.firebaseio.com",
+    projectId: "inventory-90afa",
+    storageBucket: "inventory-90afa.firebasestorage.app",
+    messagingSenderId: "783579490124",
+    appId: "1:783579490124:web:5392bc2ac0a813a37811e9"
+};
+
+firebase.initializeApp(firebaseConfig);
+const db = firebase.database();
+
+// ═══════════════════════════════════════
+// STATE
+// ═══════════════════════════════════════
+let currentUser = null;
+let inventory = [];
+let currentTab = 'all';
+let cameraStream = null;
+let barcodeInterval = null;
+let CLAUDE_API_KEY = localStorage.getItem('sv_claude_key') || '';
+
+// ═══════════════════════════════════════
+// LOGIN / LOGOUT
+// ═══════════════════════════════════════
+function handleLogin() {
+    const name = document.getElementById('loginUsername').value;
+    if (!name) { showToast('Select your name', 'error'); return; }
+    
+    currentUser = { name, uid: name.toLowerCase() };
+    db.ref(`users/${currentUser.uid}`).set({ name, lastSeen: Date.now(), status: 'online' });
+    
+    document.getElementById('loginScreen').classList.add('hidden');
+    document.getElementById('mainApp').style.display = 'block';
+    document.getElementById('actions').style.display = 'flex';
+    document.getElementById('userDisplay').textContent = name;
+    
+    loadInventory();
+    showToast(`Welcome back, ${name}!`, 'success');
+}
+
+function logout() {
+    if (currentUser) db.ref(`users/${currentUser.uid}`).remove();
+    currentUser = null;
+    inventory = [];
+    document.getElementById('loginScreen').classList.remove('hidden');
+    document.getElementById('mainApp').style.display = 'none';
+    document.getElementById('actions').style.display = 'none';
+    showToast('Logged out', 'info');
+}
+
+// ═══════════════════════════════════════
+// FIREBASE INVENTORY
+// ═══════════════════════════════════════
+function loadInventory() {
+    db.ref('inventory').on('value', snap => {
+        inventory = [];
+        snap.forEach(child => inventory.push({ id: child.key, ...child.val() }));
+        inventory.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+        renderInventory();
+        updateStats();
+    });
+}
+
+function saveItem(id, data) {
+    return db.ref(`inventory/${id}`).set(data);
+}
+
+function removeItem(id) {
+    return db.ref(`inventory/${id}`).remove();
+}
+
+// ═══════════════════════════════════════
+// RENDER
+// ═══════════════════════════════════════
+function renderInventory() {
+    const container = document.getElementById('inventoryView');
+    const search = document.getElementById('searchInput').value.toLowerCase();
+    
+    let filtered = [...inventory];
+    if (currentTab === 'boxes') filtered = filtered.filter(i => i.type === 'box');
+    if (currentTab === 'spools') filtered = filtered.filter(i => i.type === 'spool');
+    if (search) {
+        filtered = filtered.filter(i =>
+            `${i.brand} ${i.color} ${i.material} ${i.serial || ''}`.toLowerCase().includes(search)
+        );
+    }
+    
+    if (filtered.length === 0) {
+        container.innerHTML = `<div class="empty-state">
+            <div class="empty-icon">📭</div>
+            <div class="empty-title">No items found</div>
+            <div class="empty-sub">${search ? 'Try a different search' : 'Scan or add items'}</div>
+        </div>`;
+        return;
+    }
+    
+    container.innerHTML = filtered.map(item => {
+        const isBox = item.type === 'box';
+        const qtyDisplay = isBox
+            ? `${item.quantity || 1}<span style="font-size:10px;color:var(--text-dim);"> box</span>`
+            : `${item.remaining ?? 100}<span style="font-size:10px;color:var(--text-dim);">%</span>`;
+        
+        return `<div class="item">
+            <div class="item-badge ${isBox ? 'box-type' : ''}">${isBox ? '📦\nBOX' : '🔴\nSPOOL'}</div>
+            <div class="item-info">
+                <div class="item-brand">
+                    ${esc(item.brand || '—')}
+                    ${item.aiDetected ? '<span class="ai-tag">AI</span>' : ''}
+                </div>
+                <div class="item-meta">
+                    <span>${esc(item.color || '—')}</span>
+                    <span>·</span>
+                    <span>${esc(item.material || '—')}</span>
+                    <span>·</span>
+                    <span>${item.weight || '?'}g</span>
+                    ${item.serial ? `<span>·</span><span style="font-family:'Space Mono',monospace;font-size:9px;">${esc(item.serial.substring(0,13))}</span>` : ''}
+                    ${isBox && item.diameter ? `<span>·</span><span>${item.diameter}mm</span>` : ''}
+                </div>
+            </div>
+            <div class="item-qty">${qtyDisplay}</div>
+            <div class="item-actions">
+                <button class="action-btn" onclick="openEditModal('${item.id}')">✏️</button>
+                <button class="action-btn del" onclick="confirmDelete('${item.id}')">🗑️</button>
+            </div>
+        </div>`;
+    }).join('');
+}
+
+function updateStats() {
+    const boxes = inventory.filter(i => i.type === 'box').length;
+    const spools = inventory.filter(i => i.type === 'spool').length;
+    const empty = inventory.filter(i => i.type === 'spool' && (i.remaining === 0 || i.remaining === '0')).length;
+    document.getElementById('statBoxes').textContent = boxes;
+    document.getElementById('statSpools').textContent = spools;
+    document.getElementById('statEmpty').textContent = empty;
+    document.getElementById('totalCount').textContent = boxes + spools;
+}
+
+function switchTab(tab) {
+    currentTab = tab;
+    ['all','boxes','spools'].forEach(t => {
+        document.getElementById(`tab-${t}`)?.classList.toggle('active', t === tab);
+    });
+    renderInventory();
+}
+
+function esc(str) {
+    return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+// ═══════════════════════════════════════
+// CAMERA & SCANNING
+// ═══════════════════════════════════════
+async function openCamera() {
+    const camera = document.getElementById('camera');
+    camera.classList.add('active');
+    
+    setCameraMsg('Requesting camera access...', 'Point at a barcode or spool label');
+    document.getElementById('captureBtn').disabled = true;
+    
+    try {
+        cameraStream = await navigator.mediaDevices.getUserMedia({
+            video: { facingMode: { ideal: 'environment' }, width: { ideal: 1920 }, height: { ideal: 1080 } }
+        });
+        
+        const video = document.getElementById('video');
+        video.srcObject = cameraStream;
+        
+        await new Promise(res => { video.onloadedmetadata = res; });
+        await video.play();
+        
+        document.getElementById('captureBtn').disabled = false;
+        setCameraMsg('📷 Camera ready!', 'Barcode auto-detect active • Or press Capture for AI analysis');
+        
+        startBarcodeScanning(video);
+        
+    } catch (err) {
+        setCameraMsg('❌ Camera denied', err.message);
+        showToast('Camera access denied: ' + err.message, 'error');
+    }
+}
+
+function closeCamera() {
+    if (barcodeInterval) { clearInterval(barcodeInterval); barcodeInterval = null; }
+    if (cameraStream) { cameraStream.getTracks().forEach(t => t.stop()); cameraStream = null; }
+    document.getElementById('camera').classList.remove('active');
+    document.getElementById('captureBtn').disabled = true;
+}
+
+function setCameraMsg(msg, sub) {
+    document.getElementById('cameraMsg').innerHTML = msg;
+    if (sub !== undefined) document.getElementById('cameraSub').textContent = sub;
+}
+
+// Barcode scanning using native BarcodeDetector API (modern browsers)
+function startBarcodeScanning(video) {
+    if (!('BarcodeDetector' in window)) {
+        setCameraMsg('📷 Ready — No barcode API', 'Press Capture for AI scanning');
+        return;
+    }
+    
+    const detector = new BarcodeDetector({ formats: ['ean_13','ean_8','code_128','code_39','upc_a','upc_e','qr_code','data_matrix'] });
+    
+    barcodeInterval = setInterval(async () => {
+        if (!cameraStream) return;
+        try {
+            const barcodes = await detector.detect(video);
+            if (barcodes.length > 0) {
+                const code = barcodes[0].rawValue;
+                clearInterval(barcodeInterval);
+                barcodeInterval = null;
+                closeCamera();
+                handleBarcodeResult(code);
+            }
+        } catch(e) {}
+    }, 500);
+}
+
+function handleBarcodeResult(code) {
+    setFormAi('formSerial', code, 'aiSerial', '✓ BARCODE');
+    document.getElementById('formType').value = 'box';
+    updateFormForType();
+    document.getElementById('addModalTitle').textContent = 'ADD BOX (Barcode Detected)';
+    openAddModal();
+    showToast('📦 Barcode: ' + code.substring(0, 16) + (code.length > 16 ? '...' : ''), 'success');
+}
+
+async function manualCapture() {
+    if (!CLAUDE_API_KEY) {
+        showToast('⚠ Add Claude API key in 🔑 API settings first', 'error');
+        return;
+    }
+    
+    const video = document.getElementById('video');
+    const canvas = document.getElementById('canvas');
+    
+    canvas.width = video.videoWidth || 1280;
+    canvas.height = video.videoHeight || 720;
+    
+    const ctx = canvas.getContext('2d');
+    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+    
+    const imageData = canvas.toDataURL('image/jpeg', 0.92);
+    
+    setCameraMsg('<span class="scanning-spinner"></span> Sending to Claude AI...', 'Analyzing label with vision model');
+    document.getElementById('captureBtn').disabled = true;
+    
+    if (barcodeInterval) { clearInterval(barcodeInterval); barcodeInterval = null; }
+    
+    await analyzeWithClaude(imageData);
+}
+
+async function analyzeWithClaude(imageData) {
+    try {
+        const base64 = imageData.split(',')[1];
+        
+        const prompt = `You are an expert at reading 3D printer filament labels, including Prusament dot-matrix printed labels.
+
+CRITICAL DOT-MATRIX READING RULES:
+- "0" (zero) has a DIAGONAL SLASH through it
+- "O" (letter O) has NO slash
+- "8" (eight) has TWO loops
+- Serial format: EXACTLY 13 characters where position 4 must be 'M'
+  Example: 123M456789012 (3 digits, then M, then 9 digits)
+- NEVER guess — if unclear, return null for that field
+
+TASK: Extract all visible data from this filament label/box.
+
+Respond with ONLY valid JSON, no markdown, no explanation:
+{
+  "type": "box" or "spool",
+  "brand": "brand name or null",
+  "material": "PLA" or "PLA+" or "PETG" or "ABS" or "TPU" or "Nylon" or "ASA" or "PC" or null,
+  "color": "color name or null",
+  "weight": number_in_grams or null,
+  "diameter": 1.75 or 2.85 or null,
+  "serial": "13-char code or barcode or null",
+  "confidence": "high" or "medium" or "low"
+}`;
+
+        const response = await fetch('https://api.anthropic.com/v1/messages', {
+            method: 'POST',
+            headers: {
+                'x-api-key': CLAUDE_API_KEY,
+                'anthropic-version': '2023-06-01',
+                'content-type': 'application/json',
+                'anthropic-dangerous-direct-browser-access': 'true'
+            },
+            body: JSON.stringify({
+                model: 'claude-opus-4-5',
+                max_tokens: 512,
+                messages: [{
+                    role: 'user',
+                    content: [
+                        { type: 'image', source: { type: 'base64', media_type: 'image/jpeg', data: base64 } },
+                        { type: 'text', text: prompt }
+                    ]
+                }]
+            })
+        });
+        
+        if (!response.ok) {
+            const err = await response.json();
+            throw new Error(err.error?.message || `HTTP ${response.status}`);
+        }
+        
+        const data = await response.json();
+        let raw = data.content?.find(b => b.type === 'text')?.text?.trim() || '';
+        
+        // Strip markdown if present
+        raw = raw.replace(/^```json\s*/i, '').replace(/^```\s*/i, '').replace(/\s*```$/i, '').trim();
+        
+        const result = JSON.parse(raw);
+        
+        closeCamera();
+        populateFormFromAI(result);
+        openAddModal();
+        showToast(`✅ AI detected: ${result.brand || '?'} ${result.material || ''} (${result.confidence})`, 'success');
+        
+    } catch (err) {
+        closeCamera();
+        document.getElementById('captureBtn').disabled = false;
+        showToast('AI scan failed: ' + err.message, 'error');
+        openAddModal(); // Open blank form as fallback
+    }
+}
+
+function populateFormFromAI(result) {
+    const conf = result.confidence || 'medium';
+    const confLabel = conf === 'high' ? '✓ HIGH' : conf === 'medium' ? '~ MED' : '? LOW';
+    
+    if (result.type) document.getElementById('formType').value = result.type;
+    updateFormForType();
+    
+    if (result.brand) setFormAi('formBrand', result.brand, 'aiBrand', confLabel);
+    if (result.material) {
+        document.getElementById('formMaterial').value = result.material;
+        document.getElementById('aiMaterial').innerHTML = `<span class="ai-tag">${confLabel}</span>`;
+    }
+    if (result.color) setFormAi('formColor', result.color, 'aiColor', confLabel);
+    if (result.weight) document.getElementById('formWeight').value = result.weight;
+    if (result.serial) setFormAi('formSerial', result.serial, 'aiSerial', confLabel);
+    if (result.diameter) document.getElementById('formDiameter').value = result.diameter;
+    
+    document.getElementById('addModalTitle').textContent = `AI SCAN — ${(result.type || 'item').toUpperCase()}`;
+}
+
+function setFormAi(inputId, value, badgeId, label) {
+    document.getElementById(inputId).value = value;
+    const badge = document.getElementById(badgeId);
+    if (badge) badge.innerHTML = `<span class="ai-tag">${label}</span>`;
+}
+
+// ═══════════════════════════════════════
+// ADD / EDIT FORM
+// ═══════════════════════════════════════
+function updateFormForType() {
+    const type = document.getElementById('formType').value;
+    document.getElementById('spoolExtras').style.display = type === 'spool' ? 'grid' : 'none';
+    document.getElementById('batchGroup').style.display = type === 'box' ? 'block' : 'none';
+}
+
+function clearForm() {
+    ['formBrand','formColor','formSerial','formWeight','formDiameter'].forEach(id => {
+        document.getElementById(id).value = '';
+    });
+    document.getElementById('formType').value = '';
+    document.getElementById('formMaterial').value = '';
+    document.getElementById('formRemaining').value = '100';
+    document.getElementById('formQuantity').value = '1';
+    document.getElementById('editingId').value = '';
+    ['aiBrand','aiMaterial','aiColor','aiSerial'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.innerHTML = '';
+    });
+    document.getElementById('addModalTitle').textContent = 'ADD ITEM';
+    updateFormForType();
+}
+
+function openAddModal() {
+    clearForm();
+    document.getElementById('addModal').classList.add('open');
+}
+
+function openEditModal(id) {
+    const item = inventory.find(i => i.id === id);
+    if (!item) return;
+    
+    clearForm();
+    document.getElementById('editingId').value = id;
+    document.getElementById('addModalTitle').textContent = 'EDIT ITEM';
+    document.getElementById('formType').value = item.type;
+    updateFormForType();
+    document.getElementById('formBrand').value = item.brand || '';
+    document.getElementById('formMaterial').value = item.material || '';
+    document.getElementById('formColor').value = item.color || '';
+    document.getElementById('formSerial').value = item.serial || '';
+    document.getElementById('formWeight').value = item.weight || '';
+    if (item.type === 'spool') {
+        document.getElementById('formDiameter').value = item.diameter || '';
+        document.getElementById('formRemaining').value = item.remaining ?? 100;
+    }
+    document.getElementById('addModal').classList.add('open');
+}
+
+function handleSave() {
+    const type = document.getElementById('formType').value;
+    const brand = document.getElementById('formBrand').value.trim();
+    const material = document.getElementById('formMaterial').value;
+    const color = document.getElementById('formColor').value.trim();
+    const serial = document.getElementById('formSerial').value.trim();
+    const weight = parseInt(document.getElementById('formWeight').value) || 0;
+    const editId = document.getElementById('editingId').value;
+    
+    if (!type) { showToast('Select item type', 'error'); return; }
+    if (!brand) { showToast('Enter brand name', 'error'); return; }
+    if (!material) { showToast('Select material', 'error'); return; }
+    if (!color) { showToast('Enter color', 'error'); return; }
+    
+    const base = {
+        type, brand, material, color, serial, weight,
+        createdBy: currentUser.name,
+        updatedAt: Date.now()
     };
     
-    // Claude API (USER INPUT - OPTIONAL ON LOGIN)
-    let CLAUDE_API_KEY = localStorage.getItem('CLAUDE_API_KEY') || '';
-    const CLAUDE_API_URL = "https://api.anthropic.com/v1/messages";
-    
-    let codeReader = null;
-    let scanActive = false;
-    let currentUser = null;
-    let inventory = [];
-    let currentTab = 'inventory';
-    let database = null;
-    
-    // Initialize Firebase
-    firebase.initializeApp(firebaseConfig);
-    database = firebase.database();
-    
-    function showApiSettings() {
-        document.getElementById('apiModal').classList.add('open');
-        document.getElementById('claudeApiKey').value = CLAUDE_API_KEY;
-    }
-    
-    function closeApiModal() {
-        document.getElementById('apiModal').classList.remove('open');
-    }
-    
-    function handleApiSettings(event) {
-        event.preventDefault();
-        CLAUDE_API_KEY = document.getElementById('claudeApiKey').value;
-        localStorage.setItem('CLAUDE_API_KEY', CLAUDE_API_KEY);
-        closeApiModal();
-        showToast('✅ Claude API Key saved', 'success');
-    }
-    
-    function handleLogin(event) {
-        event.preventDefault();
-        const username = document.getElementById('loginUsername').value;
-        const allowedUsers = ['Benjamin', 'Christian', 'Rahul'];
-        
-        if (!username || !allowedUsers.includes(username)) {
-            showToast('❌ Access Denied', 'error');
-            return;
+    if (editId) {
+        // Editing existing
+        const existing = inventory.find(i => i.id === editId) || {};
+        const updated = { ...existing, ...base };
+        if (type === 'spool') {
+            updated.diameter = parseFloat(document.getElementById('formDiameter').value) || 1.75;
+            updated.remaining = parseInt(document.getElementById('formRemaining').value) ?? 100;
         }
-        
-        currentUser = { name: username, uid: username.toLowerCase() };
-        
-        const userRef = database.ref(`users/${currentUser.uid}`);
-        userRef.set({
-            name: username,
-            lastSeen: new Date().toISOString(),
-            status: 'online'
+        saveItem(editId, updated).then(() => {
+            showToast('✅ Item updated', 'success');
+            closeModal('addModal');
         });
-        
-        document.getElementById('loginScreen').classList.add('hidden');
-        document.getElementById('mainApp').style.display = 'block';
-        document.getElementById('actions').style.display = 'flex';
-        document.getElementById('userDisplay').textContent = username;
-        
-        loadInventory();
-        showToast(`✅ Welcome ${username}!`, 'success');
-    }
-    
-    function logout() {
-        if (currentUser) {
-            database.ref(`users/${currentUser.uid}`).remove();
-        }
-        currentUser = null;
-        document.getElementById('loginScreen').classList.remove('hidden');
-        document.getElementById('mainApp').style.display = 'none';
-        document.getElementById('actions').style.display = 'none';
-        inventory = [];
-        showToast('Logged out', 'success');
-    }
-    
-    function loadInventory() {
-        const ref = database.ref('inventory');
-        ref.on('value', (snapshot) => {
-            inventory = [];
-            snapshot.forEach((child) => {
-                inventory.push({ id: child.key, ...child.val() });
+    } else {
+        // New item
+        if (type === 'box') {
+            const qty = Math.max(1, parseInt(document.getElementById('formQuantity').value) || 1);
+            const baseId = serial || Date.now().toString();
+            const saves = [];
+            for (let i = 1; i <= qty; i++) {
+                const id = qty > 1 ? `${baseId}-${String(i).padStart(2,'0')}` : baseId;
+                saves.push(saveItem(id, { ...base, quantity: 1, createdAt: Date.now() }));
+            }
+            Promise.all(saves).then(() => {
+                showToast(`✅ Added ${qty} box${qty > 1 ? 'es' : ''}`, 'success');
+                closeModal('addModal');
             });
-            renderInventory();
-            updateStats();
-        });
+        } else {
+            const id = serial || Date.now().toString();
+            const diameter = parseFloat(document.getElementById('formDiameter').value) || 1.75;
+            const remaining = parseInt(document.getElementById('formRemaining').value) ?? 100;
+            saveItem(id, { ...base, diameter, remaining, createdAt: Date.now() }).then(() => {
+                showToast('✅ Spool added', 'success');
+                closeModal('addModal');
+            });
+        }
     }
-    
-    function renderInventory() {
-        const container = document.getElementById('inventoryView');
-        const search = document.getElementById('searchInput').value.toLowerCase();
-        
-        let filtered = inventory;
-        
-        if (currentTab === 'boxes') {
-            filtered = filtered.filter(i => i.type === 'box');
-        } else if (currentTab === 'spools') {
-            filtered = filtered.filter(i => i.type === 'spool');
-        }
-        
-        filtered = filtered.filter(item => {
-            const text = `${item.brand} ${item.color} ${item.material} ${item.serial || ''}`.toLowerCase();
-            return text.includes(search);
-        });
-        
-        if (filtered.length === 0) {
-            container.innerHTML = '<div class="empty-state"><div class="empty-icon">📭</div><div class="empty-title">No items</div></div>';
-            return;
-        }
-        
-        container.innerHTML = filtered.map(item => `
-            <div class="item">
-                <div class="item-type ${item.type === 'box' ? 'box' : ''}">${item.type === 'box' ? '📦' : '🔴'}</div>
-                <div class="item-info">
-                    <div class="item-brand">${item.brand}${item.aiDetected ? '<span class="ai-badge">AI</span>' : ''}</div>
-                    <div class="item-meta">
-                        <span>${item.color}</span>
-                        <span>${item.material}</span>
-                        ${item.serial ? `<span>${item.serial.substring(0, 8)}</span>` : ''}
-                    </div>
-                </div>
-                <div class="item-qty">${item.type === 'box' ? item.quantity : item.remaining}${item.type === 'box' ? '📦' : '%'}</div>
-                <div class="item-actions">
-                    <button class="action-btn" onclick="editItem('${item.id}')">✏️</button>
-                    <button class="action-btn delete" onclick="deleteItem('${item.id}')">🗑️</button>
-                </div>
+}
+
+// ═══════════════════════════════════════
+// DELETE
+// ═══════════════════════════════════════
+function confirmDelete(id) {
+    const item = inventory.find(i => i.id === id);
+    if (!item) return;
+    if (confirm(`Delete ${item.brand} ${item.color} (${item.material})?`)) {
+        removeItem(id).then(() => showToast('Deleted', 'info'));
+    }
+}
+
+function openDeleteModal() {
+    const list = document.getElementById('deleteList');
+    if (inventory.length === 0) {
+        list.innerHTML = '<div style="text-align:center;padding:30px;color:var(--text-dim);">Vault is empty</div>';
+    } else {
+        list.innerHTML = inventory.map(item => `
+            <div style="background:var(--surface-hover);border:1px solid var(--border);border-radius:8px;padding:12px;margin-bottom:8px;cursor:pointer;transition:0.2s;" 
+                 onmouseover="this.style.borderColor='var(--error)'" 
+                 onmouseout="this.style.borderColor='var(--border)'" 
+                 onclick="removeItem('${item.id}').then(() => { showToast('Deleted','info'); loadDeleteList(); })">
+                <div style="font-weight:700;font-size:13px;">${item.type === 'box' ? '📦' : '🔴'} ${esc(item.brand)} — ${esc(item.color)}</div>
+                <div style="font-size:10px;color:var(--text-dim);margin-top:3px;">${esc(item.material)} · ${item.weight || '?'}g ${item.serial ? '· ' + item.serial.substring(0,13) : ''}</div>
             </div>
         `).join('');
     }
-    
-    function filterInventory() { renderInventory(); }
-    
-    function updateStats() {
-        const boxes = inventory.filter(i => i.type === 'box').length;
-        const spools = inventory.filter(i => i.type === 'spool').length;
-        const empty = inventory.filter(i => i.type === 'spool' && i.remaining === 0).length;
-        
-        document.getElementById('statBoxes').textContent = boxes;
-        document.getElementById('statSpools').textContent = spools;
-        document.getElementById('statEmpty').textContent = empty;
-        document.getElementById('activeCount').textContent = boxes + spools;
-    }
-    
-    function updateFormForType() {
-        const type = document.getElementById('formType').value;
-        if (type === 'box') {
-            document.getElementById('diameterGroup').style.display = 'none';
-            document.getElementById('remainingGroup').style.display = 'none';
-            document.getElementById('quantityGroup').style.display = 'block';
-        } else {
-            document.getElementById('diameterGroup').style.display = 'block';
-            document.getElementById('remainingGroup').style.display = 'block';
-            document.getElementById('quantityGroup').style.display = 'none';
-        }
-    }
-    
-    function openAddModal() {
-        document.getElementById('addModal').classList.add('open');
-        clearForm();
-    }
-    
-    function closeAddModal() {
-        document.getElementById('addModal').classList.remove('open');
-    }
-    
-    function clearForm() {
-        document.getElementById('formType').value = '';
-        document.getElementById('formBrand').value = '';
-        document.getElementById('formMaterial').value = '';
-        document.getElementById('formColor').value = '';
-        document.getElementById('formSerial').value = '';
-        document.getElementById('formWeight').value = '';
-        document.getElementById('formDiameter').value = '';
-        document.getElementById('formRemaining').value = '100';
-        document.getElementById('formQuantity').value = '1';
-        document.getElementById('aiBrand').textContent = '';
-        document.getElementById('aiMaterial').textContent = '';
-        document.getElementById('aiColor').textContent = '';
-        document.getElementById('aiSerial').textContent = '';
-    }
-    
-    function handleAddItem(event) {
-        event.preventDefault();
-        
-        const type = document.getElementById('formType').value;
-        const brand = document.getElementById('formBrand').value;
-        const material = document.getElementById('formMaterial').value;
-        const color = document.getElementById('formColor').value;
-        const serial = document.getElementById('formSerial').value;
-        const weight = parseInt(document.getElementById('formWeight').value);
-        
-        if (type === 'box') {
-            const quantity = parseInt(document.getElementById('formQuantity').value);
-            for (let i = 1; i <= quantity; i++) {
-                const id = `${serial}-${String(i).padStart(2, '0')}`;
-                database.ref(`inventory/${id}`).set({
-                    type: 'box',
-                    brand, material, color, serial, weight, quantity: 1,
-                    aiDetected: !!document.getElementById('aiBrand').textContent,
-                    createdAt: new Date().toISOString(),
-                    createdBy: currentUser.name
-                });
-            }
-            showToast(`✅ Added ${quantity} boxes`, 'success');
-        } else {
-            const id = Date.now().toString();
-            const diameter = parseFloat(document.getElementById('formDiameter').value);
-            const remaining = parseInt(document.getElementById('formRemaining').value);
-            
-            database.ref(`inventory/${id}`).set({
-                type: 'spool',
-                brand, material, color, serial, weight, diameter, remaining,
-                aiDetected: !!document.getElementById('aiBrand').textContent,
-                createdAt: new Date().toISOString(),
-                createdBy: currentUser.name
-            });
-            showToast('✅ Spool added', 'success');
-        }
-        
-        closeAddModal();
-    }
-    
-    function deleteItem(id) {
-        if (confirm('Delete this item?')) {
-            database.ref(`inventory/${id}`).remove();
-            showToast('Deleted', 'success');
-        }
-    }
-    
-    function editItem(id) {
-        const item = inventory.find(i => i.id === id);
-        if (!item) return;
-        
-        document.getElementById('formType').value = item.type;
-        updateFormForType();
-        document.getElementById('formBrand').value = item.brand;
-        document.getElementById('formMaterial').value = item.material;
-        document.getElementById('formColor').value = item.color;
-        document.getElementById('formSerial').value = item.serial || '';
-        document.getElementById('formWeight').value = item.weight;
-        if (item.type === 'spool') {
-            document.getElementById('formDiameter').value = item.diameter;
-            document.getElementById('formRemaining').value = item.remaining;
-        }
-        openAddModal();
-    }
-    
-    function openDeleteModal() {
-        const list = document.getElementById('deleteList');
-        if (inventory.length === 0) {
-            list.innerHTML = '<p style="color: var(--text-dim); text-align: center;">No items</p>';
-        } else {
-            list.innerHTML = inventory.map(item => `
-                <div style="background: var(--surface-hover); border: 1px solid var(--border); border-radius: 8px; padding: 12px; margin-bottom: 8px; cursor: pointer;" onclick="deleteItem('${item.id}')">
-                    <div style="font-weight: 700;">${item.type === 'box' ? '📦' : '🔴'} ${item.brand} - ${item.color}</div>
-                    <div style="font-size: 11px; color: var(--text-dim);">${item.material} • ${item.weight}g</div>
-                </div>
-            `).join('');
-        }
-        document.getElementById('deleteModal').classList.add('open');
-    }
-    
-    function closeDeleteModal() {
-        document.getElementById('deleteModal').classList.remove('open');
-    }
-    
-    function initBarcodeScan() {
-        if (!codeReader) {
-            const ZXing = window.ZXing;
-            codeReader = new ZXing.BrowserMultiFormatReader();
-        }
-    }
-    
-    async function openCamera() {
-        if (!CLAUDE_API_KEY) {
-            showToast('⚠️ Add Claude API Key in 🔑 API settings to enable AI scanning', 'error');
-            return;
-        }
-        
-        initBarcodeScan();
-        document.getElementById('camera').classList.add('active');
-        
-        try {
-            const stream = await navigator.mediaDevices.getUserMedia({
-                video: { facingMode: 'environment' }
-            });
-            const video = document.getElementById('video');
-            video.srcObject = stream;
-            
-            scanActive = true;
-            document.getElementById('cameraMsg').textContent = 'Detecting format...';
-            
-            startDualScanning(video);
-            
-        } catch (err) {
-            showToast('Camera access denied', 'error');
-        }
-    }
-    
-    function closeCamera() {
-        scanActive = false;
-        const video = document.getElementById('video');
-        if (video.srcObject) {
-            video.srcObject.getTracks().forEach(track => track.stop());
-        }
-        document.getElementById('camera').classList.remove('active');
-        
-        if (codeReader) {
-            codeReader.reset();
-        }
-    }
-    
-    async function startDualScanning(video) {
-        try {
-            const result = await codeReader.decodeFromVideoElement(video);
-            if (result && scanActive) {
-                document.getElementById('cameraMsg').textContent = '✅ Barcode found!';
-                handleBarcodeDetected(result.text);
-                return;
-            }
-        } catch (err) {}
-        
-        if (scanActive) {
-            document.getElementById('cameraMsg').textContent = 'Reading label...';
-            const canvas = document.getElementById('canvas');
-            const ctx = canvas.getContext('2d');
-            
-            canvas.width = video.videoWidth;
-            canvas.height = video.videoHeight;
-            ctx.drawImage(video, 0, 0);
-            
-            const imageData = canvas.toDataURL('image/jpeg', 0.95);
-            await analyzeWithClaude(imageData);
-        }
-    }
-    
-    function handleBarcodeDetected(barcode) {
-        closeCamera();
-        
-        document.getElementById('formType').value = 'box';
-        updateFormForType();
-        document.getElementById('formSerial').value = barcode;
-        document.getElementById('aiSerial').textContent = '✓ High';
-        
-        showToast(`✅ Box barcode: ${barcode.substring(0, 12)}...`, 'success');
-        openAddModal();
-    }
-    
-    async function analyzeWithClaude(imageData) {
-        try {
-            const base64Image = imageData.split(',')[1];
-            
-            const response = await fetch(CLAUDE_API_URL, {
-                method: 'POST',
-                headers: {
-                    'x-api-key': CLAUDE_API_KEY,
-                    'anthropic-version': '2023-06-01',
-                    'content-type': 'application/json'
-                },
-                body: JSON.stringify({
-                    model: 'claude-3-5-sonnet-20241022',
-                    max_tokens: 1024,
-                    messages: [{
-                        role: 'user',
-                        content: [
-                            {
-                                type: 'image',
-                                source: { type: 'base64', media_type: 'image/jpeg', data: base64Image }
-                            },
-                            {
-                                type: 'text',
-                                text: `FAST & ACCURATE: Is this BOX or SPOOL? Extract data FAST.
-
-Unopened box = sealed packaging, product info label
-Opened spool = loose spool with sticker label
-
-DOT MATRIX on spools:
-- "0" (zero) = diagonal slash through it
-- "O" (letter) = no slash
-- Serial: exactly 13 chars, 4th char is 'M'
-- Format: XXX M XXXXXXXXX (example: 123M456789012)
-
-Extract JSON:
-{
-    "type": "box or spool",
-    "brand": "brand name",
-    "material": "PLA|PLA+|PETG|ABS|TPU|Nylon",
-    "color": "color",
-    "weight": "number grams",
-    "serial": "13-char M-code or barcode",
-    "confidence": "high|medium|low"
+    document.getElementById('deleteModal').classList.add('open');
 }
 
-NO MARKDOWN. JSON ONLY.`
-                            }
-                        ]
-                    }]
-                })
-            });
-            
-            const data = await response.json();
-            if (!response.ok) throw new Error(data.error?.message);
-            
-            let jsonStr = data.content[0].text.trim();
-            if (jsonStr.includes('```')) {
-                jsonStr = jsonStr.split('```')[1] || jsonStr.split('```')[0];
-            }
-            
-            const extracted = JSON.parse(jsonStr);
-            
-            closeCamera();
-            
-            document.getElementById('formType').value = extracted.type;
-            updateFormForType();
-            
-            if (extracted.brand) {
-                document.getElementById('formBrand').value = extracted.brand;
-                document.getElementById('aiBrand').textContent = `✓ ${extracted.confidence}`;
-            }
-            if (extracted.material) {
-                document.getElementById('formMaterial').value = extracted.material;
-                document.getElementById('aiMaterial').textContent = `✓ ${extracted.confidence}`;
-            }
-            if (extracted.color) {
-                document.getElementById('formColor').value = extracted.color;
-                document.getElementById('aiColor').textContent = `✓ ${extracted.confidence}`;
-            }
-            if (extracted.weight) {
-                document.getElementById('formWeight').value = extracted.weight;
-            }
-            if (extracted.serial) {
-                document.getElementById('formSerial').value = extracted.serial;
-                document.getElementById('aiSerial').textContent = `✓ ${extracted.confidence}`;
-            }
-            
-            openAddModal();
-            showToast(`✅ ${extracted.type.toUpperCase()}: ${extracted.brand}`, 'success');
-            
-        } catch (err) {
-            closeCamera();
-            showToast('Scan failed: ' + err.message, 'error');
-        }
+function loadDeleteList() {
+    // Re-render delete list after deletion
+    if (document.getElementById('deleteModal').classList.contains('open')) {
+        openDeleteModal();
     }
-    
-    function switchTab(tab) {
-        currentTab = tab;
-        document.querySelectorAll('.tab').forEach(el => el.classList.remove('active'));
-        const tabs = document.querySelectorAll('.tab');
-        if (tab === 'inventory') tabs[0].classList.add('active');
-        else if (tab === 'boxes') tabs[1].classList.add('active');
-        else if (tab === 'spools') tabs[2].classList.add('active');
-        renderInventory();
-    }
-    
-    function showToast(message, type = 'info') {
-        const toast = document.getElementById('toast');
-        toast.textContent = message;
-        toast.className = 'toast ' + type;
-        toast.style.display = 'block';
-        setTimeout(() => toast.style.display = 'none', 3000);
-    }
-</script>
+}
 
+// ═══════════════════════════════════════
+// API MODAL
+// ═══════════════════════════════════════
+function showApiModal() {
+    document.getElementById('apiKeyInput').value = CLAUDE_API_KEY;
+    document.getElementById('apiModal').classList.add('open');
+}
+
+function saveApiKey() {
+    CLAUDE_API_KEY = document.getElementById('apiKeyInput').value.trim();
+    localStorage.setItem('sv_claude_key', CLAUDE_API_KEY);
+    closeModal('apiModal');
+    showToast('✅ API key saved', 'success');
+}
+
+// ═══════════════════════════════════════
+// MODAL HELPERS
+// ═══════════════════════════════════════
+function closeModal(id) {
+    document.getElementById(id).classList.remove('open');
+}
+
+// Close modals on backdrop click
+document.querySelectorAll('.modal').forEach(modal => {
+    modal.addEventListener('click', e => {
+        if (e.target === modal) modal.classList.remove('open');
+    });
+});
+
+// ═══════════════════════════════════════
+// TOAST
+// ═══════════════════════════════════════
+let toastTimer = null;
+function showToast(msg, type = 'info') {
+    const el = document.getElementById('toast');
+    el.textContent = msg;
+    el.className = `toast ${type} show`;
+    if (toastTimer) clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => el.classList.remove('show'), 3200);
+}
+</script>
 </body>
 </html>
-```
-
----
-
-## **SPOOLV VAULT — COMPLETE AGENDA & APPLICATION OVERVIEW**
-
-### **Project Purpose**
-SpoolVault is an **intelligent, automated inventory management system** specifically designed for tracking 3D printer filament spools and boxes. It eliminates manual data entry by combining AI vision analysis with real-time cloud synchronization, enabling the Lindner team to efficiently manage bulk inventory and active usage spools across multiple users.
-
----
-
-### **Core Objectives & Workflow**
-
-#### **1. Automated Asset Ingestion (Dual-Layer Scanning)**
-
-The app uses two complementary scanning methods to automatically log inventory without manual typing:
-
-**Barcode Scanning (Unopened Boxes):**
-- Uses ZXing library for real-time 1D barcode detection
-- Instantly decodes barcode and auto-populates serial field
-- Identifies physical state as "unopened box"
-- Batch add feature: scan once, specify quantity (e.g., 10 boxes), system generates unique sub-IDs
-
-**Claude Vision AI (Opened Spools):**
-- Captures label photo and sends to Claude API
-- AI reads dot-matrix printed labels with 100% accuracy
-- Differentiates "0" (with diagonal slash) from "O" (letter)
-- Extracts 13-character serial code: format `[3 digits][M][9 digits]` (e.g., `123M456789012`)
-- Auto-detects filament properties: brand, material (PLA/PETG/ABS/TPU/Nylon), color, weight, diameter
-- Confidence scoring: high/medium/low accuracy indicators
-- Fallback to manual entry if AI confidence is low
-
----
-
-#### **2. Dual-Mode Inventory Tracking**
-
-The app separates filament into two distinct physical states for organized workspace management:
-
-**Unopened Boxes (Stock Management):**
-- Tracks bulk inventory
-- Icon: 📦 Blue badge
-- Quantity field tracks number of boxes
-- Batch add: automatically generates unique sub-IDs (e.g., `BARCODE-01`, `BARCODE-02`)
-- Used for reorder planning and bulk tracking
-
-**Opened Spools (Active Usage):**
-- Tracks spools currently in use or stored
-- Icon: 🔴 Red badge
-- Includes diameter (1.75mm or 2.85mm standard)
-- Percentage remaining (0-100%)
-- 13-char serial code for traceability
-- Used for daily operations
-
----
-
-#### **3. Usage & Lifecycle Management**
-
-**Remaining Percentage Tracking:**
-- Users update spool percentage as filament is consumed
-- Manual edit option: click pencil icon to update remaining %
-- Tracks from 100% (full) to 0% (empty/exhausted)
-
-**Low Stock Alerts:**
-- Dashboard displays 3 key stats:
-  - Unopened boxes count
-  - Active spools count
-  - **Empty spools count** (remaining = 0%)
-- Team can visually see depletion rate and plan reorders
-- Search/filter identifies empty spools instantly for removal
-
-**Asset Deletion (Admin Functions):**
-- Delete icon (🗑️) in item cards
-- Bulk delete modal: search and select multiple spools for removal
-- Purges exhausted/dead assets from database
-- Permanent removal from Firebase
-
----
-
-#### **4. Real-Time Team Collaboration**
-
-**Firebase Realtime Database Integration:**
-- All inventory synced across Benjamin, Christian, and Rahul
-- When one user scans a new spool, it appears **instantly** on everyone else's screen without refresh
-- Changes propagate in <1 second
-- Persistent storage: data survives app close/reopen
-
-**Access Control & Presence:**
-- Restricted to 3 authorized team members only (whitelist)
-- Each user marked "online" with timestamp
-- Active users modal shows who is currently logged in
-- User presence auto-clears on logout
-
-**Search & Filter:**
-- Real-time search across: brand, color, material, serial code
-- Instant results as user types
-- Case-insensitive matching
-- Filters by type (all/boxes/spools)
-
----
-
-### **Technical Architecture**
-
-**Frontend Stack:**
-- HTML5/CSS3 (dark theme, responsive mobile-first design)
-- Vanilla JavaScript (no framework dependencies)
-- Single-file deployment (all in one `.html` file)
-
-**APIs & Services:**
-- **Claude Vision API** (Anthropic): AI label reading, $0.80/million tokens
-- **Firebase Realtime Database**: Cloud sync, 1GB free tier
-- **ZXing Barcode Library**: JavaScript barcode detection
-
-**Data Structure:**
-```
-users/
-  benjamin/
-    name: "Benjamin"
-    lastSeen: "2025-03-02T..."
-    status: "online"
-    
-inventory/
-  BARCODE-01/  (unopened box)
-    type: "box"
-    brand: "Prusament"
-    material: "PLA"
-    color: "Jet Black"
-    serial: "BARCODE"
-    weight: 1000
-    quantity: 1
-    aiDetected: false
-    createdAt: "ISO-8601"
-    createdBy: "Benjamin"
-    
-  1234567890/  (opened spool)
-    type: "spool"
-    brand: "MatterHackers"
-    material: "PETG"
-    color: "Navy Blue"
-    serial: "456M789012345"
-    weight: 500
-    diameter: 1.75
-    remaining: 65
-    aiDetected: true
-    createdAt: "ISO-8601"
-    createdBy: "Christian"
