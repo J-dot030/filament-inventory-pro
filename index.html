@@ -129,11 +129,6 @@
         .user-item-name { font-weight: 700; font-size: 13px; }
         .user-item-time { font-size: 10px; color: var(--text-dim); }
         .user-online { background: var(--success); width: 8px; height: 8px; border-radius: 50%; }
-        
-        .api-section { margin-top: 20px; padding-top: 20px; border-top: 1px solid var(--border); }
-        .api-info { font-size: 11px; color: var(--text-dim); margin-bottom: 16px; }
-        .setup-link { color: var(--accent); text-decoration: none; font-weight: 700; }
-        .setup-link:hover { text-decoration: underline; }
     </style>
 </head>
 <body>
@@ -151,56 +146,7 @@
     <canvas id="canvas"></canvas>
 </div>
 
-<!-- API SETUP SCREEN -->
-<div class="login-screen" id="apiSetupScreen">
-    <div class="login-box">
-        <div class="login-logo-big">
-            <div class="login-logo-icon">🔑</div>
-            <div class="login-logo-text">API SETUP</div>
-            <div class="login-logo-sub">CONFIGURATION</div>
-        </div>
-        
-        <form onsubmit="handleApiSetup(event)">
-            <div class="form-group">
-                <label class="form-label">Claude API Key</label>
-                <input type="password" id="claudeApiKey" class="form-input" placeholder="sk-ant-api03-..." required>
-            </div>
-            
-            <div class="form-group">
-                <label class="form-label">Firebase API Key</label>
-                <input type="text" id="firebaseApiKey" class="form-input" placeholder="AIza..." required>
-            </div>
-            
-            <div class="form-group">
-                <label class="form-label">Firebase Auth Domain</label>
-                <input type="text" id="firebaseAuthDomain" class="form-input" placeholder="project.firebaseapp.com" required>
-            </div>
-            
-            <div class="form-group">
-                <label class="form-label">Firebase Project ID</label>
-                <input type="text" id="firebaseProjectId" class="form-input" placeholder="project-id" required>
-            </div>
-            
-            <div class="form-group">
-                <label class="form-label">Firebase Storage Bucket</label>
-                <input type="text" id="firebaseStorageBucket" class="form-input" placeholder="project.appspot.com" required>
-            </div>
-            
-            <button type="submit" class="btn-main" style="width: 100%;">SAVE & LOGIN</button>
-        </form>
-        
-        <div class="api-section">
-            <div class="api-info">
-                Get your API keys from:
-                <a href="https://console.cloud.google.com/apis/credentials" target="_blank" class="setup-link">Google Cloud Console</a> (Firebase)
-                and
-                <a href="https://console.anthropic.com/account/keys" target="_blank" class="setup-link">Anthropic Console</a> (Claude)
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- LOGIN -->
+<!-- LOGIN SCREEN -->
 <div class="login-screen" id="loginScreen">
     <div class="login-box">
         <div class="login-logo-big">
@@ -221,10 +167,6 @@
             </div>
             <button type="submit" class="btn-main" style="width: 100%;">LOGIN</button>
         </form>
-        
-        <div style="margin-top: 20px; text-align: center;">
-            <button class="header-btn" onclick="showApiSetup()" style="width: 100%;">⚙️ API SETTINGS</button>
-        </div>
     </div>
 </div>
 
@@ -250,7 +192,7 @@
                 👤 <span id="userDisplay">User</span>
                 <span class="user-badge" id="activeCount">0</span>
             </div>
-            <button class="header-btn" onclick="showActiveUsers()">👥</button>
+            <button class="header-btn" onclick="showApiSettings()">🔑 API</button>
             <button class="header-btn" onclick="logout()">Logout</button>
         </div>
     </header>
@@ -293,6 +235,25 @@
     <button class="btn-main" onclick="openCamera()">📷 SCAN</button>
     <button class="btn-secondary" onclick="openAddModal()">➕ ADD</button>
     <button class="btn-secondary" onclick="openDeleteModal()">🗑️</button>
+</div>
+
+<!-- API SETTINGS MODAL -->
+<div class="modal" id="apiModal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <div class="modal-title">API SETTINGS</div>
+            <button class="modal-close" onclick="closeApiModal()">×</button>
+        </div>
+        
+        <form onsubmit="handleApiSettings(event)">
+            <div class="form-group">
+                <label class="form-label">Claude API Key</label>
+                <input type="password" id="claudeApiKey" class="form-input" placeholder="sk-ant-api03-..." required>
+            </div>
+            
+            <button type="submit" class="btn-main" style="width: 100%;">SAVE API KEY</button>
+        </form>
+    </div>
 </div>
 
 <!-- ADD MODAL -->
@@ -392,8 +353,18 @@
 <div class="toast" id="toast"></div>
 
 <script>
+    // Firebase Config (HARDCODED)
+    const firebaseConfig = {
+        apiKey: "AIzaSyAvj9S0YpN3kXD860d4kCZ6VvVZoQnAYJU",
+        authDomain: "inventory-90afa.firebaseapp.com",
+        projectId: "inventory-90afa",
+        storageBucket: "inventory-90afa.firebasestorage.app",
+        messagingSenderId: "783579490124",
+        appId: "1:783579490124:web:5392bc2ac0a813a37811e9"
+    };
+    
+    // Claude API (USER INPUT)
     let CLAUDE_API_KEY = localStorage.getItem('CLAUDE_API_KEY') || '';
-    let FIREBASE_CONFIG = JSON.parse(localStorage.getItem('FIREBASE_CONFIG') || '{}');
     const CLAUDE_API_URL = "https://api.anthropic.com/v1/messages";
     
     let codeReader = null;
@@ -403,63 +374,32 @@
     let currentTab = 'inventory';
     let database = null;
     
-    // Initialize app
-    window.addEventListener('DOMContentLoaded', initApp);
+    // Initialize Firebase
+    firebase.initializeApp(firebaseConfig);
+    database = firebase.database();
     
-    function initApp() {
-        // Check if API keys exist
-        if (!CLAUDE_API_KEY || !FIREBASE_CONFIG.apiKey) {
-            document.getElementById('apiSetupScreen').style.display = 'flex';
-            document.getElementById('loginScreen').classList.add('hidden');
-        } else {
-            initializeFirebase();
-            document.getElementById('apiSetupScreen').style.display = 'none';
-            document.getElementById('loginScreen').style.display = 'flex';
+    // Check Claude API on load
+    window.addEventListener('DOMContentLoaded', () => {
+        if (!CLAUDE_API_KEY) {
+            showToast('⚠️ Claude API Key required - click 🔑 API', 'error');
         }
+    });
+    
+    function showApiSettings() {
+        document.getElementById('apiModal').classList.add('open');
+        document.getElementById('claudeApiKey').value = CLAUDE_API_KEY;
     }
     
-    function showApiSetup() {
-        document.getElementById('apiSetupScreen').style.display = 'flex';
-        document.getElementById('loginScreen').classList.add('hidden');
+    function closeApiModal() {
+        document.getElementById('apiModal').classList.remove('open');
     }
     
-    function handleApiSetup(event) {
+    function handleApiSettings(event) {
         event.preventDefault();
-        
         CLAUDE_API_KEY = document.getElementById('claudeApiKey').value;
-        
-        FIREBASE_CONFIG = {
-            apiKey: document.getElementById('firebaseApiKey').value,
-            authDomain: document.getElementById('firebaseAuthDomain').value,
-            projectId: document.getElementById('firebaseProjectId').value,
-            storageBucket: document.getElementById('firebaseStorageBucket').value,
-            messagingSenderId: Math.random().toString().split('.')[1].substring(0, 12),
-            appId: "1:123456789012:web:abcdefghijklmnop"
-        };
-        
         localStorage.setItem('CLAUDE_API_KEY', CLAUDE_API_KEY);
-        localStorage.setItem('FIREBASE_CONFIG', JSON.stringify(FIREBASE_CONFIG));
-        
-        initializeFirebase();
-        
-        document.getElementById('apiSetupScreen').style.display = 'none';
-        document.getElementById('loginScreen').style.display = 'flex';
-        
-        showToast('✅ API Keys saved', 'success');
-    }
-    
-    function initializeFirebase() {
-        if (!firebase.apps.length) {
-            firebase.initializeApp(FIREBASE_CONFIG);
-        }
-        database = firebase.database();
-    }
-    
-    function initBarcodeScan() {
-        if (!codeReader) {
-            const ZXing = window.ZXing;
-            codeReader = new ZXing.BrowserMultiFormatReader();
-        }
+        closeApiModal();
+        showToast('✅ Claude API Key saved', 'success');
     }
     
     function handleLogin(event) {
@@ -469,6 +409,11 @@
         
         if (!username || !allowedUsers.includes(username)) {
             showToast('❌ Access Denied', 'error');
+            return;
+        }
+        
+        if (!CLAUDE_API_KEY) {
+            showToast('❌ Set Claude API Key first', 'error');
             return;
         }
         
@@ -487,7 +432,6 @@
         document.getElementById('userDisplay').textContent = username;
         
         loadInventory();
-        loadActiveUsers();
         showToast(`✅ Welcome ${username}!`, 'success');
     }
     
@@ -693,7 +637,19 @@
         document.getElementById('deleteModal').classList.remove('open');
     }
     
+    function initBarcodeScan() {
+        if (!codeReader) {
+            const ZXing = window.ZXing;
+            codeReader = new ZXing.BrowserMultiFormatReader();
+        }
+    }
+    
     async function openCamera() {
+        if (!CLAUDE_API_KEY) {
+            showToast('❌ Claude API Key required', 'error');
+            return;
+        }
+        
         initBarcodeScan();
         document.getElementById('camera').classList.add('active');
         
@@ -859,37 +815,6 @@ NO MARKDOWN. JSON ONLY.`
         }
     }
     
-    function loadActiveUsers() {
-        const ref = database.ref('users');
-        ref.on('value', (snapshot) => {});
-    }
-    
-    function showActiveUsers() {
-        const ref = database.ref('users');
-        ref.once('value', (snapshot) => {
-            const list = document.getElementById('usersList');
-            let html = '';
-            snapshot.forEach((child) => {
-                const user = child.val();
-                html += `
-                    <div class="user-item">
-                        <div class="user-item-info">
-                            <div class="user-item-name">${user.name}</div>
-                            <div class="user-item-time">${new Date(user.lastSeen).toLocaleTimeString()}</div>
-                        </div>
-                        <div class="user-online"></div>
-                    </div>
-                `;
-            });
-            list.innerHTML = html || '<p style="color: var(--text-dim); text-align: center;">No active users</p>';
-            document.getElementById('usersModal').classList.add('open');
-        });
-    }
-    
-    function closeUsersModal() {
-        document.getElementById('usersModal').classList.remove('open');
-    }
-    
     function switchTab(tab) {
         currentTab = tab;
         document.querySelectorAll('.tab').forEach(el => el.classList.remove('active'));
@@ -898,6 +823,10 @@ NO MARKDOWN. JSON ONLY.`
         else if (tab === 'boxes') tabs[1].classList.add('active');
         else if (tab === 'spools') tabs[2].classList.add('active');
         renderInventory();
+    }
+    
+    function closeUsersModal() {
+        document.getElementById('usersModal').classList.remove('open');
     }
     
     function showToast(message, type = 'info') {
