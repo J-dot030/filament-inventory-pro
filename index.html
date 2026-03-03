@@ -664,7 +664,6 @@ Return ONLY valid JSON with no markdown fences:
             'anthropic-dangerous-direct-browser-access': 'true'
         },
         body: JSON.stringify({
-            // FIX 1: Provide a valid Claude model. "opus-4-5" does not exist and throws an API error.
             model: 'claude-3-5-sonnet-20241022',
             max_tokens: 400,
             messages: [{ role: 'user', content: [
@@ -681,31 +680,68 @@ Return ONLY valid JSON with no markdown fences:
 
     const data = await resp.json();
     let raw = (data.content?.find(b => b.type === 'text')?.text || '').trim();
-    raw = raw.replace(/^```(?:json)?\s*/i, '').replace(/\s*```\s*$/i, '').trim();
-    return JSON.parse(raw);
+    
+    // --- ROBUST JSON EXTRACTION ---
+    // Find the first '{' and last '}' to ignore any conversational text
+    const startIdx = raw.indexOf('{');
+    const endIdx = raw.lastIndexOf('}');
+    
+    if (startIdx === -1 || endIdx === -1) {
+        throw new Error('AI did not return a valid JSON format.');
+    }
+    
+    const jsonStr = raw.substring(startIdx, endIdx + 1);
+    return JSON.parse(jsonStr);
 }
 
 function populateFromAI(r) {
     clearForm();
     const c = r.confidence || 'medium';
     const label = c === 'high' ? '✓ HIGH' : c === 'medium' ? '~ MED' : '? LOW';
-    if (r.type) { document.getElementById('fType').value = r.type; onTypeChange(); }
-    if (r.brand) { document.getElementById('fBrand').value = r.brand; setAiBadge('aiBrand', label); }
-    if (r.material) { document.getElementById('fMat').value = r.material; setAiBadge('aiMat', label); }
-    if (r.color) { document.getElementById('fColor').value = r.color; setAiBadge('aiCol', label); }
-    if (r.weight) document.getElementById('fWeight').value = r.weight;
-    if (r.serial) { document.getElementById('fSerial').value = r.serial; setAiBadge('aiSerial', label); }
-    if (r.diameter) document.getElementById('fDiam').value = r.diameter;
-    document.getElementById('addTitle').textContent = 'AI SCAN — ' + (r.type||'ITEM').toUpperCase();
+    
+    // Safely set Type (Box vs Spool)
+    if (r.type && r.type !== 'null') { 
+        document.getElementById('fType').value = r.type.toLowerCase(); 
+        onTypeChange(); 
+    }
+    
+    if (r.brand && r.brand !== 'null') { 
+        document.getElementById('fBrand').value = r.brand; 
+        setAiBadge('aiBrand', label); 
+    }
+    
+    // Safely set Material (Dropdowns are case-sensitive!)
+    if (r.material && r.material !== 'null') { 
+        const matSelect = document.getElementById('fMat');
+        const targetMat = r.material.toUpperCase();
+        // Find matching option regardless of exact case
+        const foundOpt = Array.from(matSelect.options).find(opt => opt.value.toUpperCase() === targetMat);
+        if (foundOpt) {
+            matSelect.value = foundOpt.value;
+            setAiBadge('aiMat', label);
+        }
+    }
+    
+    if (r.color && r.color !== 'null') { 
+        document.getElementById('fColor').value = r.color; 
+        setAiBadge('aiCol', label); 
+    }
+    
+    if (r.weight && r.weight !== 'null') { 
+        document.getElementById('fWeight').value = r.weight; 
+    }
+    
+    if (r.serial && r.serial !== 'null') { 
+        document.getElementById('fSerial').value = r.serial; 
+        setAiBadge('aiSerial', label); 
+    }
+    
+    if (r.diameter && r.diameter !== 'null') { 
+        document.getElementById('fDiam').value = r.diameter; 
+    }
+    
+    document.getElementById('addTitle').textContent = 'AI SCAN — ' + (r.type ? r.type.toUpperCase() : 'ITEM');
 }
-
-function setAiBadge(id, text) {
-    const el = document.getElementById(id);
-    if (!el) return;
-    el.textContent = text;
-    el.style.display = 'inline-flex';
-}
-
 // ══════════════════════════════════════════════════════════
 // FORM
 // ══════════════════════════════════════════════════════════
