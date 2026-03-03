@@ -442,7 +442,9 @@ function render() {
     let list = [...items];
     if (tab === 'boxes') list = list.filter(i => i.type === 'box');
     if (tab === 'spools') list = list.filter(i => i.type === 'spool');
-    if (q) list = list.filter(i => (i.brand + i.color + i.material + (i.serial||'')).toLowerCase().includes(q));
+    
+    // FIX 3: Safe concatenation prevents "undefined" from breaking the search
+    if (q) list = list.filter(i => ((i.brand||'') + ' ' + (i.color||'') + ' ' + (i.material||'') + ' ' + (i.serial||'')).toLowerCase().includes(q));
     
     if (!list.length) {
         el.innerHTML = '<div class="empty"><div class="empty-icon">📭</div><div class="empty-title">No items found</div><div class="empty-sub">' + (q ? 'Try different search' : 'Scan or add filament') + '</div></div>';
@@ -502,7 +504,6 @@ async function openCamera() {
     stopBarcodeLoop();
 
     try {
-        // Try rear camera first, fall back to any camera
         let constraints = { video: { facingMode: { ideal: 'environment' }, width: { ideal: 1920 }, height: { ideal: 1080 } } };
         try { camStream = await navigator.mediaDevices.getUserMedia(constraints); }
         catch(e) { camStream = await navigator.mediaDevices.getUserMedia({ video: true }); }
@@ -510,7 +511,6 @@ async function openCamera() {
         const vid = document.getElementById('video');
         vid.srcObject = camStream;
 
-        // Wait for video to actually be ready
         await new Promise((res, rej) => {
             vid.onloadedmetadata = () => res();
             vid.onerror = rej;
@@ -521,7 +521,6 @@ async function openCamera() {
         document.getElementById('shutterBtn').disabled = false;
         setCamMsg('📷 Camera ready', 'Auto-detecting barcodes... or tap 📸 for AI scan');
 
-        // Start barcode detection if browser supports it
         if ('BarcodeDetector' in window) {
             startBarcodeLoop(vid);
         } else {
@@ -548,7 +547,6 @@ function setCamMsg(msg, sub) {
     if (sub !== undefined) document.getElementById('camSub').textContent = sub;
 }
 
-// ── Barcode auto-detection loop ──
 function startBarcodeLoop(vid) {
     if (!barcodeDetector) {
         try {
@@ -592,7 +590,6 @@ function onBarcodeFound(code) {
     toast('📦 Barcode: ' + code.slice(0, 18) + (code.length > 18 ? '...' : ''), 'success');
 }
 
-// ── Manual AI capture ──
 async function captureForAI() {
     if (!CLAUDE_KEY) {
         toast('⚠ Add Claude API key in 🔑 API settings', 'error');
@@ -608,14 +605,12 @@ async function captureForAI() {
     stopBarcodeLoop();
     document.getElementById('shutterBtn').disabled = true;
 
-    // Capture frame
     const canvas = document.getElementById('canvas');
     canvas.width = vid.videoWidth || 1280;
     canvas.height = vid.videoHeight || 720;
     canvas.getContext('2d').drawImage(vid, 0, 0, canvas.width, canvas.height);
     const imageB64 = canvas.toDataURL('image/jpeg', 0.92).split(',')[1];
 
-    // Show processing
     document.getElementById('camProcessing').classList.add('show');
     document.getElementById('camProcText').textContent = 'Sending to Claude AI...';
 
@@ -628,7 +623,6 @@ async function captureForAI() {
     } catch(err) {
         document.getElementById('camProcessing').classList.remove('show');
         document.getElementById('shutterBtn').disabled = false;
-        // Resume barcode scan
         if ('BarcodeDetector' in window) startBarcodeLoop(vid);
         toast('AI scan failed: ' + err.message, 'error');
     }
@@ -670,7 +664,8 @@ Return ONLY valid JSON with no markdown fences:
             'anthropic-dangerous-direct-browser-access': 'true'
         },
         body: JSON.stringify({
-            model: 'claude-opus-4-5',
+            // FIX 1: Provide a valid Claude model. "opus-4-5" does not exist and throws an API error.
+            model: 'claude-3-5-sonnet-20241022',
             max_tokens: 400,
             messages: [{ role: 'user', content: [
                 { type: 'image', source: { type: 'base64', media_type: 'image/jpeg', data: b64 } },
@@ -686,7 +681,6 @@ Return ONLY valid JSON with no markdown fences:
 
     const data = await resp.json();
     let raw = (data.content?.find(b => b.type === 'text')?.text || '').trim();
-    // Strip any accidental markdown fences
     raw = raw.replace(/^```(?:json)?\s*/i, '').replace(/\s*```\s*$/i, '').trim();
     return JSON.parse(raw);
 }
@@ -766,6 +760,10 @@ function doSave() {
     const editId = document.getElementById('editId').value;
     const aiDetected = ['aiBrand','aiMat','aiCol','aiSerial'].some(id => document.getElementById(id)?.style.display !== 'none');
 
+    // FIX 2: Safely parse numbers. `parseInt("")` returns `NaN`. `NaN ?? 100` equals `NaN`, which breaks everything.
+    const remStr = document.getElementById('fRem').value;
+    const finalRem = remStr === '' ? 100 : (parseInt(remStr) || 0);
+
     if (!type) { toast('Select item type', 'error'); return; }
     if (!brand) { toast('Enter brand', 'error'); return; }
     if (!material) { toast('Select material', 'error'); return; }
@@ -778,7 +776,7 @@ function doSave() {
         const upd = { ...existing, ...base };
         if (type === 'spool') {
             upd.diameter = parseFloat(document.getElementById('fDiam').value) || 1.75;
-            upd.remaining = parseInt(document.getElementById('fRem').value) ?? 100;
+            upd.remaining = finalRem; 
         }
         dbSet(editId, upd).then(() => { toast('✅ Updated', 'success'); closeModal('addModal'); });
     } else {
@@ -796,7 +794,7 @@ function doSave() {
             dbSet(id, {
                 ...base,
                 diameter: parseFloat(document.getElementById('fDiam').value) || 1.75,
-                remaining: parseInt(document.getElementById('fRem').value) ?? 100,
+                remaining: finalRem,
                 createdAt: Date.now()
             }).then(() => { toast('✅ Spool added', 'success'); closeModal('addModal'); });
         }
