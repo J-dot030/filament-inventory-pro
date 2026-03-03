@@ -173,7 +173,7 @@
     <canvas id="canvas"></canvas>
 
     <div class="cam-header">
-        <div class="cam-title">📷 DUAL-SCAN</div>
+        <div class="cam-title">🤖 AI VISION</div>
         <button class="cam-close" onclick="closeCamera()">✕</button>
     </div>
 
@@ -388,8 +388,6 @@ let user = null;
 let items = [];
 let tab = 'all';
 let camStream = null;
-let barcodeTimer = null;
-let barcodeDetector = null;
 let CLAUDE_KEY = localStorage.getItem('sv_ck') || '';
 
 // ══════════════════════════════════════════════════════════
@@ -443,7 +441,6 @@ function render() {
     if (tab === 'boxes') list = list.filter(i => i.type === 'box');
     if (tab === 'spools') list = list.filter(i => i.type === 'spool');
     
-    // FIX 3: Safe concatenation prevents "undefined" from breaking the search
     if (q) list = list.filter(i => ((i.brand||'') + ' ' + (i.color||'') + ' ' + (i.material||'') + ' ' + (i.serial||'')).toLowerCase().includes(q));
     
     if (!list.length) {
@@ -495,13 +492,12 @@ function setTab(t) {
 function x(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 
 // ══════════════════════════════════════════════════════════
-// CAMERA
+// CAMERA (PURE AI - NO NATIVE BARCODE DETECTOR)
 // ══════════════════════════════════════════════════════════
 async function openCamera() {
     document.getElementById('camera').classList.add('active');
     setCamMsg('<span class="spinner-inline"></span>Starting camera...', '');
     document.getElementById('shutterBtn').disabled = true;
-    stopBarcodeLoop();
 
     try {
         let constraints = { video: { facingMode: { ideal: 'environment' }, width: { ideal: 1920 }, height: { ideal: 1080 } } };
@@ -519,13 +515,7 @@ async function openCamera() {
         await vid.play();
 
         document.getElementById('shutterBtn').disabled = false;
-        setCamMsg('📷 Camera ready', 'Auto-detecting barcodes... or tap 📸 for AI scan');
-
-        if ('BarcodeDetector' in window) {
-            startBarcodeLoop(vid);
-        } else {
-            setCamMsg('📷 Ready — tap 📸 to scan', 'BarcodeDetector not available in this browser');
-        }
+        setCamMsg('🤖 AI VISION READY', 'Frame the spool or box and tap 📸');
 
     } catch(err) {
         setCamMsg('❌ Camera error', err.message || 'Permission denied?');
@@ -534,7 +524,6 @@ async function openCamera() {
 }
 
 function closeCamera() {
-    stopBarcodeLoop();
     if (camStream) { camStream.getTracks().forEach(t => t.stop()); camStream = null; }
     document.getElementById('video').srcObject = null;
     document.getElementById('camera').classList.remove('active');
@@ -547,49 +536,9 @@ function setCamMsg(msg, sub) {
     if (sub !== undefined) document.getElementById('camSub').textContent = sub;
 }
 
-function startBarcodeLoop(vid) {
-    if (!barcodeDetector) {
-        try {
-            barcodeDetector = new BarcodeDetector({
-                formats: ['ean_13','ean_8','code_128','code_39','code_93','upc_a','upc_e','qr_code','data_matrix','itf']
-            });
-        } catch(e) { return; }
-    }
-
-    let scanning = true;
-    barcodeTimer = setInterval(async () => {
-        if (!scanning || !camStream || vid.readyState < 2) return;
-        scanning = false;
-        try {
-            const codes = await barcodeDetector.detect(vid);
-            if (codes.length > 0) {
-                stopBarcodeLoop();
-                const code = codes[0].rawValue;
-                closeCamera();
-                onBarcodeFound(code);
-                return;
-            }
-        } catch(e) {}
-        finally { scanning = true; }
-        setCamMsg('🔍 Scanning for barcode...', 'Auto-detect active • tap 📸 for AI vision');
-    }, 400);
-}
-
-function stopBarcodeLoop() {
-    if (barcodeTimer) { clearInterval(barcodeTimer); barcodeTimer = null; }
-}
-
-function onBarcodeFound(code) {
-    clearForm();
-    document.getElementById('fType').value = 'box';
-    onTypeChange();
-    document.getElementById('fSerial').value = code;
-    setAiBadge('aiSerial', '✓ BARCODE');
-    document.getElementById('addTitle').textContent = '📦 BOX DETECTED';
-    openModal('addModal');
-    toast('📦 Barcode: ' + code.slice(0, 18) + (code.length > 18 ? '...' : ''), 'success');
-}
-
+// ══════════════════════════════════════════════════════════
+// CLAUDE AI PROCESSING
+// ══════════════════════════════════════════════════════════
 async function captureForAI() {
     if (!CLAUDE_KEY) {
         toast('⚠ Add Claude API key in 🔑 API settings', 'error');
@@ -602,7 +551,6 @@ async function captureForAI() {
         return;
     }
 
-    stopBarcodeLoop();
     document.getElementById('shutterBtn').disabled = true;
 
     const canvas = document.getElementById('canvas');
@@ -612,7 +560,7 @@ async function captureForAI() {
     const imageB64 = canvas.toDataURL('image/jpeg', 0.92).split(',')[1];
 
     document.getElementById('camProcessing').classList.add('show');
-    document.getElementById('camProcText').textContent = 'Sending to Claude AI...';
+    document.getElementById('camProcText').textContent = 'Analyzing with Claude AI...';
 
     try {
         const result = await callClaude(imageB64);
@@ -623,7 +571,6 @@ async function captureForAI() {
     } catch(err) {
         document.getElementById('camProcessing').classList.remove('show');
         document.getElementById('shutterBtn').disabled = false;
-        if ('BarcodeDetector' in window) startBarcodeLoop(vid);
         toast('AI scan failed: ' + err.message, 'error');
     }
 }
@@ -631,17 +578,16 @@ async function captureForAI() {
 async function callClaude(b64) {
     const prompt = `You are an expert at reading 3D printer filament labels including Prusament dot-matrix labels.
 
-CRITICAL DOT-MATRIX RULES:
+YOUR MISSION:
+1. Identify if the image shows an opened "spool" or a sealed "box".
+2. IF SPOOL: Ignore standard barcodes. Search ONLY for the 13-character unique serial code. (Pattern: 3 chars, then 'M', then 9 chars. Example: 123M456789012).
+3. IF BOX: Find and extract the standard barcode number from the sticker. Ignore the 13-character code if present.
+4. FOR BOTH: Automatically identify the filament material (e.g., PLA, PETG) and color.
+
+CRITICAL DOT-MATRIX RULES (For Spools):
 - Zero "0" has a DIAGONAL SLASH through the middle
 - Letter "O" has NO slash
 - "8" has TWO closed loops
-- Serial number format: EXACTLY 13 characters, position 4 MUST be capital letter M
-  Pattern: [3 chars][M][9 chars]  Example: 123M456789012
-- If you cannot confidently read a character, return null for that field
-
-Determine if this is:
-- "box" = sealed/unopened packaging with product label
-- "spool" = an actual filament spool (with or without shrink wrap, has a sticker/printed label)
 
 Return ONLY valid JSON with no markdown fences:
 {
@@ -651,7 +597,7 @@ Return ONLY valid JSON with no markdown fences:
   "color": "color name" or null,
   "weight": weight_as_integer_grams or null,
   "diameter": 1.75 or 2.85 or null,
-  "serial": "13-char code" or null,
+  "serial": "extracted code or barcode" or null,
   "confidence": "high" or "medium" or "low"
 }`;
 
@@ -682,7 +628,6 @@ Return ONLY valid JSON with no markdown fences:
     let raw = (data.content?.find(b => b.type === 'text')?.text || '').trim();
     
     // --- ROBUST JSON EXTRACTION ---
-    // Find the first '{' and last '}' to ignore any conversational text
     const startIdx = raw.indexOf('{');
     const endIdx = raw.lastIndexOf('}');
     
@@ -699,7 +644,6 @@ function populateFromAI(r) {
     const c = r.confidence || 'medium';
     const label = c === 'high' ? '✓ HIGH' : c === 'medium' ? '~ MED' : '? LOW';
     
-    // Safely set Type (Box vs Spool)
     if (r.type && r.type !== 'null') { 
         document.getElementById('fType').value = r.type.toLowerCase(); 
         onTypeChange(); 
@@ -710,11 +654,9 @@ function populateFromAI(r) {
         setAiBadge('aiBrand', label); 
     }
     
-    // Safely set Material (Dropdowns are case-sensitive!)
     if (r.material && r.material !== 'null') { 
         const matSelect = document.getElementById('fMat');
         const targetMat = r.material.toUpperCase();
-        // Find matching option regardless of exact case
         const foundOpt = Array.from(matSelect.options).find(opt => opt.value.toUpperCase() === targetMat);
         if (foundOpt) {
             matSelect.value = foundOpt.value;
@@ -742,6 +684,7 @@ function populateFromAI(r) {
     
     document.getElementById('addTitle').textContent = 'AI SCAN — ' + (r.type ? r.type.toUpperCase() : 'ITEM');
 }
+
 // ══════════════════════════════════════════════════════════
 // FORM
 // ══════════════════════════════════════════════════════════
@@ -796,7 +739,6 @@ function doSave() {
     const editId = document.getElementById('editId').value;
     const aiDetected = ['aiBrand','aiMat','aiCol','aiSerial'].some(id => document.getElementById(id)?.style.display !== 'none');
 
-    // FIX 2: Safely parse numbers. `parseInt("")` returns `NaN`. `NaN ?? 100` equals `NaN`, which breaks everything.
     const remStr = document.getElementById('fRem').value;
     const finalRem = remStr === '' ? 100 : (parseInt(remStr) || 0);
 
